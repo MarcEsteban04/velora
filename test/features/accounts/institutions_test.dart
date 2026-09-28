@@ -52,9 +52,16 @@ void main() {
     expect(draft.toRow().containsKey('institution'), isFalse);
   });
 
-  test('every logo asset exists', () {
+  test('every logo asset exists, with the exact same letter case', () {
+    // Android asset names are case-sensitive, but Windows file lookups
+    // aren't, so compare against the real names in the folder.
     for (final i in Institutions.all) {
-      expect(File(i.asset).existsSync(), isTrue, reason: i.asset);
+      final file = File(i.asset);
+      final names = file.parent
+          .listSync()
+          .map((e) => e.uri.pathSegments.last)
+          .toSet();
+      expect(names, contains(file.uri.pathSegments.last), reason: i.asset);
     }
   });
 }
