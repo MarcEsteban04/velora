@@ -11,6 +11,8 @@ import '../../../core/widgets/pressable_button.dart';
 import '../../../core/widgets/reveal.dart';
 import '../../../core/widgets/speech_bubble.dart';
 import '../../../core/widgets/velora_mascot.dart';
+import '../../auth/data/auth_repository.dart';
+import '../../auth/domain/backup_status.dart';
 import '../../profile/data/profile_repository.dart';
 import '../application/app_lock_controller.dart';
 import '../data/pin_repository.dart';
@@ -212,10 +214,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   }
 }
 
-/// An honest "Forgot PIN" flow. The space is anonymous, so there's no email
-/// to verify with, and resetting means starting over. We say so plainly
-/// before anything is deleted.
-class _ResetConfirm extends StatefulWidget {
+/// An honest "Forgot PIN" flow. A backed-up space signs out, and signing
+/// back in with the email sets a new PIN. Otherwise there's nothing to
+/// verify with, so resetting means starting over, and we say so plainly.
+class _ResetConfirm extends ConsumerStatefulWidget {
   const _ResetConfirm({
     super.key,
     required this.onCancel,
@@ -226,15 +228,16 @@ class _ResetConfirm extends StatefulWidget {
   final Future<void> Function() onConfirm;
 
   @override
-  State<_ResetConfirm> createState() => _ResetConfirmState();
+  ConsumerState<_ResetConfirm> createState() => _ResetConfirmState();
 }
 
-class _ResetConfirmState extends State<_ResetConfirm> {
+class _ResetConfirmState extends ConsumerState<_ResetConfirm> {
   bool _resetting = false;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final backup = ref.watch(backupStatusProvider);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -245,13 +248,19 @@ class _ResetConfirmState extends State<_ResetConfirm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Start over?', style: text.headlineSmall),
+              Text(
+                backup is LinkedBackup ? 'Reset your PIN?' : 'Start over?',
+                style: text.headlineSmall,
+              ),
               const SizedBox(height: 10),
               Text(
-                "Your space isn't linked to an email yet, so there's no way to "
-                "confirm it's you. Starting over signs you out and sets up a "
-                'fresh space. Your current accounts and history '
-                "can't be recovered.",
+                backup is LinkedBackup
+                    ? 'We’ll sign you out. Sign back in with ${backup.email} '
+                          'and set a new PIN. Everything in your space stays.'
+                    : "Your space isn't linked to an email yet, so there's no "
+                          "way to confirm it's you. Starting over signs you "
+                          'out and sets up a fresh space. Your current '
+                          "accounts and history can't be recovered.",
                 style: text.bodyMedium,
               ),
               const SizedBox(height: 22),
@@ -270,7 +279,9 @@ class _ResetConfirmState extends State<_ResetConfirm> {
                         },
                   style: TextButton.styleFrom(foregroundColor: AppColors.rust),
                   child: Text(
-                    _resetting ? 'Starting over…' : 'Start over anyway',
+                    backup is LinkedBackup
+                        ? (_resetting ? 'Signing out…' : 'Sign out')
+                        : (_resetting ? 'Starting over…' : 'Start over anyway'),
                   ),
                 ),
               ),

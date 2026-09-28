@@ -36,7 +36,7 @@ class PinSetupScreen extends ConsumerWidget {
                 Text(
                   confirming
                       ? 'Enter it once more so we know it’s right.'
-                      : 'Create a 4-digit PIN to open Velora.',
+                      : 'Create a 4-digit PIN to open Velora on this phone.',
                   textAlign: TextAlign.center,
                   style: text.bodyLarge,
                 ),

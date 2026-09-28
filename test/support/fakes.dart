@@ -2,7 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthException, PostgrestException;
 import 'package:velora/core/storage/app_preferences.dart';
 import 'package:velora/core/money/currency.dart';
 import 'package:velora/features/accounts/data/account_repository.dart';
@@ -12,6 +13,8 @@ import 'package:velora/features/accounts/domain/wallet_insight.dart';
 import 'package:velora/features/app_lock/data/pin_repository.dart';
 import 'package:velora/features/ask/data/ask_repository.dart';
 import 'package:velora/features/ask/domain/chat_message.dart';
+import 'package:velora/features/auth/data/auth_repository.dart';
+import 'package:velora/features/auth/domain/backup_status.dart';
 import 'package:velora/features/budgets/data/budget_repository.dart';
 import 'package:velora/features/budgets/domain/budget.dart';
 import 'package:velora/features/goals/data/goal_repository.dart';
@@ -490,6 +493,66 @@ class FakePins implements PinRepository {
   Future<void> clear() async => pin = null;
 }
 
+/// Supabase auth in memory. Signing out hides the profile, as the real
+/// sign-out does; signing in with the backed-up email brings it back.
+class FakeAuth implements AuthRepository {
+  FakeAuth(this.db, {this.confirmsEmail = false});
+
+  final FakeBackend db;
+
+  /// Supabase sends a link before the email counts.
+  final bool confirmsEmail;
+
+  BackupStatus status = const BackupStatus.none();
+  String? password;
+  bool linkOpened = false;
+  UserProfile? _signedOut;
+
+  @override
+  String? get currentUserId => 'me';
+
+  @override
+  BackupStatus get backupStatus => status;
+
+  @override
+  Future<String> ensureSignedIn() async => 'me';
+
+  @override
+  Future<BackupStatus> backUp(String email, String password) async {
+    status = confirmsEmail
+        ? BackupStatus.pending(email)
+        : BackupStatus.linked(email);
+    return finishBackup(password);
+  }
+
+  @override
+  Future<BackupStatus> finishBackup(String password) async {
+    if (status case PendingBackup(:final email) when linkOpened) {
+      status = BackupStatus.linked(email);
+    }
+    if (status is LinkedBackup) this.password = password;
+    return status;
+  }
+
+  @override
+  Future<void> signIn(String email, String password) async {
+    final linked = status;
+    if (linked is! LinkedBackup ||
+        linked.email != email ||
+        this.password != password) {
+      throw const AuthException('bad', code: 'invalid_credentials');
+    }
+    db.profile = _signedOut ?? db.profile;
+    _signedOut = null;
+  }
+
+  @override
+  Future<void> signOut() async {
+    _signedOut = db.profile;
+    db.profile = null;
+  }
+}
+
 /// Every override the full app needs to run on the fakes above. [prefs]
 /// comes from `SharedPreferences.getInstance()` after
 /// `SharedPreferences.setMockInitialValues`.
@@ -500,8 +563,10 @@ List<Override> fakeOverrides(
   FakeInsights? insights,
   FakeAsk? ask,
   FakeReceiptStorage? receipts,
+  FakeAuth? auth,
 }) => [
   sharedPreferencesProvider.overrideWithValue(prefs),
+  authRepositoryProvider.overrideWithValue(auth ?? FakeAuth(db)),
   onboardingRepositoryProvider.overrideWithValue(db),
   profileRepositoryProvider.overrideWithValue(db),
   accountRepositoryProvider.overrideWithValue(FakeAccounts(db)),

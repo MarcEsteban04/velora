@@ -9,13 +9,14 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/pressable_button.dart';
 import '../../../core/widgets/reveal.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
+import '../../auth/presentation/sign_in_sheet.dart';
 import 'widgets/mascot_hero.dart';
 
 /// The first screen users see.
 ///
 /// Velora signs users in anonymously behind the scenes, so there's one clear
-/// call-to-action instead of a sign-in wall. If cloud sign-in is added later,
-/// its buttons go in the actions column above "Get started".
+/// call-to-action instead of a sign-in wall. A quiet "I already have a
+/// space" opens a backed-up space on a new phone.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key, required this.onGetStarted});
 
@@ -156,7 +157,25 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                   onPressed: _celebrating ? null : _getStarted,
                                 ),
                               ),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 6),
+                              Reveal(
+                                animation: _intro,
+                                interval: const Interval(
+                                  0.55,
+                                  1,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                                child: TextButton(
+                                  onPressed: _celebrating
+                                      ? null
+                                      : () => SignInSheet.show(context),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppColors.textPrimary,
+                                  ),
+                                  child: const Text('I already have a space'),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
                               Reveal(
                                 animation: _intro,
                                 interval: const Interval(

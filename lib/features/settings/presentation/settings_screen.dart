@@ -16,6 +16,9 @@ import '../../../core/widgets/velora_mascot.dart';
 import '../../app_lock/application/app_lock_controller.dart';
 import '../../app_lock/presentation/change_pin_screen.dart';
 import '../../auth/application/session_actions.dart';
+import '../../auth/data/auth_repository.dart';
+import '../../auth/domain/backup_status.dart';
+import '../../auth/presentation/backup_sheet.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/user_profile.dart';
 import '../../profile/presentation/coach_tone_style.dart';
@@ -62,15 +65,22 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _confirmStartOver(BuildContext context) async {
+  Future<void> _confirmStartOver(
+    BuildContext context,
+    BackupStatus backup,
+  ) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceRaised,
         title: const Text('Start over?'),
-        content: const Text(
-          'This signs you out and sets up a fresh space. Your space isn’t '
-          'backed up yet, so your accounts and history can’t be recovered.',
+        content: Text(
+          backup is LinkedBackup
+              ? 'This signs you out of this phone. Your space is backed up, '
+                    'so you can sign back in with ${backup.email}.'
+              : 'This signs you out and sets up a fresh space. Your space '
+                    'isn’t backed up yet, so your accounts and history can’t '
+                    'be recovered.',
         ),
         actions: [
           TextButton(
@@ -98,6 +108,7 @@ class SettingsScreen extends ConsumerWidget {
     final autoLock = ref.watch(autoLockProvider);
     final appearance = ref.watch(appearanceProvider);
     final zone = ref.watch(timeZoneProvider);
+    final backup = ref.watch(backupStatusProvider);
     final streak = ref.watch(streakSettingsProvider);
     final streakCtl = ref.read(streakSettingsProvider.notifier);
     final name = profile?.name ?? 'friend';
@@ -362,9 +373,20 @@ class SettingsScreen extends ConsumerWidget {
                       SettingsTile(
                         icon: Icons.cloud_done_rounded,
                         color: AppColors.ember,
-                        title: 'Back up your space',
-                        subtitle: 'Link an email or Google to keep your data on any phone',
-                        badge: 'SOON',
+                        title: switch (backup) {
+                          LinkedBackup() => 'Backed up',
+                          PendingBackup() => 'Finish backing up',
+                          NoBackup() => 'Back up your space',
+                        },
+                        subtitle: switch (backup) {
+                          LinkedBackup(:final email) =>
+                            'Sign in with $email on any phone',
+                          PendingBackup(:final email) =>
+                            'Open the link sent to $email',
+                          NoBackup() =>
+                            'Add an email to open your space on any phone',
+                        },
+                        onTap: () => BackupSheet.show(context),
                       ),
                     ],
                   ),
@@ -394,9 +416,11 @@ class SettingsScreen extends ConsumerWidget {
                       SettingsTile(
                         icon: Icons.restart_alt_rounded,
                         title: 'Start over',
-                        subtitle: 'Sign out and set up a fresh space',
+                        subtitle: backup is LinkedBackup
+                            ? 'Sign out of this phone'
+                            : 'Sign out and set up a fresh space',
                         destructive: true,
-                        onTap: () => _confirmStartOver(context),
+                        onTap: () => _confirmStartOver(context, backup),
                       ),
                     ],
                   ),
