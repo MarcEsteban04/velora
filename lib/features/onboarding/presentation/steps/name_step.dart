@@ -80,7 +80,12 @@ class _NameStepState extends ConsumerState<NameStep> {
               color: AppColors.leafBright,
             ),
             const SizedBox(width: 6),
-            Text('Private to you, never shared', style: text.labelMedium),
+            Flexible(
+              child: Text(
+                'Private to you, never shared',
+                style: text.labelMedium,
+              ),
+            ),
           ],
         ),
       ],

@@ -19,13 +19,6 @@ import '../../profile/presentation/coach_tone_style.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  static Route<void> route() => PageRouteBuilder(
-    transitionDuration: const Duration(milliseconds: 600),
-    pageBuilder: (_, _, _) => const HomeScreen(),
-    transitionsBuilder: (_, animation, _, child) =>
-        FadeTransition(opacity: animation, child: child),
-  );
-
   static String _greeting(DateTime now) => switch (now.hour) {
     < 12 => 'Good morning',
     < 18 => 'Good afternoon',

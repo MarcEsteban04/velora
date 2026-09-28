@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/money/currency.dart';
 import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
+import '../../app_lock/application/app_lock_controller.dart';
+import '../../app_lock/data/pin_repository.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/user_profile.dart';
 import '../data/onboarding_repository.dart';
@@ -17,6 +19,7 @@ class OnboardingDraft {
     this.accountName = 'Cash',
     this.openingBalanceMinor = 0,
     this.coachTone = CoachTone.balanced,
+    this.pin,
   });
 
   final String name;
@@ -25,6 +28,10 @@ class OnboardingDraft {
   final String accountName;
   final int openingBalanceMinor;
   final CoachTone coachTone;
+
+  /// Held in memory only until [OnboardingController.complete] saves its
+  /// hash to the keystore. It's never sent to the server.
+  final String? pin;
 
   String get firstName => name.trim();
 
@@ -35,6 +42,7 @@ class OnboardingDraft {
     String? accountName,
     int? openingBalanceMinor,
     CoachTone? coachTone,
+    String? pin,
   }) => OnboardingDraft(
     name: name ?? this.name,
     currency: currency ?? this.currency,
@@ -42,6 +50,7 @@ class OnboardingDraft {
     accountName: accountName ?? this.accountName,
     openingBalanceMinor: openingBalanceMinor ?? this.openingBalanceMinor,
     coachTone: coachTone ?? this.coachTone,
+    pin: pin ?? this.pin,
   );
 }
 
@@ -76,10 +85,16 @@ class OnboardingController extends Notifier<OnboardingDraft> {
   void setCoachTone(CoachTone value) =>
       state = state.copyWith(coachTone: value);
 
-  /// Saves the profile and first account together on the server, then
-  /// refreshes what the rest of the app reads.
+  void setPin(String value) => state = state.copyWith(pin: value);
+
+  /// Saves the profile and first account together on the server, then the
+  /// PIN on the device, then refreshes what the rest of the app reads. The
+  /// PIN is saved before the profile refresh so the "set a PIN" screen never
+  /// flashes up for a user who just chose one.
   Future<void> complete() async {
     final draft = state;
+    final pin = draft.pin;
+    if (pin == null) throw StateError('PIN missing from onboarding draft');
     await ref
         .read(onboardingRepositoryProvider)
         .complete(
@@ -90,8 +105,11 @@ class OnboardingController extends Notifier<OnboardingDraft> {
           accountType: draft.accountType,
           openingBalanceMinor: draft.openingBalanceMinor,
         );
-    ref
-      ..invalidate(profileProvider)
-      ..invalidate(accountsProvider);
+    await ref.read(pinRepositoryProvider).setPin(pin);
+    ref.read(appLockProvider.notifier).pinCreated();
+    ref.invalidate(accountsProvider);
+    // Wait for the fresh profile, so the app gate shows Home the moment
+    // onboarding closes rather than a flash of Welcome.
+    final _ = await ref.refresh(profileProvider.future);
   }
 }

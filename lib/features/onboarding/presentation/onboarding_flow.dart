@@ -6,7 +6,6 @@ import '../../../core/errors/friendly_error.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
 import '../../../core/widgets/pressable_button.dart';
-import '../../home/presentation/home_screen.dart';
 import '../application/onboarding_controller.dart';
 import 'steps/account_step.dart';
 import 'steps/celebration_step.dart';
@@ -14,6 +13,7 @@ import 'steps/coach_step.dart';
 import 'steps/currency_step.dart';
 import 'steps/features_step.dart';
 import 'steps/name_step.dart';
+import 'steps/pin_step.dart';
 import 'steps/promise_step.dart';
 import 'steps/ready_step.dart';
 import 'widgets/onboarding_progress.dart';
@@ -26,10 +26,11 @@ enum OnboardingStep {
   celebrate,
   features,
   coach,
+  pin,
   ready,
 }
 
-/// Eight short steps from "hello" to a first account. Answers live in the
+/// Nine short steps from "hello" to a first account. Answers live in the
 /// in-memory draft until the last step, then everything is saved at once.
 class OnboardingFlow extends ConsumerStatefulWidget {
   const OnboardingFlow({super.key});
@@ -62,6 +63,7 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
   bool _canContinue(OnboardingDraft draft) => switch (_step) {
     OnboardingStep.name => draft.firstName.isNotEmpty,
     OnboardingStep.account => draft.accountName.trim().isNotEmpty,
+    OnboardingStep.pin => draft.pin != null,
     _ => true,
   };
 
@@ -119,7 +121,7 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
     }
     if (!mounted) return;
     HapticFeedback.heavyImpact();
-    Navigator.of(context).pushAndRemoveUntil(HomeScreen.route(), (_) => false);
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Widget _buildStep(OnboardingStep step) => switch (step) {
@@ -130,6 +132,7 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
     OnboardingStep.celebrate => const CelebrationStep(),
     OnboardingStep.features => const FeaturesStep(),
     OnboardingStep.coach => const CoachStep(),
+    OnboardingStep.pin => PinStep(onCreated: _next),
     OnboardingStep.ready => const ReadyStep(),
   };
 
@@ -173,7 +176,7 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 14, 24, 4),
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
                       child: Row(
                         children: [
                           Expanded(
@@ -191,13 +194,24 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
                       ),
                     ),
                     Expanded(
-                      child: PageView(
-                        controller: _pages,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          for (final step in OnboardingStep.values)
-                            _buildStep(step),
-                        ],
+                      // Content fades out as it scrolls up under the step bar
+                      // instead of colliding with it.
+                      child: ShaderMask(
+                        blendMode: BlendMode.dstIn,
+                        shaderCallback: (rect) => const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Colors.black],
+                          stops: [0, 0.05],
+                        ).createShader(rect),
+                        child: PageView(
+                          controller: _pages,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: [
+                            for (final step in OnboardingStep.values)
+                              _buildStep(step),
+                          ],
+                        ),
                       ),
                     ),
                     Padding(

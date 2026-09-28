@@ -133,7 +133,14 @@ class _PressableButtonState extends State<PressableButton> {
                             ),
                             const SizedBox(width: 10),
                           ],
-                          Text(widget.label, style: labelStyle),
+                          Flexible(
+                            child: Text(
+                              widget.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: labelStyle,
+                            ),
+                          ),
                         ],
                       ),
                     ),

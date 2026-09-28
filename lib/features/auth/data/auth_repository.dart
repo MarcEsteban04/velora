@@ -23,6 +23,8 @@ class AuthRepository {
     if (user == null) throw const AuthException('Anonymous sign-in failed');
     return user.id;
   }
+
+  Future<void> signOut() => _auth.signOut();
 }
 
 final authRepositoryProvider = Provider<AuthRepository>(

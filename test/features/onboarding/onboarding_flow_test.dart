@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:velora/app/velora_app.dart';
 import 'package:velora/core/money/currency.dart';
 import 'package:velora/core/theme/app_theme.dart';
 import 'package:velora/features/accounts/data/account_repository.dart';
 import 'package:velora/features/accounts/domain/account.dart';
+import 'package:velora/features/app_lock/data/pin_repository.dart';
 import 'package:velora/features/home/presentation/home_screen.dart';
 import 'package:velora/features/onboarding/application/onboarding_controller.dart';
 import 'package:velora/features/onboarding/data/onboarding_repository.dart';
@@ -55,20 +58,65 @@ class _FakeBackend
   Future<List<Account>> fetchAll() async => List.of(accounts);
 }
 
+/// Keeps the PIN in memory. The real repository hashes on an isolate, which
+/// can't run inside a widget test's fake clock.
+class _FakePins implements PinRepository {
+  String? pin;
+
+  @override
+  Future<bool> hasPin() async => pin != null;
+
+  @override
+  Future<void> setPin(String value) async => pin = value;
+
+  @override
+  Future<PinCheck> verify(String value) async =>
+      value == pin ? const PinAccepted() : const PinRejected(4);
+
+  @override
+  Future<DateTime?> lockedUntil() async => null;
+
+  @override
+  Future<void> clear() async => pin = null;
+}
+
 void main() {
   late _FakeBackend backend;
+  late _FakePins pins;
 
-  setUp(() => backend = _FakeBackend());
+  setUp(() {
+    backend = _FakeBackend();
+    pins = _FakePins();
+  });
+
+  List<Override> overrides() => [
+    onboardingRepositoryProvider.overrideWithValue(backend),
+    profileRepositoryProvider.overrideWithValue(backend),
+    accountRepositoryProvider.overrideWithValue(backend),
+    pinRepositoryProvider.overrideWithValue(pins),
+    deviceCurrencyProvider.overrideWithValue(Currencies.byCode('PHP')),
+  ];
+
+  /// A typical phone (411x914 logical pixels), so full-height screens such
+  /// as the PIN pad fit the way they do on a device.
+  void usePhoneSize(WidgetTester tester) {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+  }
+
+  Future<void> typePin(WidgetTester tester, String pin) async {
+    for (final d in pin.split('')) {
+      await tester.tap(find.text(d));
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+    await tester.pump(const Duration(milliseconds: 400));
+  }
 
   Future<ProviderContainer> pumpFlow(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          onboardingRepositoryProvider.overrideWithValue(backend),
-          profileRepositoryProvider.overrideWithValue(backend),
-          accountRepositoryProvider.overrideWithValue(backend),
-          deviceCurrencyProvider.overrideWithValue(Currencies.byCode('PHP')),
-        ],
+        overrides: overrides(),
         child: MaterialApp(theme: AppTheme.dark, home: const OnboardingFlow()),
       ),
     );
@@ -98,10 +146,20 @@ void main() {
     expect(find.text('Nice to meet you, Marc!'), findsOneWidget);
   });
 
-  testWidgets('full flow saves the account and profile, then opens Home', (
+  testWidgets('from Welcome to Home: saves everything and sets a PIN', (
     tester,
   ) async {
-    final container = await pumpFlow(tester);
+    usePhoneSize(tester);
+    await tester.pumpWidget(
+      ProviderScope(overrides: overrides(), child: const VeloraApp()),
+    );
+    await tester.pump(const Duration(seconds: 2));
+    await tester.tap(find.text('Get started'));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(OnboardingFlow)),
+    );
 
     await tester.enterText(find.byType(TextField), 'Marc');
     await tester.pump();
@@ -134,7 +192,22 @@ void main() {
     await tester.tap(find.text('Straight-talk'));
     await tester.pump(const Duration(milliseconds: 400));
     await tapNext(tester, 'Continue'); // Coach
+    expect(find.text('Protect your space'), findsOneWidget);
+
+    await typePin(tester, '1234');
+    expect(find.textContaining('easy to guess'), findsOneWidget);
+
+    await typePin(tester, '2580');
+    expect(find.text('Confirm your PIN'), findsOneWidget);
+    await typePin(tester, '2581');
+    expect(find.textContaining("didn't match"), findsOneWidget);
+
+    await typePin(tester, '2580');
+    await typePin(tester, '2580');
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(milliseconds: 700));
     expect(find.text("You're all set, Marc!"), findsOneWidget);
+    expect(pins.pin, isNull, reason: 'saved only when onboarding completes');
     expect(find.textContaining('₱12,000.00'), findsOneWidget);
 
     await tapNext(tester, 'Start tracking');
@@ -151,6 +224,64 @@ void main() {
     expect(profile?.name, 'Marc');
     expect(profile?.coachTone, CoachTone.direct);
 
+    expect(pins.pin, '2580');
     expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.text('Enter your PIN'), findsNothing);
+  });
+
+  testWidgets('returning users must enter their PIN to see Home', (
+    tester,
+  ) async {
+    await backend.complete(
+      displayName: 'Marc',
+      currencyCode: 'PHP',
+      coachTone: CoachTone.balanced,
+      accountName: 'Cash',
+      accountType: AccountType.cash,
+      openingBalanceMinor: 500000,
+    );
+    pins.pin = '2580';
+
+    usePhoneSize(tester);
+    await tester.pumpWidget(
+      ProviderScope(overrides: overrides(), child: const VeloraApp()),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Enter your PIN'), findsOneWidget);
+    expect(find.text('Welcome back, Marc!'), findsOneWidget);
+
+    await typePin(tester, '1111');
+    expect(find.textContaining('Wrong PIN'), findsOneWidget);
+
+    await typePin(tester, '2580');
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Enter your PIN'), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('onboarded users without a PIN are asked to create one', (
+    tester,
+  ) async {
+    await backend.complete(
+      displayName: 'Marc',
+      currencyCode: 'PHP',
+      coachTone: CoachTone.balanced,
+      accountName: 'Cash',
+      accountType: AccountType.cash,
+      openingBalanceMinor: 0,
+    );
+
+    usePhoneSize(tester);
+    await tester.pumpWidget(
+      ProviderScope(overrides: overrides(), child: const VeloraApp()),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Protect your space'), findsOneWidget);
+
+    await typePin(tester, '2580');
+    await typePin(tester, '2580');
+    await tester.pump(const Duration(seconds: 1));
+    expect(pins.pin, '2580');
+    expect(find.text('Protect your space'), findsNothing);
   });
 }

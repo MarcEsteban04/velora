@@ -13,7 +13,7 @@ class StepLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Align(
         alignment: Alignment.topCenter,
