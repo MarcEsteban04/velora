@@ -10,6 +10,7 @@ import '../../ask/presentation/ask_screen.dart';
 import '../../history/presentation/history_screen.dart';
 import '../../home/presentation/home_screen.dart';
 import '../../plan/presentation/plan_screen.dart';
+import '../../receipts/presentation/scan_receipt_screen.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
 import 'widgets/floating_nav_bar.dart';
@@ -103,6 +104,10 @@ class _AppShellState extends State<AppShell>
     }
     if (action == QuickAction.ask) {
       Navigator.of(context).push(AskScreen.route());
+      return;
+    }
+    if (action == QuickAction.scan) {
+      Navigator.of(context).push(ScanReceiptScreen.route());
       return;
     }
     Toast.of(context).show(

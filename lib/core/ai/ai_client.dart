@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -20,6 +21,12 @@ abstract final class AiClient {
     'GROQ_MODEL',
     defaultValue: 'llama-3.3-70b-versatile',
   );
+
+  /// Groq's text model can't see images; this one can.
+  static const _groqVisionModel = String.fromEnvironment(
+    'GROQ_VISION_MODEL',
+    defaultValue: 'meta-llama/llama-4-scout-17b-16e-instruct',
+  );
   static const _geminiModel = String.fromEnvironment(
     'GEMINI_MODEL',
     defaultValue: 'gemini-2.5-flash',
@@ -29,23 +36,34 @@ abstract final class AiClient {
     defaultValue: 'gpt-4o-mini',
   );
 
-  static const _timeout = Duration(seconds: 15);
-
   /// True when at least one provider key was built in.
   static bool get isConfigured =>
       _groqKey.isNotEmpty || _geminiKey.isNotEmpty || _openAiKey.isNotEmpty;
 
-  /// The first provider's reply, or null if every one fails. [messages]
-  /// are (role, text) pairs, oldest first, with role "user" or
-  /// "assistant". With [json], providers are asked for a JSON object.
+  /// The first provider's reply, or null if every one fails.
+  ///
+  /// [messages] are (role, text) pairs, oldest first, with role "user" or
+  /// "assistant". [image] (a JPEG) goes with the last user message. With
+  /// [json], providers are asked for a JSON object.
   static Future<String?> complete({
     required String system,
     required List<(String, String)> messages,
+    Uint8List? image,
     bool json = false,
     int maxTokens = 300,
     double temperature = 0.5,
     http.Client? client,
   }) async {
+    final req = _Request(
+      system: system,
+      messages: messages,
+      image: image,
+      json: json,
+      maxTokens: maxTokens,
+      temperature: temperature,
+    );
+    // Images take longer to read than text.
+    final timeout = Duration(seconds: image == null ? 15 : 30);
     final c = client ?? http.Client();
     try {
       for (final (name, key, call) in [
@@ -55,15 +73,7 @@ abstract final class AiClient {
       ]) {
         if (key.isEmpty) continue;
         try {
-          final text = await call(
-            c,
-            key,
-            system,
-            messages,
-            json,
-            maxTokens,
-            temperature,
-          ).timeout(_timeout);
+          final text = await call(c, key, req).timeout(timeout);
           if (text != null && text.trim().isNotEmpty) return text.trim();
         } on Object catch (error) {
           // Out of credits, rate limited or offline: try the next one.
@@ -76,45 +86,23 @@ abstract final class AiClient {
     }
   }
 
-  static Future<String?> _groq(
-    http.Client c,
-    String key,
-    String system,
-    List<(String, String)> messages,
-    bool json,
-    int maxTokens,
-    double temperature,
-  ) => _chatCompletions(
-    c,
-    Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-    key,
-    _groqModel,
-    system,
-    messages,
-    json,
-    maxTokens,
-    temperature,
-  );
+  static Future<String?> _groq(http.Client c, String key, _Request r) =>
+      _chatCompletions(
+        c,
+        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+        key,
+        r.image == null ? _groqModel : _groqVisionModel,
+        r,
+      );
 
-  static Future<String?> _openAi(
-    http.Client c,
-    String key,
-    String system,
-    List<(String, String)> messages,
-    bool json,
-    int maxTokens,
-    double temperature,
-  ) => _chatCompletions(
-    c,
-    Uri.parse('https://api.openai.com/v1/chat/completions'),
-    key,
-    _openAiModel,
-    system,
-    messages,
-    json,
-    maxTokens,
-    temperature,
-  );
+  static Future<String?> _openAi(http.Client c, String key, _Request r) =>
+      _chatCompletions(
+        c,
+        Uri.parse('https://api.openai.com/v1/chat/completions'),
+        key,
+        _openAiModel,
+        r,
+      );
 
   /// Groq and OpenAI share the chat completions format.
   static Future<String?> _chatCompletions(
@@ -122,12 +110,9 @@ abstract final class AiClient {
     Uri url,
     String key,
     String model,
-    String system,
-    List<(String, String)> messages,
-    bool json,
-    int maxTokens,
-    double temperature,
+    _Request r,
   ) async {
+    final last = r.messages.lastIndexWhere((m) => m.$1 == 'user');
     final res = await c.post(
       url,
       headers: {
@@ -136,12 +121,27 @@ abstract final class AiClient {
       },
       body: jsonEncode({
         'model': model,
-        'temperature': temperature,
-        'max_tokens': maxTokens,
-        if (json) 'response_format': {'type': 'json_object'},
+        'temperature': r.temperature,
+        'max_tokens': r.maxTokens,
+        if (r.json) 'response_format': {'type': 'json_object'},
         'messages': [
-          {'role': 'system', 'content': system},
-          for (final (role, text) in messages) {'role': role, 'content': text},
+          {'role': 'system', 'content': r.system},
+          for (final (i, (role, text)) in r.messages.indexed)
+            {
+              'role': role,
+              'content': i == last && r.image != null
+                  ? [
+                      {'type': 'text', 'text': text},
+                      {
+                        'type': 'image_url',
+                        'image_url': {
+                          'url':
+                              'data:image/jpeg;base64,${base64Encode(r.image!)}',
+                        },
+                      },
+                    ]
+                  : text,
+            },
         ],
       }),
     );
@@ -154,15 +154,8 @@ abstract final class AiClient {
         as String?;
   }
 
-  static Future<String?> _gemini(
-    http.Client c,
-    String key,
-    String system,
-    List<(String, String)> messages,
-    bool json,
-    int maxTokens,
-    double temperature,
-  ) async {
+  static Future<String?> _gemini(http.Client c, String key, _Request r) async {
+    final last = r.messages.lastIndexWhere((m) => m.$1 == 'user');
     final res = await c.post(
       Uri.parse(
         'https://generativelanguage.googleapis.com/v1beta/models/'
@@ -172,22 +165,29 @@ abstract final class AiClient {
       body: jsonEncode({
         'systemInstruction': {
           'parts': [
-            {'text': system},
+            {'text': r.system},
           ],
         },
         'contents': [
-          for (final (role, text) in messages)
+          for (final (i, (role, text)) in r.messages.indexed)
             {
               'role': role == 'assistant' ? 'model' : 'user',
               'parts': [
+                if (i == last && r.image != null)
+                  {
+                    'inline_data': {
+                      'mime_type': 'image/jpeg',
+                      'data': base64Encode(r.image!),
+                    },
+                  },
                 {'text': text},
               ],
             },
         ],
         'generationConfig': {
-          'temperature': temperature,
-          'maxOutputTokens': maxTokens + 100,
-          if (json) 'responseMimeType': 'application/json',
+          'temperature': r.temperature,
+          'maxOutputTokens': r.maxTokens + 100,
+          if (r.json) 'responseMimeType': 'application/json',
           'thinkingConfig': {'thinkingBudget': 0},
         },
       }),
@@ -203,4 +203,22 @@ abstract final class AiClient {
         const [];
     return parts.map((p) => (p as Map)['text'] ?? '').join();
   }
+}
+
+class _Request {
+  const _Request({
+    required this.system,
+    required this.messages,
+    required this.image,
+    required this.json,
+    required this.maxTokens,
+    required this.temperature,
+  });
+
+  final String system;
+  final List<(String, String)> messages;
+  final Uint8List? image;
+  final bool json;
+  final int maxTokens;
+  final double temperature;
 }

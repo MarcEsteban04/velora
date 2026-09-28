@@ -24,6 +24,7 @@ import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
 import '../application/balance_privacy.dart';
+import '../application/home_insight_provider.dart';
 import '../application/home_spending_providers.dart';
 import '../application/spending_stats.dart';
 import 'widgets/spending_cards.dart';
@@ -158,6 +159,11 @@ class HomeScreen extends ConsumerWidget {
           if (profile != null)
             stagger(
               CoachCard(
+                // The AI's note quotes amounts, so hidden balances keep the
+                // phone's own note, which masks them.
+                aiMessage: hidden || expenseCount == 0
+                    ? null
+                    : ref.watch(homeInsightProvider).value,
                 message: expenseCount == 0
                     ? profile.coachTone.firstStepsMessage(name)
                     : profile.coachTone.monthInsight(

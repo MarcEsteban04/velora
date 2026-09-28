@@ -40,11 +40,17 @@ class AppPreferences {
   static const _kTimeZone = 'prefs.timeZone';
   // v2: insights now know how many days were tracked.
   static const _kInsight = 'cache.walletInsight.v2';
+  static const _kHomeInsight = 'cache.homeInsight.v1';
 
   /// Today's AI insight, so reopening Wallet doesn't spend tokens.
   String? get cachedInsight => _prefs.getString(_kInsight);
   Future<void> setCachedInsight(String json) =>
       _prefs.setString(_kInsight, json);
+
+  /// Today's AI note for Home, cached the same way.
+  String? get cachedHomeInsight => _prefs.getString(_kHomeInsight);
+  Future<void> setCachedHomeInsight(String json) =>
+      _prefs.setString(_kHomeInsight, json);
 
   /// Night by default: Velora's signature look.
   Appearance get appearance =>
