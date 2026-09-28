@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../core/ai/ai_client.dart';
+import '../../../core/ai/insight_text.dart';
 import '../../../core/money/currency.dart';
 import '../../../core/money/money.dart';
 import '../../profile/domain/user_profile.dart';
@@ -13,8 +14,6 @@ import 'insight_repository.dart';
 class DirectInsightRepository implements InsightRepository {
   const DirectInsightRepository();
 
-  static const _maxChars = 280;
-
   static const _tone = {
     CoachTone.gentle: 'Warm and reassuring. Never judgmental.',
     CoachTone.balanced: 'Friendly and practical.',
@@ -25,8 +24,8 @@ class DirectInsightRepository implements InsightRepository {
 
   static String systemPrompt(WalletSnapshot s, CoachTone tone) => [
     'You are Velora, a friendly personal finance coach inside a budgeting app.',
-    'Write ONE insight about the user\'s wallet in at most two short sentences',
-    '(under $_maxChars characters). ${_tone[tone]}',
+    'Write ONE short sentence about the user\'s wallet, under',
+    '$insightMaxChars characters: the single most useful thing. ${_tone[tone]}',
     'Use only the numbers given. Do not invent facts, give investment advice,',
     'or use emojis, markdown, quotes or greetings. Amounts are in',
     '${s.currencyCode}: write them like ${Money.short(123456700, Currencies.byCode(s.currencyCode))}, with the symbol and',
@@ -66,17 +65,9 @@ class DirectInsightRepository implements InsightRepository {
     final raw = await AiClient.complete(
       system: systemPrompt(snapshot, tone),
       messages: [('user', userPrompt(snapshot))],
-      maxTokens: 120,
+      maxTokens: 60,
       temperature: 0.6,
     );
-    if (raw == null) return null;
-    final t = raw
-        .replaceAll(RegExp(r'[*_#`"]'), '')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    if (t.isEmpty) return null;
-    return t.length > _maxChars
-        ? '${t.substring(0, _maxChars - 1).trim()}…'
-        : t;
+    return raw == null ? null : tightenInsight(raw);
   }
 }

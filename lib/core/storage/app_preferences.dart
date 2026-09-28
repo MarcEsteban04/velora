@@ -39,8 +39,8 @@ class AppPreferences {
   static const _kAppearance = 'prefs.appearance';
   static const _kTimeZone = 'prefs.timeZone';
   // v2: insights now know how many days were tracked.
-  static const _kInsight = 'cache.walletInsight.v2';
-  static const _kHomeInsight = 'cache.homeInsight.v1';
+  static const _kInsight = 'cache.walletInsight.v3';
+  static const _kHomeInsight = 'cache.homeInsight.v2';
 
   /// Today's AI insight, so reopening Wallet doesn't spend tokens.
   String? get cachedInsight => _prefs.getString(_kInsight);

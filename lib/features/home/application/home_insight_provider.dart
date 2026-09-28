@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/ai/ai_client.dart';
+import '../../../core/ai/insight_text.dart';
 import '../../../core/storage/app_preferences.dart';
 import '../../../core/time/app_clock.dart';
 import '../../ask/application/money_context_provider.dart';
@@ -48,16 +49,11 @@ final homeInsightProvider = FutureProvider<String?>((ref) async {
   final raw = await AiClient.complete(
     system: homeInsightPrompt(c.coachTone, trackedDays),
     messages: [('user', jsonEncode(facts))],
-    maxTokens: 110,
+    maxTokens: 60,
     temperature: 0.7,
   );
-  if (raw == null) return null;
-  var text = raw
-      .replaceAll(RegExp(r'[*_#`"]'), '')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
-  if (text.isEmpty) return null;
-  if (text.length > 220) text = '${text.substring(0, 219).trim()}…';
+  final text = raw == null ? null : tightenInsight(raw);
+  if (text == null) return null;
   await prefs.setCachedHomeInsight(
     jsonEncode({'day': day, 'key': key, 'text': text}),
   );
@@ -131,7 +127,7 @@ Map<String, Object?> homeFacts(MoneyContext c, {required int trackedDays}) {
 String homeInsightPrompt(String tone, int trackedDays) => [
   'You are Velora, a friendly red panda money coach on the Home screen of a',
   'budgeting app used mostly in the Philippines.',
-  'Write ONE short note (at most two sentences, under 200 characters) about',
+  'Write ONE short sentence (under $insightMaxChars characters) about',
   'the user\'s spending habits right now: today, this week, this month,',
   'their budgets or their streak. Pick the single most useful or',
   'encouraging thing, and be specific with a number or category.',

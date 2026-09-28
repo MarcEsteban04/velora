@@ -75,6 +75,8 @@ class InsightCard extends StatelessWidget {
                               "Velora's take."
                         : i.text,
                     key: ValueKey(i.text + hidden.toString()),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
                     style: text.bodyMedium?.copyWith(
                       color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,

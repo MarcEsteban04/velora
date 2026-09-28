@@ -9,7 +9,7 @@
 // Optional: GROQ_MODEL, GEMINI_MODEL, OPENAI_MODEL.
 
 const TIMEOUT_MS = 8000;
-const MAX_CHARS = 280;
+const MAX_CHARS = 120;
 
 type Tone = "gentle" | "balanced" | "direct";
 
@@ -126,8 +126,8 @@ function prompts(s: Snapshot, tone: Tone): { system: string; user: string } {
   const major = (minor: number) => (minor / 100).toFixed(2);
   const system = [
     "You are Velora, a friendly personal finance coach inside a budgeting app.",
-    "Write ONE insight about the user's wallet in at most two short sentences",
-    `(under ${MAX_CHARS} characters). ${toneGuide[tone]}`,
+    "Write ONE short sentence about the user's wallet, under",
+    `${MAX_CHARS} characters: the single most useful thing. ${toneGuide[tone]}`,
     "Use only the numbers given. Do not invent facts, give investment advice,",
     "or use emojis, markdown, quotes or greetings. Amounts are in",
     `${s.currency}; write them with the currency symbol and no decimals when`,
@@ -186,7 +186,7 @@ function chatCompletions(url: string, model: string) {
     const data = await post(url, { Authorization: `Bearer ${key}` }, {
       model,
       temperature: 0.6,
-      max_tokens: 120,
+      max_tokens: 60,
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },

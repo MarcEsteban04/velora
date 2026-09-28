@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/ai/ai_client.dart';
+import '../../../core/ai/insight_text.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../profile/domain/user_profile.dart';
 import '../domain/wallet_insight.dart';
@@ -33,10 +34,8 @@ class SupabaseInsightRepository implements InsightRepository {
           .timeout(const Duration(seconds: 20));
       final data = res.data;
       if (res.status == 200 && data is Map && data['insight'] is String) {
-        final text = (data['insight'] as String).trim();
-        if (text.isNotEmpty) {
-          return text.length > 280 ? '${text.substring(0, 277)}…' : text;
-        }
+        final text = tightenInsight(data['insight'] as String);
+        if (text != null) return text;
       }
     } on Object catch (error) {
       developer.log('Wallet insight unavailable', name: 'velora', error: error);

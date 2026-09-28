@@ -53,6 +53,8 @@ class CoachCard extends StatelessWidget {
                   children: [
                     Text(
                       aiMessage ?? message,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: text.bodyMedium?.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
