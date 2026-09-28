@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 
 import '../../accounts/data/account_repository.dart';
 import '../../budgets/application/budget_providers.dart';
@@ -51,24 +52,34 @@ DateTime monthKey(DateTime d) => DateTime(d.year, d.month);
 /// It holds the app's [ProviderContainer] rather than a widget's ref, so an
 /// Undo tapped after the entry screen has closed still works.
 class TransactionActions {
-  TransactionActions(this._container);
+  TransactionActions(ProviderContainer container)
+    : _repo = container.read(transactionRepositoryProvider),
+      _invalidate = container.invalidate;
+
+  /// From inside a provider, such as Ask Velora's chat.
+  TransactionActions.fromRef(Ref ref)
+    : _repo = ref.read(transactionRepositoryProvider),
+      _invalidate = ref.invalidate;
 
   factory TransactionActions.of(BuildContext context) =>
       TransactionActions(ProviderScope.containerOf(context, listen: false));
 
-  final ProviderContainer _container;
+  final TransactionRepository _repo;
+  final void Function(ProviderOrFamily) _invalidate;
 
-  TransactionRepository get _repo =>
-      _container.read(transactionRepositoryProvider);
-
-  void _refresh() => _container
-    ..invalidate(monthTransactionsProvider)
-    ..invalidate(recentTransactionsProvider)
-    ..invalidate(weekTransactionsProvider)
-    ..invalidate(last30DaysTransactionsProvider)
-    ..invalidate(streakHistoryProvider)
-    ..invalidate(budgetTransactionsProvider)
-    ..invalidate(accountsProvider);
+  void _refresh() {
+    for (final p in <ProviderOrFamily>[
+      monthTransactionsProvider,
+      recentTransactionsProvider,
+      weekTransactionsProvider,
+      last30DaysTransactionsProvider,
+      streakHistoryProvider,
+      budgetTransactionsProvider,
+      accountsProvider,
+    ]) {
+      _invalidate(p);
+    }
+  }
 
   Future<Transaction> create(TransactionDraft draft) async {
     final t = await _repo.create(draft);

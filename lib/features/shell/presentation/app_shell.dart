@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
 import '../../accounts/presentation/wallet_screen.dart';
+import '../../ask/presentation/ask_screen.dart';
 import '../../history/presentation/history_screen.dart';
 import '../../home/presentation/home_screen.dart';
 import '../../plan/presentation/plan_screen.dart';
@@ -98,6 +99,10 @@ class _AppShellState extends State<AppShell>
     };
     if (kind != null) {
       Navigator.of(context).push(TransactionEntryScreen.route(kind: kind));
+      return;
+    }
+    if (action == QuickAction.ask) {
+      Navigator.of(context).push(AskScreen.route());
       return;
     }
     Toast.of(context).show(

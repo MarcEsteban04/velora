@@ -11,7 +11,7 @@ enum QuickAction {
   income('Income', 'Money coming in', Icons.south_west_rounded),
   transfer('Transfer', 'Between accounts', Icons.swap_horiz_rounded),
   scan('Scan receipt', 'Snap it, done', Icons.document_scanner_rounded),
-  ask('Ask Velora', 'Log by chatting', Icons.chat_bubble_rounded);
+  ask('Ask Velora', 'Log or ask by chatting', Icons.chat_bubble_rounded);
 
   const QuickAction(this.label, this.hint, this.icon);
 

@@ -8,6 +8,8 @@ import 'package:velora/features/accounts/data/insight_repository.dart';
 import 'package:velora/features/accounts/domain/account.dart';
 import 'package:velora/features/accounts/domain/wallet_insight.dart';
 import 'package:velora/features/app_lock/data/pin_repository.dart';
+import 'package:velora/features/ask/data/ask_repository.dart';
+import 'package:velora/features/ask/domain/chat_message.dart';
 import 'package:velora/features/budgets/data/budget_repository.dart';
 import 'package:velora/features/budgets/domain/budget.dart';
 import 'package:velora/features/goals/data/goal_repository.dart';
@@ -391,6 +393,22 @@ class FakeGoals implements GoalRepository {
       db.goalEntries.removeWhere((e) => e.id == id);
 }
 
+/// Stands in for the `ask-velora` Edge Function. Unavailable by default, so
+/// the phone answers on its own.
+class FakeAsk implements AskRepository {
+  AiReply? reply;
+  final requests = <Map<String, Object?>>[];
+
+  @override
+  Future<AiReply?> ask({
+    required List<(String, String)> history,
+    required Map<String, Object?> context,
+  }) async {
+    requests.add(context);
+    return reply;
+  }
+}
+
 /// Stands in for the `wallet-insight` Edge Function. By default the AI is
 /// unavailable, so the app falls back to its own insight.
 class FakeInsights implements InsightRepository {
@@ -434,6 +452,7 @@ List<Override> fakeOverrides(
   FakePins pins,
   SharedPreferences prefs, {
   FakeInsights? insights,
+  FakeAsk? ask,
 }) => [
   sharedPreferencesProvider.overrideWithValue(prefs),
   onboardingRepositoryProvider.overrideWithValue(db),
@@ -444,6 +463,7 @@ List<Override> fakeOverrides(
   pinRepositoryProvider.overrideWithValue(pins),
   insightRepositoryProvider.overrideWithValue(insights ?? FakeInsights()),
   budgetRepositoryProvider.overrideWithValue(FakeBudgets(db)),
+  askRepositoryProvider.overrideWithValue(ask ?? FakeAsk()),
   goalRepositoryProvider.overrideWithValue(FakeGoals(db)),
   deviceCurrencyProvider.overrideWithValue(Currencies.byCode('PHP')),
 ];

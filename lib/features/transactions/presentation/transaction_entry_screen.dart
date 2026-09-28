@@ -41,6 +41,7 @@ class TransactionEntryScreen extends ConsumerStatefulWidget {
     this.initialKind = TransactionKind.expense,
     this.existing,
     this.initialDay,
+    this.prefill,
   });
 
   final TransactionKind initialKind;
@@ -50,16 +51,22 @@ class TransactionEntryScreen extends ConsumerStatefulWidget {
   /// from a day picked in the History calendar.
   final DateTime? initialDay;
 
+  /// A new transaction filled in ahead, for example from Ask Velora. It is
+  /// saved as new, never as an edit.
+  final TransactionDraft? prefill;
+
   static Route<void> route({
     TransactionKind kind = TransactionKind.expense,
     Transaction? existing,
     DateTime? day,
+    TransactionDraft? prefill,
   }) => MaterialPageRoute(
     fullscreenDialog: true,
     builder: (_) => TransactionEntryScreen(
-      initialKind: kind,
+      initialKind: prefill?.kind ?? kind,
       existing: existing,
       initialDay: day,
+      prefill: prefill,
     ),
   );
 
@@ -75,12 +82,16 @@ class _TransactionEntryScreenState
 
   /// Editing pre-fills the amount once the account (and so its currency's
   /// decimal places) is known.
-  late bool _exprReady = widget.existing == null;
-  late String? _categoryId = widget.existing?.categoryId;
-  late String? _accountId = widget.existing?.accountId;
-  late String? _toAccountId = widget.existing?.toAccountId;
+  late bool _exprReady = widget.existing == null && widget.prefill == null;
+  late String? _categoryId =
+      widget.existing?.categoryId ?? widget.prefill?.categoryId;
+  late String? _accountId =
+      widget.existing?.accountId ?? widget.prefill?.accountId;
+  late String? _toAccountId =
+      widget.existing?.toAccountId ?? widget.prefill?.toAccountId;
   late DateTime _when =
       widget.existing?.occurredAt ??
+      widget.prefill?.occurredAt ??
       switch (widget.initialDay) {
         final d? => () {
           final now = AppClock.now();
@@ -88,7 +99,9 @@ class _TransactionEntryScreenState
         }(),
         null => AppClock.now(),
       };
-  late final _note = TextEditingController(text: widget.existing?.note);
+  late final _note = TextEditingController(
+    text: widget.existing?.note ?? widget.prefill?.note,
+  );
   final _toAmount = TextEditingController();
   final _noteFocus = FocusNode();
   late bool _padOpen = widget.existing == null;
@@ -307,11 +320,12 @@ class _TransactionEntryScreenState
     if (!_exprReady && account != null) {
       _expr = AmountExpression(
         AmountExpression.plain(
-          widget.existing!.amountMinor,
+          widget.existing?.amountMinor ?? widget.prefill!.amountMinor,
           currency.decimalDigits,
         ),
       );
-      final existingTo = widget.existing!.toAmountMinor;
+      final existingTo =
+          widget.existing?.toAmountMinor ?? widget.prefill?.toAmountMinor;
       if (crossCurrency && existingTo != null) {
         _toAmount.text = Money.toInputText(existingTo, toCurrency);
       }
