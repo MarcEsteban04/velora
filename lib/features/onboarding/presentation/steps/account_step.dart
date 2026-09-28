@@ -8,8 +8,8 @@ import '../../../../core/widgets/reveal.dart';
 import '../../../accounts/domain/account.dart';
 import '../../../accounts/presentation/account_type_style.dart';
 import '../../../accounts/presentation/widgets/account_card.dart';
+import '../../../accounts/presentation/widgets/account_type_picker.dart';
 import '../../application/onboarding_controller.dart';
-import '../widgets/selectable_tile.dart';
 import '../widgets/step_layout.dart';
 
 class AccountStep extends ConsumerStatefulWidget {
@@ -78,40 +78,7 @@ class _AccountStepState extends ConsumerState<AccountStep> {
           ),
         ),
         const FieldLabel('Account type'),
-        Row(
-          children: [
-            for (final (i, type) in AccountType.values.indexed) ...[
-              if (i > 0) const SizedBox(width: 8),
-              Expanded(
-                child: SelectableTile(
-                  selected: draft.accountType == type,
-                  semanticLabel: '${type.label} account',
-                  onTap: () => _selectType(type),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  radius: 18,
-                  child: Column(
-                    children: [
-                      Icon(
-                        type.icon,
-                        color: draft.accountType == type
-                            ? AppColors.leafBright
-                            : AppColors.textSecondary,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        type.label,
-                        maxLines: 1,
-                        style: text.labelMedium?.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
+        AccountTypePicker(selected: draft.accountType, onChanged: _selectType),
         const FieldLabel('Account name'),
         TextField(
           controller: _nameController,

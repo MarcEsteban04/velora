@@ -5,12 +5,12 @@ import '../../../core/money/currency.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/reveal.dart';
 import '../../accounts/data/account_repository.dart';
+import '../../accounts/domain/account.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/presentation/coach_tone_style.dart';
 import '../../shell/presentation/widgets/floating_nav_bar.dart';
 import '../../shell/presentation/widgets/quick_actions.dart';
 import '../application/balance_privacy.dart';
-import 'widgets/accounts_carousel.dart';
 import 'widgets/balance_hero.dart';
 import 'widgets/coach_card.dart';
 import 'widgets/home_header.dart';
@@ -21,13 +21,19 @@ import 'widgets/setup_checklist.dart';
 /// 1. Greeting, with a "hide balances" toggle.
 /// 2. Net worth, plus this month's money in and out.
 /// 3. Velora's coaching note, with one next step.
-/// 4. Account cards.
-/// 5. "Get set up" checklist.
-/// 6. Recent activity.
+/// 4. "Get set up" checklist.
+/// 5. Recent activity.
+///
+/// Accounts themselves live in the Wallet tab.
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key, required this.onQuickAction});
+  const HomeScreen({
+    super.key,
+    required this.onQuickAction,
+    required this.onOpenWallet,
+  });
 
   final ValueChanged<QuickAction> onQuickAction;
+  final VoidCallback onOpenWallet;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,8 +44,7 @@ class HomeScreen extends ConsumerWidget {
 
     final name = profile?.name ?? 'friend';
     final currency = Currencies.byCode(profile?.currencyCode ?? 'USD');
-    final inMain = accounts.where((a) => a.currencyCode == currency.code);
-    final netWorth = inMain.fold<int>(0, (s, a) => s + a.openingBalanceMinor);
+    final netWorth = NetWorth.of(accounts, currency.code).totalMinor;
 
     var i = 0;
     Widget stagger(Widget child) => FadeSlideIn(
@@ -94,6 +99,7 @@ class HomeScreen extends ConsumerWidget {
               incomeMinor: 0,
               spentMinor: 0,
               hidden: hidden,
+              onOpenWallet: onOpenWallet,
             ),
           ),
           const SizedBox(height: 16),
@@ -106,11 +112,7 @@ class HomeScreen extends ConsumerWidget {
                 onAction: () => onQuickAction(QuickAction.expense),
               ),
             ),
-          if (accounts.isNotEmpty) ...[
-            section('Your accounts', trailing: '${accounts.length} total'),
-            stagger(AccountsCarousel(accounts: accounts, hidden: hidden)),
-          ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           stagger(
             SetupChecklist(
               tasks: [

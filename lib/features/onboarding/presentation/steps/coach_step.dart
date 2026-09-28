@@ -7,7 +7,7 @@ import '../../../../core/widgets/velora_mascot.dart';
 import '../../../profile/domain/user_profile.dart';
 import '../../../profile/presentation/coach_tone_style.dart';
 import '../../application/onboarding_controller.dart';
-import '../widgets/selectable_tile.dart';
+import '../../../../core/widgets/selectable_tile.dart';
 import '../widgets/step_layout.dart';
 
 class CoachStep extends ConsumerWidget {

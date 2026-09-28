@@ -20,7 +20,7 @@ class NavDestination {
 
 /// A frosted, floating tab bar with a raised "+" in the middle.
 ///
-/// - A glowing pill slides to the active tab.
+/// - A soft pill slides to the active tab.
 /// - The "+" turns into a "×" while quick actions are open.
 /// - Setting [visible] to false slides the bar out of the way (while
 ///   scrolling down).
@@ -105,18 +105,8 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) {
     const radius = BorderRadius.all(Radius.circular(30));
 
-    return Container(
+    return SizedBox(
       height: FloatingNavBar.barHeight,
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
       child: ClipRRect(
         borderRadius: radius,
         child: BackdropFilter(
@@ -149,14 +139,6 @@ class _Bar extends StatelessWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           color: AppColors.leaf.withValues(alpha: 0.22),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.leafBright.withValues(
-                                alpha: 0.28,
-                              ),
-                              blurRadius: 16,
-                            ),
-                          ],
                         ),
                       ),
                     ),
@@ -272,15 +254,6 @@ class _AddButton extends StatelessWidget {
               color: Colors.white.withValues(alpha: open ? 0.14 : 0.22),
               width: 1.5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: (open ? Colors.black : AppColors.leaf).withValues(
-                  alpha: 0.5,
-                ),
-                blurRadius: 22,
-                offset: const Offset(0, 8),
-              ),
-            ],
           ),
           child: AnimatedRotation(
             turns: open ? 0.125 : 0,

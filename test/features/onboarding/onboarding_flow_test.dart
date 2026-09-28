@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:velora/app/velora_app.dart';
 import 'package:velora/core/money/currency.dart';
+import 'package:velora/core/widgets/round_icon_button.dart';
 import 'package:velora/core/theme/app_theme.dart';
 import 'package:velora/features/accounts/data/account_repository.dart';
 import 'package:velora/features/accounts/domain/account.dart';
@@ -56,6 +57,33 @@ class _FakeBackend
 
   @override
   Future<List<Account>> fetchAll() async => List.of(accounts);
+
+  @override
+  Future<Account> create(AccountDraft draft) async {
+    final a = _fromDraft('acc-${accounts.length + 1}', draft);
+    accounts.add(a);
+    return a;
+  }
+
+  @override
+  Future<Account> update(String id, AccountDraft draft) async {
+    final i = accounts.indexWhere((a) => a.id == id);
+    return accounts[i] = _fromDraft(id, draft);
+  }
+
+  @override
+  Future<void> delete(String id) async =>
+      accounts.removeWhere((a) => a.id == id);
+
+  Account _fromDraft(String id, AccountDraft d) => Account(
+    id: id,
+    name: d.name.trim(),
+    type: d.type,
+    currencyCode: d.currencyCode,
+    openingBalanceMinor: d.openingBalanceMinor,
+    includeInNetWorth: d.includeInNetWorth,
+    createdAt: DateTime(2026),
+  );
 }
 
 /// Keeps the PIN in memory. The real repository hashes on an isolate, which
@@ -308,7 +336,7 @@ void main() {
 
     // Dashboard content.
     expect(find.text('NET WORTH'), findsOneWidget);
-    expect(find.text('Your accounts'), findsOneWidget);
+    expect(find.text('View wallet'), findsOneWidget);
     expect(find.text('₱12,000.00'), findsWidgets);
 
     // Hide balances masks every amount.
@@ -349,6 +377,68 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('What would you like to log?'), findsNothing);
     expect(find.textContaining('Income is coming next'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('wallet: add, edit and delete accounts', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await backend.complete(
+      displayName: 'Marc',
+      currencyCode: 'PHP',
+      coachTone: CoachTone.balanced,
+      accountName: 'Cash',
+      accountType: AccountType.cash,
+      openingBalanceMinor: 1200000,
+    );
+    pins.pin = '2580';
+    usePhoneSize(tester);
+    await tester.pumpWidget(
+      ProviderScope(overrides: overrides(), child: const VeloraApp()),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await typePin(tester, '2580');
+    await tester.pump(const Duration(seconds: 2));
+
+    // Accounts are no longer on the dashboard.
+    expect(find.text('Your accounts'), findsNothing);
+
+    await tester.tap(find.bySemanticsLabel(RegExp('Wallet tab')));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Accounts · 1'), findsOneWidget);
+
+    // Add a bank account.
+    // The header's + (the dashed tile can sit under the floating nav bar).
+    await tester.tap(find.widgetWithIcon(RoundIconButton, Icons.add_rounded));
+    // A pushed route is offstage for its first frame; pump past it.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.enterText(find.byType(TextField).first, 'BPI Savings');
+    await tester.enterText(find.byType(TextField).last, '8000');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Add account').last);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(backend.accounts, hasLength(2));
+    expect(backend.accounts.last.name, 'BPI Savings');
+    expect(backend.accounts.last.type, AccountType.bank);
+    expect(backend.accounts.last.openingBalanceMinor, 800000);
+    expect(find.text('Accounts · 2'), findsOneWidget);
+
+    // Open it, then delete it with confirmation.
+    await tester.tap(find.text('BPI Savings').first);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Edit account'), findsOneWidget);
+    await tester.tap(find.text('Delete account'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Delete'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(backend.accounts, hasLength(1));
+    expect(find.text('Accounts · 1'), findsOneWidget);
     semantics.dispose();
   });
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/money/currency.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../money/currency.dart';
+import '../theme/app_colors.dart';
 
 /// A searchable list of every supported currency. It returns the picked
 /// currency, or null if the user dismisses the sheet.

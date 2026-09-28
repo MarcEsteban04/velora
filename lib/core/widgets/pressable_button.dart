@@ -92,13 +92,6 @@ class _PressableButtonState extends State<PressableButton> {
                       decoration: BoxDecoration(
                         color: palette.lip,
                         borderRadius: BorderRadius.circular(_radius),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
                       ),
                     ),
                   ),

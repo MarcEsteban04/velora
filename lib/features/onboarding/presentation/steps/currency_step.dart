@@ -6,8 +6,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/reveal.dart';
 import '../../application/onboarding_controller.dart';
-import '../widgets/currency_picker_sheet.dart';
-import '../widgets/selectable_tile.dart';
+import '../../../../core/widgets/currency_picker_sheet.dart';
+import '../../../../core/widgets/selectable_tile.dart';
 import '../widgets/step_layout.dart';
 
 class CurrencyStep extends ConsumerWidget {
@@ -51,12 +51,6 @@ class CurrencyStep extends ConsumerWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.leaf.withValues(alpha: 0.4),
-                          blurRadius: 18,
-                        ),
-                      ],
                     ),
                     child: FittedBox(
                       child: Padding(

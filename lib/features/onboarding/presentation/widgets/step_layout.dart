@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/reveal.dart';
+
+export '../../../../core/widgets/field_label.dart';
 
 /// The shared frame for every onboarding step: scrollable (so the keyboard
 /// never hides a field), padded, and at most 480 wide on tablets.
@@ -66,28 +67,6 @@ class StepHeader extends StatelessWidget {
             Text(subtitle!, textAlign: align, style: text.bodyLarge),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// Small uppercase label above a field or group.
-class FieldLabel extends StatelessWidget {
-  const FieldLabel(this.text, {super.key});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 10, top: 22),
-      child: Text(
-        text.toUpperCase(),
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          fontSize: 12,
-          letterSpacing: 1.6,
-          color: AppColors.textMuted,
-        ),
       ),
     );
   }

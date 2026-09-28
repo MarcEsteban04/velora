@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
 import '../../../core/widgets/velora_mascot.dart';
+import '../../accounts/presentation/wallet_screen.dart';
 import '../../home/presentation/home_screen.dart';
 import 'widgets/coming_soon_tab.dart';
 import 'widgets/floating_nav_bar.dart';
@@ -108,20 +109,8 @@ class _AppShellState extends State<AppShell>
   }
 
   Widget _tab(int i) => switch (i) {
-    0 => HomeScreen(onQuickAction: _onAction),
-    1 => const ComingSoonTab(
-      title: 'Wallet',
-      subtitle: 'All your accounts and balances in one place.',
-      pose: MascotPose.wallet,
-      previews: [
-        (
-          Icons.add_card_rounded,
-          'Add cash, bank, e-wallet and savings accounts',
-        ),
-        (Icons.swap_horiz_rounded, 'Move money between accounts'),
-        (Icons.show_chart_rounded, 'See how your balance changes over time'),
-      ],
-    ),
+    0 => HomeScreen(onQuickAction: _onAction, onOpenWallet: () => _select(1)),
+    1 => const WalletScreen(),
     2 => const ComingSoonTab(
       title: 'Plan',
       subtitle: 'Budgets and goals that keep you on track.',

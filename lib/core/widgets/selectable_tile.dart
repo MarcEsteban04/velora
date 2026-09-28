@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
 /// A tappable option that glows green when selected. Used for currencies,
 /// account types and coaching tones, so every choice in onboarding feels the
@@ -54,14 +54,6 @@ class SelectableTile extends StatelessWidget {
                     : Colors.white.withValues(alpha: 0.07),
                 width: selected ? 1.8 : 1,
               ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: AppColors.leaf.withValues(alpha: 0.25),
-                        blurRadius: 18,
-                      ),
-                    ]
-                  : null,
             ),
             child: child,
           ),

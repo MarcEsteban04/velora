@@ -79,12 +79,6 @@ class CoachCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.leaf,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.leaf.withValues(alpha: 0.4),
-                            blurRadius: 14,
-                          ),
-                        ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,

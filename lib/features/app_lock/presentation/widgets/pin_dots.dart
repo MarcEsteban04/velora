@@ -89,14 +89,6 @@ class _PinDotsState extends State<PinDots> with SingleTickerProviderStateMixin {
                             : AppColors.textMuted.withValues(alpha: 0.7),
                         width: 2,
                       ),
-                      boxShadow: i < widget.filled
-                          ? [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.55),
-                                blurRadius: 12,
-                              ),
-                            ]
-                          : null,
                     ),
                   ),
                 ),

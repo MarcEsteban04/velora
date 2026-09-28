@@ -16,6 +16,7 @@ class BalanceHero extends StatelessWidget {
     required this.incomeMinor,
     required this.spentMinor,
     required this.hidden,
+    required this.onOpenWallet,
   });
 
   final int netWorthMinor;
@@ -24,6 +25,7 @@ class BalanceHero extends StatelessWidget {
   final int incomeMinor;
   final int spentMinor;
   final bool hidden;
+  final VoidCallback onOpenWallet;
 
   String _amount(int minor) =>
       hidden ? '${currency.symbol} ••••••' : Money.format(minor, currency);
@@ -62,11 +64,37 @@ class BalanceHero extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            'Across $accountCount '
-            '${accountCount == 1 ? 'account' : 'accounts'} · '
-            '${currency.code}',
-            style: text.bodyMedium,
+          Semantics(
+            button: true,
+            label: 'Across $accountCount accounts. View wallet',
+            excludeSemantics: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onOpenWallet,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Across $accountCount '
+                      '${accountCount == 1 ? 'account' : 'accounts'} · '
+                      '${currency.code}',
+                      style: text.bodyMedium,
+                    ),
+                  ),
+                  Text(
+                    'View wallet',
+                    style: text.labelMedium?.copyWith(
+                      color: AppColors.leafBright,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: AppColors.leafBright,
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 18),
           Text(

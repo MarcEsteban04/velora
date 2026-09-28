@@ -34,14 +34,6 @@ class OnboardingProgress extends StatelessWidget {
                   color: i <= index
                       ? (i == index ? AppColors.leafBright : AppColors.leaf)
                       : Colors.white.withValues(alpha: 0.14),
-                  boxShadow: i == index
-                      ? [
-                          BoxShadow(
-                            color: AppColors.leafBright.withValues(alpha: 0.6),
-                            blurRadius: 10,
-                          ),
-                        ]
-                      : null,
                 ),
               ),
             ),
