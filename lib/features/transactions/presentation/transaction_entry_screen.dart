@@ -39,18 +39,27 @@ class TransactionEntryScreen extends ConsumerStatefulWidget {
     super.key,
     this.initialKind = TransactionKind.expense,
     this.existing,
+    this.initialDay,
   });
 
   final TransactionKind initialKind;
   final Transaction? existing;
 
+  /// Logs on this day (at the current time) instead of now, for example
+  /// from a day picked in the History calendar.
+  final DateTime? initialDay;
+
   static Route<void> route({
     TransactionKind kind = TransactionKind.expense,
     Transaction? existing,
+    DateTime? day,
   }) => MaterialPageRoute(
     fullscreenDialog: true,
-    builder: (_) =>
-        TransactionEntryScreen(initialKind: kind, existing: existing),
+    builder: (_) => TransactionEntryScreen(
+      initialKind: kind,
+      existing: existing,
+      initialDay: day,
+    ),
   );
 
   @override
@@ -69,7 +78,15 @@ class _TransactionEntryScreenState
   late String? _categoryId = widget.existing?.categoryId;
   late String? _accountId = widget.existing?.accountId;
   late String? _toAccountId = widget.existing?.toAccountId;
-  late DateTime _when = widget.existing?.occurredAt ?? DateTime.now();
+  late DateTime _when =
+      widget.existing?.occurredAt ??
+      switch (widget.initialDay) {
+        final d? => () {
+          final now = DateTime.now();
+          return DateTime(d.year, d.month, d.day, now.hour, now.minute);
+        }(),
+        null => DateTime.now(),
+      };
   late final _note = TextEditingController(text: widget.existing?.note);
   final _toAmount = TextEditingController();
   final _noteFocus = FocusNode();

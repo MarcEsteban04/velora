@@ -8,6 +8,7 @@ import '../../../core/money/currency.dart';
 import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/island_toast.dart';
 import '../../../core/widgets/pressable_button.dart';
 import '../../../core/widgets/reveal.dart';
 import '../../../core/widgets/round_icon_button.dart';
@@ -15,18 +16,22 @@ import '../../../core/widgets/velora_mascot.dart';
 import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
 import '../../home/application/balance_privacy.dart';
-import '../../profile/data/profile_repository.dart';
+import '../../profile/application/main_currency.dart';
 import '../../shell/presentation/widgets/floating_nav_bar.dart';
 import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/category_style.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
-import '../../transactions/presentation/widgets/transaction_tile.dart';
-import '../../../core/widgets/island_toast.dart';
+import 'widgets/day_group.dart';
+import 'widgets/history_filter.dart';
+import 'widgets/month_calendar.dart';
 
-/// Every transaction, one month at a time: a summary card, kind filters and
-/// search, grouped by day. Swipe to delete (with Undo) and tap to edit.
+enum _View { list, calendar }
+
+/// Every transaction, a month at a time, as a timeline of days or as a
+/// calendar. Search, filter by type, account and category, fold days away,
+/// and edit, log again or delete (with Undo) from each card.
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
@@ -36,19 +41,31 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   DateTime _month = monthKey(DateTime.now());
-  TransactionKind? _filter;
+  _View _view = _View.list;
+  HistoryFilter _filter = const HistoryFilter();
   bool _searching = false;
   String _query = '';
 
-  /// Rows swiped away and waiting for the server. They're hidden right away,
+  /// The day open in the calendar. Null picks a sensible one.
+  DateTime? _day;
+
+  /// Days folded away in the list.
+  final _collapsed = <DateTime>{};
+
+  /// Deleted rows waiting for the server. They're hidden right away,
   /// because a dismissed row must leave the tree immediately.
   final _removed = <String>{};
 
   bool get _isCurrentMonth => _month == monthKey(DateTime.now());
 
   void _shiftMonth(int delta) {
+    final next = DateTime(_month.year, _month.month + delta);
+    if (next.isAfter(monthKey(DateTime.now()))) return;
     HapticFeedback.selectionClick();
-    setState(() => _month = DateTime(_month.year, _month.month + delta));
+    setState(() {
+      _month = next;
+      _day = null;
+    });
   }
 
   Future<void> _delete(Transaction t) async {
@@ -69,16 +86,62 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         friendlyError(error, action: 'delete that'),
         tone: ToastTone.error,
       );
-      // The delete failed, so bring the row back.
       if (mounted) setState(() => _removed.remove(t.id));
     }
   }
 
-  String _dayLabel(DateTime day) {
-    final today = DateUtils.dateOnly(DateTime.now());
-    if (day == today) return 'Today';
-    if (day == today.subtract(const Duration(days: 1))) return 'Yesterday';
-    return DateFormat('EEEE, MMM d').format(day);
+  /// Logs the same transaction again, now.
+  Future<void> _repeat(Transaction t) async {
+    final actions = TransactionActions.of(context);
+    final toast = Toast.of(context);
+    final currency = Currencies.byCode(
+      ref
+              .read(accountsProvider)
+              .value
+              ?.where((a) => a.id == t.accountId)
+              .firstOrNull
+              ?.currencyCode ??
+          ref.read(mainCurrencyProvider).code,
+    );
+    try {
+      final d = t.toDraft();
+      final saved = await actions.create(
+        TransactionDraft(
+          kind: d.kind,
+          amountMinor: d.amountMinor,
+          accountId: d.accountId,
+          toAccountId: d.toAccountId,
+          toAmountMinor: d.toAmountMinor,
+          categoryId: d.categoryId,
+          note: d.note,
+          occurredAt: DateTime.now(),
+        ),
+      );
+      HapticFeedback.mediumImpact();
+      toast.show(
+        'Logged again · ${Money.format(t.amountMinor, currency)}',
+        icon: Icons.replay_rounded,
+        action: ToastAction('Undo', () => actions.delete(saved.id)),
+      );
+    } on Object catch (error) {
+      toast.show(
+        friendlyError(error, action: 'log that'),
+        tone: ToastTone.error,
+      );
+    }
+  }
+
+  void _edit(Transaction t) =>
+      Navigator.of(context).push(TransactionEntryScreen.route(existing: t));
+
+  Future<void> _openFilter(List<Account> accounts, List<Category> cats) async {
+    final picked = await HistoryFilter.edit(
+      context,
+      current: _filter,
+      accounts: accounts,
+      categories: cats,
+    );
+    if (picked != null) setState(() => _filter = picked);
   }
 
   @override
@@ -89,29 +152,29 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final categories =
         ref.watch(categoriesProvider).value ?? const <Category>[];
     final hidden = ref.watch(balancesHiddenProvider);
-    final main = Currencies.byCode(
-      ref.watch(profileProvider).value?.currencyCode ?? 'USD',
-    );
+    final main = ref.watch(mainCurrencyProvider);
 
     final accountById = {for (final a in accounts) a.id: a};
     final categoryById = {for (final c in categories) c.id: c};
     bool inMain(String id) => accountById[id]?.currencyCode == main.code;
 
-    final all = async.value ?? const <Transaction>[];
-    final summary = FlowSummary.of(all, inCurrency: inMain);
+    final all = (async.value ?? const <Transaction>[])
+        .where((t) => !_removed.contains(t.id))
+        .toList();
     final q = _query.toLowerCase();
     final visible = all.where((t) {
-      if (_removed.contains(t.id)) return false;
-      if (_filter != null && t.kind != _filter) return false;
+      if (!_filter.matches(t)) return false;
       if (q.isEmpty) return true;
       final haystack = [
         t.note ?? '',
         categoryById[t.categoryId]?.name ?? '',
         accountById[t.accountId]?.name ?? '',
         accountById[t.toAccountId]?.name ?? '',
+        Money.format(t.amountMinor, main),
       ].join(' ').toLowerCase();
       return haystack.contains(q);
     }).toList();
+    final summary = FlowSummary.of(visible, inCurrency: inMain);
 
     final byDay = <DateTime, List<Transaction>>{};
     for (final t in visible) {
@@ -120,6 +183,114 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     String fmt(int minor) =>
         hidden ? '${main.symbol} ••••' : Money.format(minor, main);
+    final menu = TransactionMenu(
+      onEdit: _edit,
+      onRepeat: _repeat,
+      onDelete: _delete,
+    );
+
+    Widget group(
+      DateTime day,
+      List<Transaction> txns, {
+      bool foldable = true,
+    }) => DayGroup(
+      key: ValueKey(day),
+      day: day,
+      transactions: txns,
+      accounts: accountById,
+      categories: categoryById,
+      currency: main,
+      inMainCurrency: inMain,
+      hidden: hidden,
+      menu: menu,
+      collapsed: foldable && _collapsed.contains(day),
+      onToggle: foldable
+          ? () => setState(
+              () => _collapsed.contains(day)
+                  ? _collapsed.remove(day)
+                  : _collapsed.add(day),
+            )
+          : null,
+    );
+
+    final filtered = !_filter.isEmpty || q.isNotEmpty;
+    final List<Widget> body;
+    if (async.isLoading && !async.hasValue) {
+      body = [
+        Padding(
+          padding: const EdgeInsets.all(40),
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.leafBright),
+          ),
+        ),
+      ];
+    } else if (async.hasError && !async.hasValue) {
+      body = [
+        GlassCard(
+          child: Column(
+            children: [
+              Text(
+                friendlyError(async.error!, action: 'load your history'),
+                textAlign: TextAlign.center,
+                style: text.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              PressableButton(
+                label: 'Try again',
+                icon: Icons.refresh_rounded,
+                onPressed: () =>
+                    ref.invalidate(monthTransactionsProvider(_month)),
+              ),
+            ],
+          ),
+        ),
+      ];
+    } else if (_view == _View.calendar) {
+      final activity = <DateTime, DayActivity>{
+        for (final e in byDay.entries)
+          e.key: () {
+            final f = FlowSummary.of(e.value, inCurrency: inMain);
+            return DayActivity(
+              spentMinor: f.spentMinor,
+              incomeMinor: f.incomeMinor,
+              count: e.value.length,
+            );
+          }(),
+      };
+      final today = DateUtils.dateOnly(DateTime.now());
+      final day =
+          _day ??
+          (_isCurrentMonth
+              ? today
+              : (byDay.keys.isEmpty
+                    ? DateTime(_month.year, _month.month + 1, 0)
+                    : byDay.keys.first));
+      final dayTxns = byDay[day] ?? const <Transaction>[];
+      body = [
+        MonthCalendar(
+          month: _month,
+          activity: activity,
+          selected: day,
+          currency: main,
+          hidden: hidden,
+          onSelect: (d) => setState(() => _day = d),
+          onSwipe: _shiftMonth,
+        ),
+        if (dayTxns.isEmpty)
+          _EmptyDay(
+            day: day,
+            onLog: () =>
+                Navigator.of(context)
+                    .push(TransactionEntryScreen.route(day: day)),
+          )
+        else
+          group(day, dayTxns, foldable: false),
+      ];
+    } else if (visible.isEmpty) {
+      body = [_EmptyHistory(month: _month, filtered: filtered)];
+    } else {
+      body = [for (final e in byDay.entries) group(e.key, e.value)];
+    }
 
     return RefreshIndicator(
       color: AppColors.leafBright,
@@ -150,6 +321,56 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     if (!_searching) _query = '';
                   }),
                 ),
+                const SizedBox(width: 8),
+                RoundIconButton(
+                  icon: _view == _View.list
+                      ? Icons.calendar_month_rounded
+                      : Icons.view_agenda_rounded,
+                  semanticLabel: _view == _View.list
+                      ? 'Calendar view'
+                      : 'List view',
+                  active: _view == _View.calendar,
+                  onTap: () => setState(
+                    () => _view = _view == _View.list
+                        ? _View.calendar
+                        : _View.list,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    RoundIconButton(
+                      icon: Icons.tune_rounded,
+                      semanticLabel: _filter.isEmpty
+                          ? 'Filter'
+                          : 'Filter, ${_filter.count} on',
+                      active: !_filter.isEmpty,
+                      onTap: () => _openFilter(accounts, categories),
+                    ),
+                    if (!_filter.isEmpty)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 18,
+                          height: 18,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.ember,
+                          ),
+                          child: Text(
+                            '${_filter.count}',
+                            style: text.labelMedium?.copyWith(
+                              fontSize: 10,
+                              color: AppColors.onBrand,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -172,203 +393,108 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   )
                 : const SizedBox(width: double.infinity),
           ),
-          const SizedBox(height: 18),
+          if (!_filter.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: _ActiveFilters(
+                filter: _filter,
+                accounts: accountById,
+                categories: categoryById,
+                onChanged: (f) => setState(() => _filter = f),
+              ),
+            ),
+          const SizedBox(height: 14),
           FadeSlideIn(
             delay: const Duration(milliseconds: 60),
-            child: GlassCard(
-              padding: const EdgeInsets.fromLTRB(8, 10, 8, 18),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        tooltip: 'Previous month',
-                        onPressed: () => _shiftMonth(-1),
-                        icon: const Icon(Icons.chevron_left_rounded),
-                      ),
-                      Expanded(
-                        child: Text(
-                          DateFormat('MMMM y').format(_month),
-                          textAlign: TextAlign.center,
-                          style: text.titleMedium,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Next month',
-                        onPressed: _isCurrentMonth
-                            ? null
-                            : () => _shiftMonth(1),
-                        icon: const Icon(Icons.chevron_right_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _Stat(
-                        label: 'In',
-                        value: fmt(summary.incomeMinor),
-                        color: AppColors.leafBright,
-                      ),
-                      _Stat(
-                        label: 'Out',
-                        value: fmt(summary.spentMinor),
-                        color: TransactionKind.expense.color,
-                      ),
-                      _Stat(
-                        label: 'Net',
-                        value:
-                            '${summary.netMinor < 0 ? '−' : ''}${fmt(summary.netMinor.abs())}',
-                        color: AppColors.textPrimary,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            child: _MonthBar(
+              month: _month,
+              canGoNext: !_isCurrentMonth,
+              onShift: _shiftMonth,
+              income: fmt(summary.incomeMinor),
+              spent: fmt(summary.spentMinor),
+              net:
+                  '${summary.netMinor < 0 ? '−' : ''}${fmt(summary.netMinor.abs())}',
+              filtered: filtered,
             ),
           ),
-          const SizedBox(height: 14),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final (label, kind) in [
-                  ('All', null),
-                  ('Expenses', TransactionKind.expense),
-                  ('Income', TransactionKind.income),
-                  ('Transfers', TransactionKind.transfer),
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(label),
-                      selected: _filter == kind,
-                      onSelected: (_) => setState(() => _filter = kind),
-                      showCheckmark: false,
-                      labelStyle: text.labelMedium?.copyWith(
-                        fontSize: 13,
-                        color: _filter == kind
-                            ? AppColors.night
-                            : AppColors.textSecondary,
-                      ),
-                      selectedColor: kind?.color ?? AppColors.leafBright,
-                      backgroundColor: AppColors.surface.withValues(alpha: 0.6),
-                      side: BorderSide(color: AppColors.hairline(0.08)),
-                      shape: const StadiumBorder(),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (async.isLoading && !async.hasValue)
-            Padding(
-              padding: EdgeInsets.all(40),
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.leafBright),
+          const SizedBox(height: 4),
+          ...body,
+        ],
+      ),
+    );
+  }
+}
+
+class _MonthBar extends StatelessWidget {
+  const _MonthBar({
+    required this.month,
+    required this.canGoNext,
+    required this.onShift,
+    required this.income,
+    required this.spent,
+    required this.net,
+    required this.filtered,
+  });
+
+  final DateTime month;
+  final bool canGoNext;
+  final ValueChanged<int> onShift;
+  final String income;
+  final String spent;
+  final String net;
+  final bool filtered;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return GlassCard(
+      radius: 24,
+      padding: const EdgeInsets.fromLTRB(6, 6, 6, 14),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                tooltip: 'Previous month',
+                onPressed: () => onShift(-1),
+                icon: const Icon(Icons.chevron_left_rounded),
               ),
-            )
-          else if (async.hasError && !async.hasValue)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: GlassCard(
+              Expanded(
                 child: Column(
                   children: [
                     Text(
-                      friendlyError(async.error!, action: 'load your history'),
-                      textAlign: TextAlign.center,
-                      style: text.bodyMedium,
+                      DateFormat('MMMM y').format(month),
+                      style: text.titleMedium,
                     ),
-                    const SizedBox(height: 12),
-                    PressableButton(
-                      label: 'Try again',
-                      icon: Icons.refresh_rounded,
-                      onPressed: () =>
-                          ref.invalidate(monthTransactionsProvider(_month)),
-                    ),
+                    if (filtered)
+                      Text(
+                        'Filtered',
+                        style: text.labelMedium?.copyWith(
+                          fontSize: 10,
+                          color: AppColors.ember,
+                        ),
+                      ),
                   ],
                 ),
               ),
-            )
-          else if (visible.isEmpty)
-            _EmptyHistory(
-              month: _month,
-              filtered: _filter != null || q.isNotEmpty,
-            )
-          else
-            for (final entry in byDay.entries) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _dayLabel(entry.key),
-                        style: text.titleMedium?.copyWith(fontSize: 14),
-                      ),
-                    ),
-                    Builder(
-                      builder: (context) {
-                        final day = FlowSummary.of(
-                          entry.value,
-                          inCurrency: inMain,
-                        );
-                        if (day.incomeMinor == 0 && day.spentMinor == 0) {
-                          return const SizedBox.shrink();
-                        }
-                        final net = day.netMinor;
-                        return Text(
-                          '${net < 0 ? '−' : '+'}${fmt(net.abs())}',
-                          style: text.labelMedium?.copyWith(
-                            color: net < 0
-                                ? AppColors.textSecondary
-                                : AppColors.leafBright,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              GlassCard(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                radius: 24,
-                child: Column(
-                  children: [
-                    for (final (i, t) in entry.value.indexed) ...[
-                      if (i > 0)
-                        Divider(
-                          height: 1,
-                          indent: 68,
-                          color: AppColors.hairline(0.06),
-                        ),
-                      Dismissible(
-                        key: ValueKey(t.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 22),
-                          color: AppColors.rust.withValues(alpha: 0.25),
-                          child: Icon(
-                            Icons.delete_outline_rounded,
-                            color: AppColors.rust,
-                          ),
-                        ),
-                        onDismissed: (_) => _delete(t),
-                        child: TransactionTile(
-                          transaction: t,
-                          accounts: accountById,
-                          categories: categoryById,
-                          hidden: hidden,
-                          onTap: () => Navigator.of(context)
-                              .push(TransactionEntryScreen.route(existing: t)),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+              IconButton(
+                tooltip: 'Next month',
+                onPressed: canGoNext ? () => onShift(1) : null,
+                icon: const Icon(Icons.chevron_right_rounded),
               ),
             ],
+          ),
+          Row(
+            children: [
+              _Stat(label: 'In', value: income, color: AppColors.leafBright),
+              _Stat(
+                label: 'Out',
+                value: spent,
+                color: TransactionKind.expense.color,
+              ),
+              _Stat(label: 'Net', value: net, color: AppColors.textPrimary),
+            ],
+          ),
         ],
       ),
     );
@@ -392,12 +518,117 @@ class _Stat extends StatelessWidget {
             label.toUpperCase(),
             style: text.labelMedium?.copyWith(fontSize: 11, letterSpacing: 1.4),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(value, style: text.titleMedium?.copyWith(color: color)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The filters in use, each removable with a tap.
+class _ActiveFilters extends StatelessWidget {
+  const _ActiveFilters({
+    required this.filter,
+    required this.accounts,
+    required this.categories,
+    required this.onChanged,
+  });
+
+  final HistoryFilter filter;
+  final Map<String, Account> accounts;
+  final Map<String, Category> categories;
+  final ValueChanged<HistoryFilter> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = <(String, Color, VoidCallback)>[
+      if (filter.kind case final k?)
+        (
+          switch (k) {
+            TransactionKind.expense => 'Expenses',
+            TransactionKind.income => 'Income',
+            TransactionKind.transfer => 'Transfers',
+          },
+          k.color,
+          () => onChanged(filter.copyWith(kind: () => null)),
+        ),
+      for (final id in filter.accountIds)
+        (
+          accounts[id]?.name ?? 'Account',
+          AppColors.sky,
+          () => onChanged(
+            filter.copyWith(accountIds: {...filter.accountIds}..remove(id)),
+          ),
+        ),
+      for (final id in filter.categoryIds)
+        (
+          categories[id]?.name ?? 'Category',
+          categories[id]?.colorValue ?? AppColors.textMuted,
+          () => onChanged(
+            filter.copyWith(categoryIds: {...filter.categoryIds}..remove(id)),
+          ),
+        ),
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final (label, color, remove) in chips)
+          InputChip(
+            label: Text(label),
+            onDeleted: remove,
+            deleteIcon: const Icon(Icons.close_rounded, size: 16),
+            labelStyle: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: AppColors.textPrimary),
+            backgroundColor: color.withValues(alpha: 0.16),
+            side: BorderSide(color: color.withValues(alpha: 0.4)),
+            shape: const StadiumBorder(),
+          ),
+      ],
+    );
+  }
+}
+
+class _EmptyDay extends StatelessWidget {
+  const _EmptyDay({required this.day, required this.onLog});
+
+  final DateTime day;
+  final VoidCallback onLog;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: GlassCard(
+        radius: 22,
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(dayTitle(day, DateTime.now()), style: text.titleMedium),
+                  Text(
+                    'Nothing logged on ${DateFormat('MMMM d').format(day)}',
+                    style: text.labelMedium,
+                  ),
+                ],
+              ),
+            ),
+            TextButton.icon(
+              onPressed: onLog,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Log for this day'),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -24,7 +24,9 @@ import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
 import '../application/balance_privacy.dart';
-import 'widgets/month_glance.dart';
+import '../application/home_spending_providers.dart';
+import '../application/spending_stats.dart';
+import 'widgets/spending_cards.dart';
 import 'widgets/coach_card.dart';
 import 'widgets/home_header.dart';
 import 'widgets/recent_activity.dart';
@@ -32,8 +34,8 @@ import 'widgets/setup_checklist.dart';
 
 /// The dashboard tab. From top to bottom:
 /// 1. Streak chip, "hide balances" and settings, then the greeting.
-/// 2. This month's money in and out (net worth lives in Wallet).
-/// 3. Velora's coaching note, based on this month's real numbers.
+/// 2. Velora's coaching note, based on this month's real numbers.
+/// 3. The last 7 days of spending, and today, this week or this month.
 /// 4. "Get set up" checklist (hides once everything is done).
 /// 5. Recent activity.
 ///
@@ -120,6 +122,7 @@ class HomeScreen extends ConsumerWidget {
           ..invalidate(monthTransactionsProvider)
           ..invalidate(recentTransactionsProvider)
           ..invalidate(streakHistoryProvider)
+          ..invalidate(last30DaysTransactionsProvider)
           ..invalidate(categoriesProvider);
         await ref.read(accountsProvider.future);
       },
@@ -150,16 +153,7 @@ class HomeScreen extends ConsumerWidget {
                   Navigator.of(context).push(SettingsScreen.route()),
             ),
           ),
-          const SizedBox(height: 22),
-          stagger(
-            MonthGlance(
-              currency: currency,
-              incomeMinor: flow.incomeMinor,
-              spentMinor: flow.spentMinor,
-              hidden: hidden,
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           if (profile != null)
             stagger(
               CoachCard(
@@ -181,6 +175,8 @@ class HomeScreen extends ConsumerWidget {
                 onAction: () => onQuickAction(QuickAction.expense),
               ),
             ),
+          const SizedBox(height: 12),
+          stagger(_SpendingRow(currency: currency, hidden: hidden)),
           const SizedBox(height: 16),
           stagger(
             SetupChecklist(
@@ -227,6 +223,47 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The last 7 days next to today, this week or this month.
+class _SpendingRow extends ConsumerStatefulWidget {
+  const _SpendingRow({required this.currency, required this.hidden});
+
+  final Currency currency;
+  final bool hidden;
+
+  @override
+  ConsumerState<_SpendingRow> createState() => _SpendingRowState();
+}
+
+class _SpendingRowState extends ConsumerState<_SpendingRow> {
+  SpendPeriod _period = SpendPeriod.day;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: WeekSpendingCard(
+            days: ref.watch(weekSpendingProvider),
+            currency: widget.currency,
+            hidden: widget.hidden,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: PeriodSpendCard(
+            period: _period,
+            spend: ref.watch(periodSpendProvider(_period)),
+            currency: widget.currency,
+            hidden: widget.hidden,
+            onPeriod: (p) => setState(() => _period = p),
+          ),
+        ),
+      ],
     );
   }
 }

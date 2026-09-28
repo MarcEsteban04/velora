@@ -239,7 +239,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
 
     // Dashboard content.
-    expect(find.text('THIS MONTH'), findsOneWidget);
+    expect(find.text('LAST 7 DAYS'), findsOneWidget);
     expect(find.text('NET WORTH'), findsNothing);
     expect(find.text('₱0.00'), findsWidgets);
 
@@ -254,13 +254,13 @@ void main() {
     // Only the active tab is on screen. This guards against tabs stacking
     // on top of each other.
     expect(find.text('Budgets, goals and what’s coming up'), findsOneWidget);
-    expect(find.text('THIS MONTH'), findsNothing);
+    expect(find.text('LAST 7 DAYS'), findsNothing);
     expect(find.text('Every peso, searchable and tidy.'), findsNothing);
 
     // Android back returns to Home instead of leaving the app.
     await tester.binding.handlePopRoute();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('THIS MONTH'), findsOneWidget);
+    expect(find.text('LAST 7 DAYS'), findsOneWidget);
     expect(find.text('Budgets, goals and what’s coming up'), findsNothing);
 
     // + opens quick actions; picking one closes the panel with a note.
