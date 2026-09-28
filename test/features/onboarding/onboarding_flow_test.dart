@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:velora/app/velora_app.dart';
 import 'package:velora/features/profile/data/profile_repository.dart';
 import 'package:velora/core/widgets/round_icon_button.dart';
@@ -17,13 +18,16 @@ import '../../support/fakes.dart';
 void main() {
   late FakeBackend backend;
   late FakePins pins;
+  late SharedPreferences prefs;
 
-  setUp(() {
+  setUp(() async {
     backend = FakeBackend();
     pins = FakePins();
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
   });
 
-  List<Override> overrides() => fakeOverrides(backend, pins);
+  List<Override> overrides() => fakeOverrides(backend, pins, prefs);
 
   /// A typical phone (411x914 logical pixels), so full-height screens such
   /// as the PIN pad fit the way they do on a device.

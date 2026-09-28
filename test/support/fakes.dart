@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:velora/core/storage/app_preferences.dart';
 import 'package:velora/core/money/currency.dart';
 import 'package:velora/features/accounts/data/account_repository.dart';
 import 'package:velora/features/accounts/domain/account.dart';
@@ -75,6 +77,22 @@ class FakeBackend implements OnboardingRepository, ProfileRepository {
 
   @override
   Future<UserProfile?> fetch() async => profile;
+
+  @override
+  Future<void> update({
+    String? name,
+    String? currencyCode,
+    CoachTone? coachTone,
+  }) async {
+    final p = profile;
+    if (p == null) return;
+    profile = UserProfile(
+      name: name ?? p.name,
+      currencyCode: currencyCode ?? p.currencyCode,
+      coachTone: coachTone ?? p.coachTone,
+      onboardedAt: p.onboardedAt,
+    );
+  }
 
   /// Mirrors the database's account_balances view.
   int balanceOf(Account a) =>
@@ -227,8 +245,15 @@ class FakePins implements PinRepository {
   Future<void> clear() async => pin = null;
 }
 
-/// Every override the full app needs to run on the fakes above.
-List<Override> fakeOverrides(FakeBackend db, FakePins pins) => [
+/// Every override the full app needs to run on the fakes above. [prefs]
+/// comes from `SharedPreferences.getInstance()` after
+/// `SharedPreferences.setMockInitialValues`.
+List<Override> fakeOverrides(
+  FakeBackend db,
+  FakePins pins,
+  SharedPreferences prefs,
+) => [
+  sharedPreferencesProvider.overrideWithValue(prefs),
   onboardingRepositoryProvider.overrideWithValue(db),
   profileRepositoryProvider.overrideWithValue(db),
   accountRepositoryProvider.overrideWithValue(FakeAccounts(db)),

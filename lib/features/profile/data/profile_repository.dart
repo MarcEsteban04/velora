@@ -9,6 +9,13 @@ abstract interface class ProfileRepository {
   /// The signed-in user's profile, or null when there's no session yet or
   /// onboarding hasn't finished.
   Future<UserProfile?> fetch();
+
+  /// Changes only the fields given.
+  Future<void> update({
+    String? name,
+    String? currencyCode,
+    CoachTone? coachTone,
+  });
 }
 
 class SupabaseProfileRepository implements ProfileRepository {
@@ -27,6 +34,24 @@ class SupabaseProfileRepository implements ProfileRepository {
         .eq('id', userId)
         .maybeSingle();
     return row == null ? null : UserProfile.fromRow(row);
+  }
+
+  @override
+  Future<void> update({
+    String? name,
+    String? currencyCode,
+    CoachTone? coachTone,
+  }) async {
+    final userId = _auth.currentUserId;
+    if (userId == null) return;
+    await _db
+        .from('profiles')
+        .update({
+          'display_name': ?name?.trim(),
+          'currency_code': ?currencyCode,
+          'coach_tone': ?coachTone?.name,
+        })
+        .eq('id', userId);
   }
 }
 

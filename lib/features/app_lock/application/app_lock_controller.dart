@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/storage/app_preferences.dart';
 import '../data/pin_repository.dart';
 
 class AppLockState {
@@ -11,13 +12,13 @@ class AppLockState {
 }
 
 /// Decides when the lock screen covers the app. It locks on a cold start and
-/// again after the app has been in the background longer than [_grace].
+/// again after the app has been in the background longer than the
+/// auto-lock setting.
 final appLockProvider = AsyncNotifierProvider<AppLockController, AppLockState>(
   AppLockController.new,
 );
 
 class AppLockController extends AsyncNotifier<AppLockState> {
-  static const _grace = Duration(seconds: 30);
   DateTime? _backgroundedAt;
 
   @override
@@ -37,7 +38,8 @@ class AppLockController extends AsyncNotifier<AppLockState> {
     _backgroundedAt = null;
     final current = state.value;
     if (since == null || current == null || !current.hasPin) return;
-    if (DateTime.now().difference(since) > _grace) {
+    final grace = ref.read(autoLockProvider).grace;
+    if (DateTime.now().difference(since) >= grace) {
       state = AsyncData(AppLockState(hasPin: true, locked: true));
     }
   }
@@ -48,6 +50,13 @@ class AppLockController extends AsyncNotifier<AppLockState> {
   /// Call after a PIN is saved. The user just proved they know it, so the
   /// app stays unlocked.
   void pinCreated() => unlock();
+
+  /// "Lock now" in Settings.
+  void lock() {
+    if (state.value?.hasPin ?? false) {
+      state = const AsyncData(AppLockState(hasPin: true, locked: true));
+    }
+  }
 
   void reset() =>
       state = const AsyncData(AppLockState(hasPin: false, locked: false));

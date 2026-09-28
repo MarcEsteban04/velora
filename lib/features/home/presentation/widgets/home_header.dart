@@ -10,12 +10,14 @@ class HomeHeader extends StatelessWidget {
     required this.balancesHidden,
     required this.onToggleBalances,
     required this.now,
+    required this.onOpenSettings,
   });
 
   final String name;
   final bool balancesHidden;
   final VoidCallback onToggleBalances;
   final DateTime now;
+  final VoidCallback onOpenSettings;
 
   static String greeting(DateTime now) => switch (now.hour) {
     < 5 => 'Up late',
@@ -54,6 +56,12 @@ class HomeHeader extends StatelessWidget {
           semanticLabel: balancesHidden ? 'Show balances' : 'Hide balances',
           active: balancesHidden,
           onTap: onToggleBalances,
+        ),
+        const SizedBox(width: 10),
+        RoundIconButton(
+          icon: Icons.settings_rounded,
+          semanticLabel: 'Settings',
+          onTap: onOpenSettings,
         ),
       ],
     );

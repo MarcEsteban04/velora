@@ -9,6 +9,7 @@ import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/presentation/coach_tone_style.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../../shell/presentation/widgets/floating_nav_bar.dart';
 import '../../shell/presentation/widgets/quick_actions.dart';
 import '../../transactions/application/transaction_providers.dart';
@@ -130,6 +131,8 @@ class HomeScreen extends ConsumerWidget {
               onToggleBalances: ref
                   .read(balancesHiddenProvider.notifier)
                   .toggle,
+              onOpenSettings: () =>
+                  Navigator.of(context).push(SettingsScreen.route()),
             ),
           ),
           const SizedBox(height: 22),

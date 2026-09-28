@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:velora/app/velora_app.dart';
 import 'package:velora/features/accounts/domain/account.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
@@ -11,10 +12,13 @@ import '../../support/fakes.dart';
 void main() {
   late FakeBackend db;
   late FakePins pins;
+  late SharedPreferences prefs;
 
   setUp(() async {
     db = FakeBackend();
     pins = FakePins()..pin = '2580';
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
     await db.complete(
       displayName: 'Marc',
       currencyCode: 'PHP',
@@ -37,7 +41,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakeOverrides(db, pins),
+        overrides: fakeOverrides(db, pins, prefs),
         child: const VeloraApp(),
       ),
     );
