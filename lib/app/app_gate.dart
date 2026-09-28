@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/errors/friendly_error.dart';
 import '../core/theme/app_colors.dart';
 import '../core/widgets/dusk_backdrop.dart';
 import '../core/widgets/pressable_button.dart';
@@ -30,6 +31,7 @@ class AppGate extends ConsumerWidget {
     } else if (profile.hasError) {
       screen = _OfflineView(
         key: const ValueKey('offline'),
+        error: profile.error!,
         onRetry: () => ref.invalidate(profileProvider),
       );
     } else if (profile.value == null) {
@@ -107,8 +109,9 @@ class _SplashView extends StatelessWidget {
 }
 
 class _OfflineView extends StatelessWidget {
-  const _OfflineView({super.key, required this.onRetry});
+  const _OfflineView({super.key, required this.error, required this.onRetry});
 
+  final Object error;
   final VoidCallback onRetry;
 
   @override
@@ -123,14 +126,16 @@ class _OfflineView extends StatelessWidget {
             const VeloraMascot(pose: MascotPose.wallet, size: 170),
             const SizedBox(height: 20),
             Text(
-              "Can't reach Velora right now",
+              isNetworkError(error)
+                  ? "Can't reach Velora right now"
+                  : 'Velora hit a snag',
               textAlign: TextAlign.center,
               style: text.headlineSmall,
             ),
             const SizedBox(height: 10),
             Text(
-              'Check your internet connection and try again. Your data is '
-              'safe.',
+              '${friendlyError(error, action: 'load your space')} '
+              'Your data is safe.',
               textAlign: TextAlign.center,
               style: text.bodyLarge,
             ),

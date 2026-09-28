@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
 import '../../../core/widgets/pressable_button.dart';
@@ -106,14 +107,12 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
     setState(() => _saving = true);
     try {
       await ref.read(onboardingControllerProvider.notifier).complete();
-    } on Object {
+    } on Object catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Couldn't reach Velora. Check your connection and try again.",
-          ),
+        SnackBar(
+          content: Text(friendlyError(error, action: 'save your setup')),
         ),
       );
       return;
