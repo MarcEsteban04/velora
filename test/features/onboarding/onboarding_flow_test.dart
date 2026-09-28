@@ -341,7 +341,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel(RegExp('Add: open quick actions')));
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('What would you like to log?'), findsOneWidget);
-    await tester.tap(find.text('Income'));
+    await tester.tap(find.text('Money coming in'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('What would you like to log?'), findsNothing);
