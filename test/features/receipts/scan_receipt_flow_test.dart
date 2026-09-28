@@ -29,7 +29,10 @@ class _FakeReader implements ReceiptReader {
   ReceiptScan? result;
 
   @override
-  Future<ReceiptScan?> read(ReceiptPhoto photo, List<String> categories) async {
+  Future<ReceiptScan?> read(
+    ReceiptPhoto photo,
+    ReceiptCategories categories,
+  ) async {
     await Future<void>.delayed(const Duration(milliseconds: 300));
     return result;
   }
@@ -142,6 +145,40 @@ void main() {
     expect(find.text('I couldn’t find a total'), findsOneWidget);
     expect(find.text('Retake'), findsOneWidget);
     expect(find.text('Type it in'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('money in logs as income, and the switch flips it', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    reader.result = const ReceiptScan(
+      totalMinor: 150000,
+      source: ReceiptSource.ai,
+      kind: TransactionKind.income,
+      merchant: 'Payroll',
+      category: 'Salary',
+    );
+    await openScan(tester);
+    await tester.tap(find.text('Take a photo'));
+    await tester.pump();
+    await frames(tester, 16);
+
+    // Read as money in; flipping to out and back keeps the amount.
+    expect(find.text('Money in'), findsOneWidget);
+    await tester.tap(find.text('Money out'));
+    await frames(tester, 6);
+    await tester.tap(find.text('Money in'));
+    await frames(tester, 6);
+
+    await tester.tap(find.text('Log it'));
+    await tester.pump();
+    await frames(tester);
+    final t = db.transactions.single;
+    expect(t.kind, TransactionKind.income);
+    expect(t.amountMinor, 150000);
+    // Flipping back restored the AI's category.
+    expect(t.categoryId, 'salary');
     semantics.dispose();
   });
 }

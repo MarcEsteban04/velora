@@ -30,8 +30,10 @@ import '../domain/receipt.dart';
 
 enum _Stage { start, reading, result, failed }
 
-/// Snap or pick a receipt; Velora reads the total, store, date and items,
-/// and offers an expense to confirm. Nothing is saved without a tap.
+/// Snap or pick a receipt, or proof of money in (cashback, interest, a
+/// refund, a "you have received" screenshot). Velora reads the amount,
+/// store or source, date and items, and offers an expense or income to
+/// confirm. Nothing is saved without a tap.
 class ScanReceiptScreen extends ConsumerStatefulWidget {
   const ScanReceiptScreen({super.key});
 
@@ -46,6 +48,9 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   _Stage _stage = _Stage.start;
   ReceiptPhoto? _photo;
   ReceiptScan? _scan;
+
+  /// What was read, before any Money in / Money out correction.
+  ReceiptScan? _original;
   ParsedTransaction? _proposal;
   ProposalStatus _status = ProposalStatus.pending;
   Transaction? _saved;
@@ -76,11 +81,14 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   Future<void> _read(ReceiptPhoto photo) async {
     final categories = await ref.read(categoriesProvider.future);
     final accounts = await ref.read(accountsProvider.future);
-    final names = [
+    List<String> names(TransactionKind kind) => [
       for (final c in categories)
-        if (c.kind == TransactionKind.expense && !c.hidden) c.name,
+        if (c.kind == kind && !c.hidden) c.name,
     ];
-    final scan = await ref.read(receiptReaderProvider).read(photo, names);
+    final scan = await ref.read(receiptReaderProvider).read(photo, (
+      expense: names(TransactionKind.expense),
+      income: names(TransactionKind.income),
+    ));
     if (!mounted) return;
     if (scan == null || accounts.isEmpty) {
       HapticFeedback.mediumImpact();
@@ -92,6 +100,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     HapticFeedback.mediumImpact();
     setState(() {
       _scan = scan;
+      _original = scan;
       _proposal = receiptToTransaction(
         scan,
         accounts: accounts,
@@ -102,6 +111,27 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
             : accounts.first.id,
       );
       _stage = _Stage.result;
+    });
+  }
+
+  /// The user says it's the other way round: money in, not out, or back.
+  void _flip(TransactionKind kind) {
+    final scan = _scan, original = _original, p = _proposal;
+    if (scan == null || original == null || p == null || scan.kind == kind) {
+      return;
+    }
+    HapticFeedback.selectionClick();
+    // From the original, so flipping back restores the AI's category.
+    final flipped = original.withKind(kind);
+    setState(() {
+      _scan = flipped;
+      _proposal = receiptToTransaction(
+        flipped,
+        accounts: ref.read(accountsProvider).value ?? const [],
+        categories: ref.read(categoriesProvider).value ?? const [],
+        now: AppClock.now(),
+        accountId: p.accountId,
+      );
     });
   }
 
@@ -174,6 +204,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     _stage = _Stage.start;
     _photo = null;
     _scan = null;
+    _original = null;
     _proposal = null;
     _status = ProposalStatus.pending;
     _saved = null;
@@ -208,6 +239,13 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
           child: _SourceRow(photo: _photo!, source: _scan!.source),
         ),
         const SizedBox(height: 12),
+        if (_status == ProposalStatus.pending) ...[
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 40),
+            child: _Direction(kind: _scan!.kind, onChanged: _flip),
+          ),
+          const SizedBox(height: 10),
+        ],
         FadeSlideIn(
           delay: const Duration(milliseconds: 80),
           child: ProposalCard(
@@ -303,8 +341,10 @@ class _Start extends StatelessWidget {
             Text('Snap it, done', style: text.headlineSmall),
             const SizedBox(height: 4),
             Text(
-              'Velora reads the total, the store and the date. You check it '
-              'before anything is logged.',
+              'A receipt, or proof of money in like cashback, interest or a '
+              '“you received” screenshot. Velora reads the amount, where '
+              'it’s from and the date. You check it before anything is '
+              'logged.',
               textAlign: TextAlign.center,
               style: text.bodyMedium,
             ),
@@ -618,4 +658,31 @@ class _Failed extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Money out or money in, for when the scan guessed wrong.
+class _Direction extends StatelessWidget {
+  const _Direction({required this.kind, required this.onChanged});
+
+  final TransactionKind kind;
+  final ValueChanged<TransactionKind> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SegmentedButton<TransactionKind>(
+    segments: const [
+      ButtonSegment(
+        value: TransactionKind.expense,
+        icon: Icon(Icons.north_east_rounded, size: 18),
+        label: Text('Money out'),
+      ),
+      ButtonSegment(
+        value: TransactionKind.income,
+        icon: Icon(Icons.south_west_rounded, size: 18),
+        label: Text('Money in'),
+      ),
+    ],
+    selected: {kind},
+    showSelectedIcon: false,
+    onSelectionChanged: (s) => onChanged(s.first),
+  );
 }

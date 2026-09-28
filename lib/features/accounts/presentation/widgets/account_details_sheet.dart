@@ -11,7 +11,6 @@ import '../../../../core/widgets/pressable_button.dart';
 import '../../data/account_repository.dart';
 import '../../domain/account.dart';
 import '../account_form_screen.dart';
-import '../account_type_style.dart';
 import '../institutions.dart';
 import 'account_card.dart';
 import '../../../../core/widgets/island_toast.dart';
@@ -105,7 +104,7 @@ class _AccountDetailsSheetState extends ConsumerState<AccountDetailsSheet> {
     final currency = Currencies.byCode(a.currencyCode);
     final text = Theme.of(context).textTheme;
     final rows = [
-      ('Type', a.type.label),
+      ('Type', accountKindLabel(a.type, Institutions.forAccount(a))),
       ('Currency', '${currency.code} · ${currency.name}'),
       (
         'Starting balance',

@@ -28,7 +28,7 @@ class _FakeReader implements ReceiptReader {
   @override
   Future<ReceiptScan?> read(
     ReceiptPhoto photo,
-    List<String> categories,
+    ReceiptCategories categories,
   ) async => const ReceiptScan(
     totalMinor: 26500,
     source: ReceiptSource.ai,

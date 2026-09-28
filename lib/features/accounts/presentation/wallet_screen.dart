@@ -19,7 +19,6 @@ import '../application/wallet_insight_providers.dart';
 import '../data/account_repository.dart';
 import '../domain/account.dart';
 import 'account_form_screen.dart';
-import 'account_type_style.dart';
 import 'institutions.dart';
 import 'widgets/account_avatar.dart';
 import 'widgets/account_card.dart';
@@ -405,7 +404,8 @@ class _ListRow extends StatelessWidget {
           style: text.titleMedium?.copyWith(fontSize: 14),
         ),
         subtitle: Text(
-          '${account.type.label} · ${currency.code}'
+          '${accountKindLabel(account.type, Institutions.forAccount(account))} '
+          '· ${currency.code}'
           '${account.includeInNetWorth ? '' : ' · not in net worth'}',
           style: text.labelMedium,
         ),

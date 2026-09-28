@@ -26,12 +26,17 @@ String dayTitle(DateTime day, DateTime now) {
 /// What can be done to a transaction from History.
 class TransactionMenu {
   const TransactionMenu({
+    required this.onView,
     required this.onEdit,
     required this.onRepeat,
     required this.onDelete,
     required this.onReceipt,
   });
 
+  /// Tapping a transaction: its details, read only.
+  final void Function(Transaction) onView;
+
+  /// Editing is its own menu item, so a tap never changes anything.
   final void Function(Transaction) onEdit;
 
   /// Logs the same thing again, now.
@@ -383,7 +388,7 @@ class _TransactionCard extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => menu.onEdit(t),
+        onTap: () => menu.onView(t),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 2, 10),
           child: Row(

@@ -127,4 +127,26 @@ void main() {
     expect(db.transactions.where((t) => t.note == 'Ramen'), hasLength(2));
     semantics.dispose();
   });
+
+  testWidgets('tapping a transaction shows it, read only', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openHistory(tester);
+    await tester.tap(find.text('Ramen'));
+    await tester.pump();
+    await frames(tester);
+
+    // Details in a sheet; no editor, nothing to type into.
+    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(find.text('Category'), findsOneWidget);
+    expect(find.text('When'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.byType(TextField),
+      ),
+      findsNothing,
+    );
+    expect(find.text('Save changes'), findsNothing);
+    semantics.dispose();
+  });
 }

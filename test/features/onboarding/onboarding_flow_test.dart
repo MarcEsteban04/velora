@@ -313,6 +313,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.enterText(find.byType(TextField).first, 'BPI Savings');
+    // The balance field sits below the bank pickers; bring it into view.
+    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.enterText(find.byType(TextField).last, '8000');
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Add account').last);

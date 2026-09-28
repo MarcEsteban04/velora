@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Calls the AI providers straight from the app, for personal builds.
@@ -17,15 +17,17 @@ abstract final class AiClient {
   static const _geminiKey = String.fromEnvironment('GEMINI_AI_API_KEY');
   static const _openAiKey = String.fromEnvironment('OPENAI_API_KEY');
 
+  // Groq retires models now and then (the Llama ones went in 2026). When a
+  // provider starts failing with HTTP 404, check its model list first.
   static const _groqModel = String.fromEnvironment(
     'GROQ_MODEL',
-    defaultValue: 'llama-3.3-70b-versatile',
+    defaultValue: 'openai/gpt-oss-120b',
   );
 
   /// Groq's text model can't see images; this one can.
   static const _groqVisionModel = String.fromEnvironment(
     'GROQ_VISION_MODEL',
-    defaultValue: 'meta-llama/llama-4-scout-17b-16e-instruct',
+    defaultValue: 'qwen/qwen3.8-27b',
   );
   static const _geminiModel = String.fromEnvironment(
     'GEMINI_MODEL',
@@ -78,6 +80,7 @@ abstract final class AiClient {
         } on Object catch (error) {
           // Out of credits, rate limited or offline: try the next one.
           developer.log('AI $name failed', name: 'velora', error: error);
+          if (kDebugMode) debugPrint('velora: AI $name failed: $error');
         }
       }
       return null;
@@ -86,14 +89,30 @@ abstract final class AiClient {
     }
   }
 
-  static Future<String?> _groq(http.Client c, String key, _Request r) =>
-      _chatCompletions(
-        c,
-        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-        key,
-        r.image == null ? _groqModel : _groqVisionModel,
-        r,
-      );
+  static Future<String?> _groq(http.Client c, String key, _Request r) {
+    final model = r.image == null ? _groqModel : _groqVisionModel;
+    return _chatCompletions(
+      c,
+      Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+      key,
+      model,
+      r,
+      extra: groqReasoning(model),
+    );
+  }
+
+  /// Both of Groq's models think before answering, and the thinking counts
+  /// against max_tokens. Short replies need little of it: keep gpt-oss's
+  /// light and hidden, and switch Qwen's off.
+  @visibleForTesting
+  static Map<String, Object> groqReasoning(String model) => switch (model) {
+    _ when model.startsWith('openai/gpt-oss') => {
+      'reasoning_effort': 'low',
+      'include_reasoning': false,
+    },
+    _ when model.startsWith('qwen/qwen3') => {'reasoning_effort': 'none'},
+    _ => const {},
+  };
 
   static Future<String?> _openAi(http.Client c, String key, _Request r) =>
       _chatCompletions(
@@ -110,8 +129,9 @@ abstract final class AiClient {
     Uri url,
     String key,
     String model,
-    _Request r,
-  ) async {
+    _Request r, {
+    Map<String, Object> extra = const {},
+  }) async {
     final last = r.messages.lastIndexWhere((m) => m.$1 == 'user');
     final res = await c.post(
       url,
@@ -123,6 +143,7 @@ abstract final class AiClient {
         'model': model,
         'temperature': r.temperature,
         'max_tokens': r.maxTokens,
+        ...extra,
         if (r.json) 'response_format': {'type': 'json_object'},
         'messages': [
           {'role': 'system', 'content': r.system},

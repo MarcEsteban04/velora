@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/account.dart';
+import 'account_type_style.dart';
 
 /// A bank or e-wallet Velora knows: its logo and the brand colours used to
 /// theme its cards.
@@ -14,6 +15,7 @@ class Institution {
     required this.aliases,
     this.darkPlate = false,
     this.currencyCode,
+    this.international = false,
   });
 
   /// Stored in `accounts.institution`.
@@ -33,8 +35,17 @@ class Institution {
   /// user's main one (Payoneer balances are in US dollars).
   final String? currencyCode;
 
+  /// A bank outside the Philippines, such as Payoneer. Listed under
+  /// "International bank" and labelled that way.
+  final bool international;
+
   bool get isPayoneer => id == 'payoneer';
 }
+
+/// How an account reads in lists: "International bank" for one, else its
+/// type ("Bank", "E-wallet"...).
+String accountKindLabel(AccountType type, Institution? institution) =>
+    (institution?.international ?? false) ? 'International bank' : type.label;
 
 abstract final class Institutions {
   static const _dir = 'assets/images/accounts';
@@ -100,19 +111,28 @@ abstract final class Institutions {
     Institution(
       id: 'payoneer',
       name: 'Payoneer',
-      type: AccountType.eWallet,
+      type: AccountType.bank,
       asset: '$_dir/payoneer.png',
       gradient: [Color(0xFF2E2F3A), Color(0xFF15161D)],
       aliases: ['payoneer'],
       currencyCode: 'USD',
+      international: true,
     ),
   ];
 
   static Institution? byId(String? id) =>
       id == null ? null : all.where((i) => i.id == id).firstOrNull;
 
-  static List<Institution> ofType(AccountType type) =>
-      all.where((i) => i.type == type).toList();
+  /// Institutions of [type]; with [international], only those inside or
+  /// outside the Philippines.
+  static List<Institution> ofType(AccountType type, {bool? international}) =>
+      all
+          .where(
+            (i) =>
+                i.type == type &&
+                (international == null || i.international == international),
+          )
+          .toList();
 
   /// The institution an account name refers to, if any, for example
   /// "Maribank savings" → Maribank. It matches whole words, so "Mayari

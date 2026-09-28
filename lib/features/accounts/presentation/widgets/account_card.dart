@@ -244,7 +244,8 @@ class AccountCard extends StatelessWidget {
                   Text(
                     excluded
                         ? 'Not in net worth'
-                        : '${type.label} · ${currency.code}',
+                        : '${accountKindLabel(type, institution)} · '
+                              '${currency.code}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: text.labelMedium?.copyWith(

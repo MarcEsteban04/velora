@@ -127,6 +127,10 @@ function chatCompletions(url: string, model: string) {
       model,
       temperature: 0.3,
       max_tokens: 400,
+      // gpt-oss thinks first, and that counts against max_tokens.
+      ...(model.startsWith("openai/gpt-oss")
+        ? { reasoning_effort: "low", include_reasoning: false }
+        : {}),
       response_format: { type: "json_object" },
       messages: [{ role: "system", content: system }, ...messages],
     });
@@ -165,7 +169,7 @@ const providers: Provider[] = [
     key: Deno.env.get("GROQ_AI_API_KEY"),
     call: chatCompletions(
       "https://api.groq.com/openai/v1/chat/completions",
-      Deno.env.get("GROQ_MODEL") ?? "llama-3.3-70b-versatile",
+      Deno.env.get("GROQ_MODEL") ?? "openai/gpt-oss-120b",
     ),
   },
   { name: "gemini", key: Deno.env.get("GEMINI_AI_API_KEY"), call: gemini },

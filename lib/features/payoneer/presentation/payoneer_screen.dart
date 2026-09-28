@@ -21,7 +21,7 @@ import '../../home/application/balance_privacy.dart';
 import '../../profile/application/main_currency.dart';
 import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/domain/transaction.dart';
-import '../../transactions/presentation/transaction_entry_screen.dart';
+import '../../transactions/presentation/transaction_details_sheet.dart';
 import '../application/payoneer_providers.dart';
 import '../domain/invoice.dart';
 import '../domain/payoneer_activity.dart';
@@ -546,7 +546,7 @@ class _ActivityList extends StatelessWidget {
             title: t.note ?? 'Payment received',
             subtitle: DateFormat('MMM d, y').format(t.occurredAt),
             amount: '+${money(t.amountMinor, from)}',
-            onTap: () => _edit(context, t),
+            onTap: () => _view(context, t),
           ),
         ),
       for (final w in activity.withdrawals)
@@ -565,7 +565,7 @@ class _ActivityList extends StatelessWidget {
             detail: w.to.code == from.code
                 ? null
                 : money(w.receivedMinor, w.to),
-            onTap: () => _edit(context, w.transaction),
+            onTap: () => _view(context, w.transaction),
           ),
         ),
     ]..sort((a, b) => b.$1.compareTo(a.$1));
@@ -582,8 +582,8 @@ class _ActivityList extends StatelessWidget {
     return Column(children: [for (final (_, w) in items.take(20)) w]);
   }
 
-  void _edit(BuildContext context, Transaction t) =>
-      Navigator.of(context).push(TransactionEntryScreen.route(existing: t));
+  void _view(BuildContext context, Transaction t) =>
+      TransactionDetailsSheet.show(context, t);
 }
 
 class _ActivityRow extends StatelessWidget {

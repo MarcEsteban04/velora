@@ -1,8 +1,12 @@
+import '../../transactions/domain/transaction.dart';
 import 'receipt.dart';
 
 /// Reads a receipt from recognized text, offline: the store (from the top
 /// lines), the total (from the TOTAL / AMOUNT DUE line, never subtotal,
 /// cash or change), the date, and item lines.
+///
+/// Proof of money in (cashback, interest, a refund, "you have received")
+/// reads as income, with the amount received.
 abstract final class ReceiptTextParser {
   static final _money = RegExp(
     r'(?:₱|php|p)?\s*(\d{1,3}(?:[,\s]\d{3})+|\d+)[.,](\d{2})(?!\d)',
@@ -24,6 +28,31 @@ abstract final class ReceiptTextParser {
   /// Lines that mention "total" or hold amounts but aren't the total.
   static final _notTotal = RegExp(
     r'sub\s*-?total|total\s*(items?|qty|quantity|discount|savings)|vatable|vat\b|v\.a\.t|change|cash|tender|card|gcash|maya|points|rounding|less:',
+    caseSensitive: false,
+  );
+
+  /// Words that mean money came in, not went out.
+  static final _incoming = RegExp(
+    r'cash\s*-?back|interest\s*(earned|credited|income|paid|received)|you\s*(have\s*)?received|received\s*from|money\s*received|refund(ed)?|credited\s*to\s*your|incoming\s*transfer|salary|payroll\s*credit',
+    caseSensitive: false,
+  );
+
+  /// Where the amount received is labelled, strongest first.
+  static const _incomeWords = [
+    'amount received',
+    'you have received',
+    'you received',
+    'received',
+    'cashback',
+    'cash back',
+    'interest',
+    'refund',
+    'credited',
+    'amount',
+  ];
+
+  static final _notIncome = RegExp(
+    r'balance|fee|charge|rate|tax|withheld|available',
     caseSensitive: false,
   );
 
@@ -54,12 +83,14 @@ abstract final class ReceiptTextParser {
     ];
     if (lines.isEmpty) return null;
 
-    final total = _total(lines);
+    final incoming = _incoming.hasMatch(text);
+    final total = (incoming ? _received(lines) : null) ?? _total(lines);
     if (total == null || total <= 0) return null;
 
     return ReceiptScan(
       totalMinor: total,
       source: ReceiptSource.device,
+      kind: incoming ? TransactionKind.income : TransactionKind.expense,
       merchant: _merchant(lines),
       date: _date(text, now),
       items: _items(lines, total),
@@ -69,6 +100,23 @@ abstract final class ReceiptTextParser {
   static int _minor(RegExpMatch m) =>
       int.parse(m.group(1)!.replaceAll(RegExp(r'[,\s]'), '')) * 100 +
       int.parse(m.group(2)!);
+
+  /// The amount received on proof of money in, from its labelled line.
+  static int? _received(List<String> lines) {
+    for (final word in _incomeWords) {
+      for (var i = 0; i < lines.length; i++) {
+        final l = lines[i].toLowerCase();
+        if (!l.contains(word) || _notIncome.hasMatch(l)) continue;
+        final here = _money.allMatches(lines[i]).toList();
+        if (here.isNotEmpty) return _minor(here.last);
+        if (i + 1 < lines.length && !_notIncome.hasMatch(lines[i + 1])) {
+          final next = _money.firstMatch(lines[i + 1]);
+          if (next != null) return _minor(next);
+        }
+      }
+    }
+    return null;
+  }
 
   static int? _total(List<String> lines) {
     for (final word in _totalWords) {

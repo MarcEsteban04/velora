@@ -19,6 +19,14 @@ void main() {
       final p = Institutions.match('Payoneer')!;
       expect(p.isPayoneer, isTrue);
       expect(p.currencyCode, 'USD');
+      // An international bank, listed apart from PH banks.
+      expect(p.type, AccountType.bank);
+      expect(p.international, isTrue);
+      expect(
+        Institutions.ofType(AccountType.bank, international: false),
+        isNot(contains(p)),
+      );
+      expect(accountKindLabel(p.type, p), 'International bank');
       expect(Institutions.match('BPI')!.currencyCode, isNull);
     });
 

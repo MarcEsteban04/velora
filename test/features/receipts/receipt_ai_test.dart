@@ -72,6 +72,27 @@ void main() {
         icon: 'other',
         color: 'slate',
       ),
+      Category(
+        id: 'refund',
+        kind: TransactionKind.income,
+        name: 'Refund',
+        icon: 'refund',
+        color: 'teal',
+      ),
+      Category(
+        id: 'interest',
+        kind: TransactionKind.income,
+        name: 'Interest',
+        icon: 'interest',
+        color: 'amber',
+      ),
+      Category(
+        id: 'other-in',
+        kind: TransactionKind.income,
+        name: 'Other',
+        icon: 'other',
+        color: 'slate',
+      ),
     ];
     ParsedTransaction map(ReceiptScan s) => receiptToTransaction(
       s,
@@ -110,6 +131,42 @@ void main() {
       expect(t.occurredAt, _now);
     });
 
+    test('cashback is income, filed under Refund', () {
+      final t = map(
+        const ReceiptScan(
+          totalMinor: 2500,
+          source: ReceiptSource.device,
+          kind: TransactionKind.income,
+          merchant: 'GCash cashback',
+        ),
+      );
+      expect(t.kind, TransactionKind.income);
+      expect(t.categoryId, 'refund');
+    });
+
+    test('income uses the AI income category, never an expense one', () {
+      final t = map(
+        const ReceiptScan(
+          totalMinor: 1234,
+          source: ReceiptSource.ai,
+          kind: TransactionKind.income,
+          merchant: 'BPI',
+          category: 'Interest',
+        ),
+      );
+      expect(t.categoryId, 'interest');
+      final unknown = map(
+        const ReceiptScan(
+          totalMinor: 1234,
+          source: ReceiptSource.ai,
+          kind: TransactionKind.income,
+          merchant: 'Zqx',
+          category: 'Food',
+        ),
+      );
+      expect(unknown.categoryId, 'other-in');
+    });
+
     test('an unknown store goes to Other', () {
       final t = map(
         const ReceiptScan(
@@ -119,6 +176,48 @@ void main() {
         ),
       );
       expect(t.categoryId, 'other');
+    });
+  });
+
+  group('money in', () {
+    test('the AI says which way the money went', () {
+      final s = SmartReceiptReader.parseAi(
+        '{"is_receipt": true, "direction": "in", "merchant": "BPI interest",'
+        ' "total": 12.34, "category": "Interest", "items": []}',
+        _now,
+      )!;
+      expect(s.kind, TransactionKind.income);
+      expect(s.totalMinor, 1234);
+      // No direction means a receipt: money out.
+      expect(
+        SmartReceiptReader.parseAi(
+          '{"is_receipt": true, "total": 5}',
+          _now,
+        )!.kind,
+        TransactionKind.expense,
+      );
+    });
+
+    test('flipping a scan keeps the amount and drops the other kind\'s '
+        'category', () {
+      const out = ReceiptScan(
+        totalMinor: 5000,
+        source: ReceiptSource.ai,
+        category: 'Food',
+      );
+      final flipped = out.withKind(TransactionKind.income);
+      expect(flipped.isIncome, isTrue);
+      expect(flipped.totalMinor, 5000);
+      expect(flipped.category, isNull);
+    });
+
+    test('the prompt offers both kinds of category', () {
+      final prompt = SmartReceiptReader.prompt((
+        expense: ['Food'],
+        income: ['Interest', 'Refund'],
+      ), _now);
+      expect(prompt, contains('"direction": "out" | "in"'));
+      expect(prompt, contains('Interest, Refund'));
     });
   });
 }

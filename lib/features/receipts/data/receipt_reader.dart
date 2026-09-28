@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/ai/ai_client.dart';
 import '../../../core/time/app_clock.dart';
+import '../../transactions/domain/transaction.dart';
 import '../domain/receipt.dart';
 import '../domain/receipt_text_parser.dart';
 
@@ -43,11 +44,11 @@ class ImagePickerPhotoSource implements ReceiptPhotoSource {
   }
 }
 
-/// Reads a receipt photo.
+/// Reads a receipt photo, or proof of money coming in.
 abstract interface class ReceiptReader {
-  /// [categories] are the user's expense category names, for the AI to
-  /// pick from. Returns null when nothing sensible could be read.
-  Future<ReceiptScan?> read(ReceiptPhoto photo, List<String> categories);
+  /// [categories] are the user's category names, for the AI to pick from.
+  /// Returns null when nothing sensible could be read.
+  Future<ReceiptScan?> read(ReceiptPhoto photo, ReceiptCategories categories);
 }
 
 /// The AI first (it reads messy receipts and knows what the store sells),
@@ -56,7 +57,10 @@ class SmartReceiptReader implements ReceiptReader {
   const SmartReceiptReader();
 
   @override
-  Future<ReceiptScan?> read(ReceiptPhoto photo, List<String> categories) async {
+  Future<ReceiptScan?> read(
+    ReceiptPhoto photo,
+    ReceiptCategories categories,
+  ) async {
     if (AiClient.isConfigured) {
       final ai = await _ai(photo.bytes, categories);
       if (ai != null) return ai;
@@ -64,21 +68,31 @@ class SmartReceiptReader implements ReceiptReader {
     return _device(photo.path);
   }
 
-  static String prompt(List<String> categories, DateTime today) => [
-    'You read shopping receipts for a budgeting app in the Philippines.',
+  static String prompt(ReceiptCategories categories, DateTime today) => [
+    'You read money documents for a budgeting app in the Philippines:',
+    'shopping receipts and bills (money out), and proof of money in, such',
+    'as cashback, interest earned, refunds, salary, or "you have received"',
+    'notices and screenshots from banks and e-wallets.',
     'Look at the photo and reply with JSON only, exactly this shape:',
-    '{"is_receipt": boolean, "merchant": string | null, "total": number |',
-    'null, "date": "YYYY-MM-DD" | null, "category": string | null,',
-    '"items": [{"name": string, "amount": number}]}',
-    'total is the final amount paid (grand total or amount due, including',
-    'tax), never the subtotal, cash tendered or change. Amounts are plain',
-    'numbers in pesos, like 1245.50.',
+    '{"is_receipt": boolean, "direction": "out" | "in", "merchant": string',
+    '| null, "total": number | null, "date": "YYYY-MM-DD" | null,',
+    '"category": string | null, "items": [{"name": string, "amount":',
+    'number}]}',
+    'direction is "in" when money came to the user (cashback, interest,',
+    'refund, a transfer received, salary), otherwise "out".',
+    'For "out", total is the final amount paid (grand total or amount due,',
+    'including tax), never the subtotal, cash tendered or change. For "in",',
+    'total is the amount received. Amounts are plain numbers in pesos, like',
+    '1245.50.',
+    'merchant is the store, or for money in, where it came from, like',
+    '"GCash cashback" or "BPI interest".',
     'Today is ${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}.',
-    'category must be one of: ${categories.join(', ')}; pick the best fit',
-    'for what was bought, or null.',
-    'items: up to 6 main lines as printed, shortened to a few words.',
-    'If it isn\'t a receipt or you can\'t read the total, set is_receipt',
-    'to false.',
+    'category: for "out" one of: ${categories.expense.join(', ')}; for "in"',
+    'one of: ${categories.income.join(', ')}. Pick the best fit, or null.',
+    'items: for shopping receipts, up to 6 main lines as printed, shortened',
+    'to a few words; otherwise [].',
+    'If it isn\'t any of these or you can\'t read the amount, set',
+    'is_receipt to false.',
   ].join(' ');
 
   static ReceiptScan? parseAi(String raw, DateTime now) {
@@ -115,6 +129,9 @@ class SmartReceiptReader implements ReceiptReader {
     return ReceiptScan(
       totalMinor: (total * 100).round(),
       source: ReceiptSource.ai,
+      kind: j['direction'] == 'in'
+          ? TransactionKind.income
+          : TransactionKind.expense,
       merchant: str(j['merchant'], 40),
       date: date,
       category: str(j['category'], 30),
@@ -132,11 +149,11 @@ class SmartReceiptReader implements ReceiptReader {
     );
   }
 
-  Future<ReceiptScan?> _ai(Uint8List jpeg, List<String> categories) async {
+  Future<ReceiptScan?> _ai(Uint8List jpeg, ReceiptCategories categories) async {
     final now = AppClock.now();
     final raw = await AiClient.complete(
       system: prompt(categories, now),
-      messages: const [('user', 'Read this receipt.')],
+      messages: const [('user', 'Read this.')],
       image: jpeg,
       json: true,
       maxTokens: 500,

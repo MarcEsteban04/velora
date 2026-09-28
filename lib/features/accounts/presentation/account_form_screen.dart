@@ -228,6 +228,18 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                           selected: _institution,
                           onChanged: _pickInstitution,
                         ),
+                        if (Institutions.ofType(
+                          _type,
+                          international: true,
+                        ).isNotEmpty) ...[
+                          const FieldLabel('International bank'),
+                          InstitutionPicker(
+                            type: _type,
+                            international: true,
+                            selected: _institution,
+                            onChanged: _pickInstitution,
+                          ),
+                        ],
                       ],
                       const FieldLabel('Account name'),
                       TextField(

@@ -13,7 +13,10 @@ abstract interface class TransactionRepository {
   Future<List<Transaction>> fetchRecent({int limit = 5});
 
   /// Everything into or out of one account, newest first.
-  Future<List<Transaction>> fetchForAccount(String accountId, {int limit = 300});
+  Future<List<Transaction>> fetchForAccount(
+    String accountId, {
+    int limit = 300,
+  });
 
   Future<Transaction> create(TransactionDraft draft);
 

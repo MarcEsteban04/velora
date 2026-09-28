@@ -15,15 +15,20 @@ class InstitutionPicker extends StatelessWidget {
     required this.type,
     required this.selected,
     required this.onChanged,
+    this.international = false,
   });
 
   final AccountType type;
   final Institution? selected;
   final ValueChanged<Institution?> onChanged;
 
+  /// Only banks outside the Philippines, without the "Other" tile (the
+  /// local list already has one).
+  final bool international;
+
   @override
   Widget build(BuildContext context) {
-    final options = Institutions.ofType(type);
+    final options = Institutions.ofType(type, international: international);
     if (options.isEmpty) return const SizedBox.shrink();
     final text = Theme.of(context).textTheme;
 
@@ -73,25 +78,26 @@ class InstitutionPicker extends StatelessWidget {
             onTap: () => onChanged(selected?.id == i.id ? null : i),
             child: InstitutionLogo(institution: i, height: 34, width: 92),
           ),
-        tile(
-          isSelected: selected == null,
-          label: 'Other',
-          ring: AppColors.leafBright,
-          onTap: () => onChanged(null),
-          child: SizedBox(
-            width: 92,
-            height: 34,
-            child: Center(
-              child: Text(
-                'Other',
-                style: text.titleMedium?.copyWith(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
+        if (!international)
+          tile(
+            isSelected: selected == null,
+            label: 'Other',
+            ring: AppColors.leafBright,
+            onTap: () => onChanged(null),
+            child: SizedBox(
+              width: 92,
+              height: 34,
+              child: Center(
+                child: Text(
+                  'Other',
+                  style: text.titleMedium?.copyWith(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

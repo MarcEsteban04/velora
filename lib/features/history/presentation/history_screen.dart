@@ -22,6 +22,7 @@ import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/category_style.dart';
+import '../../transactions/presentation/transaction_details_sheet.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
 import '../../receipts/presentation/widgets/receipt_attachment.dart';
 import '../../receipts/presentation/widgets/receipt_image.dart';
@@ -239,6 +240,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
 
     final menu = TransactionMenu(
+      onView: (t) => TransactionDetailsSheet.show(context, t),
       onEdit: _edit,
       onRepeat: _repeat,
       onDelete: _delete,
