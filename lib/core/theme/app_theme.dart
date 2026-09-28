@@ -17,14 +17,16 @@ abstract final class AppTheme {
   /// Status and navigation bars that suit the active scene: light icons at
   /// night, dark icons by day.
   static SystemUiOverlayStyle get overlayStyle =>
-      (AppColors.isDay ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light)
+      (AppColors.isLight
+              ? SystemUiOverlayStyle.dark
+              : SystemUiOverlayStyle.light)
           .copyWith(
             statusBarColor: Colors.transparent,
             systemNavigationBarColor: AppColors.night,
           );
 
   static ThemeData _build() {
-    final brightness = AppColors.isDay ? Brightness.light : Brightness.dark;
+    final brightness = AppColors.isLight ? Brightness.light : Brightness.dark;
     final scheme =
         ColorScheme.fromSeed(
           seedColor: AppColors.leaf,
@@ -52,7 +54,7 @@ abstract final class AppTheme {
         // buttons), so a snackbar never covers a tab or turns a tab tap into
         // an accidental Undo.
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 104),
-        backgroundColor: AppColors.isDay
+        backgroundColor: AppColors.isLight
             ? const Color(0xFF1C2630)
             : AppColors.surfaceRaised,
         contentTextStyle: AppTypography.textTheme.bodyMedium?.copyWith(
@@ -67,7 +69,7 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.isDay
+        fillColor: AppColors.isLight
             ? Colors.white.withValues(alpha: 0.85)
             : AppColors.night.withValues(alpha: 0.55),
         hintStyle: AppTypography.textTheme.bodyLarge?.copyWith(

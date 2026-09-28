@@ -30,9 +30,17 @@ abstract final class SettingsSheets {
   );
 
   static IconData appearanceIcon(Appearance a) => switch (a) {
-    Appearance.night => Icons.dark_mode_rounded,
     Appearance.day => Icons.light_mode_rounded,
-    Appearance.automatic => Icons.brightness_auto_rounded,
+    Appearance.afternoon => Icons.wb_twilight_rounded,
+    Appearance.night => Icons.dark_mode_rounded,
+    Appearance.automatic => Icons.schedule_rounded,
+  };
+
+  static Color appearanceColor(Appearance a) => switch (a) {
+    Appearance.day => AppColors.ember,
+    Appearance.afternoon => AppColors.rust,
+    Appearance.night => AppColors.lilac,
+    Appearance.automatic => AppColors.sky,
   };
 
   static Future<Appearance?> appearance(
@@ -40,10 +48,12 @@ abstract final class SettingsSheets {
     Appearance current,
   ) => showModalBottomSheet<Appearance>(
     context: context,
+    // Four options outgrow the default height on smaller phones.
+    isScrollControlled: true,
     builder: (context) {
       final text = Theme.of(context).textTheme;
       return SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -52,7 +62,8 @@ abstract final class SettingsSheets {
               Text('Appearance', style: text.headlineSmall),
               const SizedBox(height: 4),
               Text(
-                'Visit the valley by day or by night.',
+                'Visit the valley by day, in the golden afternoon, or by '
+                'night.',
                 style: text.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -67,9 +78,7 @@ abstract final class SettingsSheets {
                       children: [
                         Icon(
                           appearanceIcon(option),
-                          color: option == Appearance.day
-                              ? AppColors.ember
-                              : AppColors.lilac,
+                          color: appearanceColor(option),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

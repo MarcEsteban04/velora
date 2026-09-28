@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,11 +9,13 @@ import '../core/navigation/app_navigator.dart';
 import '../core/storage/app_preferences.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/scene_schedule.dart';
+import '../core/time/app_clock.dart';
 import '../features/app_lock/presentation/app_lock_gate.dart';
 import 'app_gate.dart';
 
-/// The app root. It resolves the Day or Night scene (following the phone
-/// when set to Automatic) and repaints every screen when the scene changes.
+/// The app root. It resolves the scene (by the time of day when set to
+/// Automatic) and repaints every screen when the scene changes.
 class VeloraApp extends ConsumerStatefulWidget {
   const VeloraApp({super.key});
 
@@ -23,6 +27,9 @@ class _VeloraAppState extends ConsumerState<VeloraApp>
     with WidgetsBindingObserver {
   Scene? _shown;
 
+  /// Fires at the next Day, Afternoon or Night boundary under Automatic.
+  Timer? _sceneTimer;
+
   @override
   void initState() {
     super.initState();
@@ -32,22 +39,36 @@ class _VeloraAppState extends ConsumerState<VeloraApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _sceneTimer?.cancel();
     super.dispose();
   }
 
-  /// The phone switched light/dark: matters when set to Automatic.
+  /// Back from the background, maybe hours later: pick the scene again.
   @override
-  void didChangePlatformBrightness() => setState(() {});
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) setState(() {});
+  }
 
   Scene _resolve(Appearance appearance) => switch (appearance) {
     Appearance.day => Scene.day,
+    Appearance.afternoon => Scene.afternoon,
     Appearance.night => Scene.night,
-    Appearance.automatic =>
-      WidgetsBinding.instance.platformDispatcher.platformBrightness ==
-              Brightness.light
-          ? Scene.day
-          : Scene.night,
+    Appearance.automatic => SceneSchedule.at(AppClock.now()),
   };
+
+  void _scheduleNextScene(Appearance appearance) {
+    _sceneTimer?.cancel();
+    _sceneTimer = null;
+    if (appearance != Appearance.automatic) return;
+    final now = AppClock.now();
+    // A second late, so the boundary hour has certainly begun.
+    final wait =
+        SceneSchedule.nextChange(now).difference(now) +
+        const Duration(seconds: 1);
+    _sceneTimer = Timer(wait, () {
+      if (mounted) setState(() {});
+    });
+  }
 
   /// Colours are read from the active palette during build, so after a
   /// switch every element rebuilds once, keeping all state and routes.
@@ -66,10 +87,12 @@ class _VeloraAppState extends ConsumerState<VeloraApp>
 
   @override
   Widget build(BuildContext context) {
-    final scene = _resolve(ref.watch(appearanceProvider));
-    final theme = AppTheme.forPalette(
-      scene == Scene.day ? Palette.dayPalette : Palette.nightPalette,
-    );
+    final appearance = ref.watch(appearanceProvider);
+    // A new time zone can mean a new time of day.
+    ref.watch(timeZoneProvider);
+    final scene = _resolve(appearance);
+    _scheduleNextScene(appearance);
+    final theme = AppTheme.forPalette(Palette.of(scene));
     if (_shown != null && _shown != scene) _repaintEverything();
     _shown = scene;
 

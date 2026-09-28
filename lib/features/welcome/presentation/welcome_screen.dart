@@ -223,12 +223,14 @@ class _Wordmark extends StatelessWidget {
                 // crisp against the bright hills.
                 Shadow(
                   color:
-                      (AppColors.isDay ? const Color(0xFF1C3A26) : Colors.black)
-                          .withValues(alpha: AppColors.isDay ? 0.55 : 0.45),
+                      (AppColors.isLight
+                              ? const Color(0xFF1C3A26)
+                              : Colors.black)
+                          .withValues(alpha: AppColors.isLight ? 0.55 : 0.45),
                   offset: const Offset(0, 5),
-                  blurRadius: AppColors.isDay ? 12 : 16,
+                  blurRadius: AppColors.isLight ? 12 : 16,
                 ),
-                if (AppColors.isDay)
+                if (AppColors.isLight)
                   Shadow(
                     color: const Color(0xFF1C3A26).withValues(alpha: 0.45),
                     offset: const Offset(0, 1.5),

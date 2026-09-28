@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
-/// Which scene Velora is painted in.
-enum Scene { night, day }
+/// Which scene Velora is painted in, in the order of a day.
+enum Scene { day, afternoon, night }
 
-/// One complete set of colour tokens. [night] is the Himalayan dusk;
-/// [day] is the same valley in sunshine.
+/// One complete set of colour tokens. [night] is the Himalayan dusk, [day]
+/// the same valley in sunshine, and [afternoon] its golden hour: a low sun,
+/// peach sky and sunlit peaks.
 ///
 /// The brand colours come from the mascot: leaf green from the cap and tee,
-/// rust and cream from the red panda's fur. In Day, accents are a shade
-/// deeper so they keep their contrast on light surfaces.
+/// rust and cream from the red panda's fur. In the light scenes accents are
+/// a shade deeper so they keep their contrast on light surfaces.
 class Palette {
   const Palette({
     required this.scene,
@@ -47,13 +48,14 @@ class Palette {
   final Color night;
   final Color mist;
 
-  /// The moon at night, the sun by day.
+  /// The moon at night, the sun by day and in the afternoon.
   final Color moon;
   final Color leaf, leafBright, leafShadow, rust, ember, sky, lilac;
   final Color surface, surfaceRaised;
   final Color textPrimary, textSecondary, textMuted;
 
-  bool get isDay => scene == Scene.day;
+  /// Day and Afternoon: light surfaces and dark text.
+  bool get isLight => scene != Scene.night;
 
   static const nightPalette = Palette(
     scene: Scene.night,
@@ -112,6 +114,41 @@ class Palette {
     textSecondary: Color(0xFF46505C),
     textMuted: Color(0xFF7A838F),
   );
+
+  static const afternoonPalette = Palette(
+    scene: Scene.afternoon,
+    skyZenith: Color(0xFF7FA3D6),
+    skyIndigo: Color(0xFFB4B6DC),
+    skyPlum: Color(0xFFF1C3B0),
+    skyRose: Color(0xFFFBC48E),
+    skyAmber: Color(0xFFFFD27A),
+    ridgeFarTop: Color(0xFFE2AE98),
+    ridgeFarBase: Color(0xFFC08E8C),
+    ridgeMidTop: Color(0xFFB3A873),
+    ridgeMidBase: Color(0xFF86895B),
+    ridgeNear: Color(0xFF5A6E45),
+    night: Color(0xFFF8ECDF),
+    mist: Color(0xFFFFE6CC),
+    moon: Color(0xFFFFBE5C),
+    leaf: Color(0xFF3E9E57),
+    leafBright: Color(0xFF2E8A47),
+    leafShadow: Color(0xFF256E39),
+    rust: Color(0xFFB8471A),
+    ember: Color(0xFFC7641A),
+    sky: Color(0xFF2F66C4),
+    lilac: Color(0xFF7050CC),
+    surface: Color(0xFFFFFBF6),
+    surfaceRaised: Color(0xFFF5E7D8),
+    textPrimary: Color(0xFF2A211B),
+    textSecondary: Color(0xFF55483E),
+    textMuted: Color(0xFF8A7A6C),
+  );
+
+  static Palette of(Scene scene) => switch (scene) {
+    Scene.day => dayPalette,
+    Scene.afternoon => afternoonPalette,
+    Scene.night => nightPalette,
+  };
 }
 
 /// Velora's colour tokens, resolved against the active [Palette].
@@ -122,7 +159,10 @@ class Palette {
 abstract final class AppColors {
   static Palette palette = Palette.nightPalette;
 
-  static bool get isDay => palette.isDay;
+  static Scene get scene => palette.scene;
+
+  /// Day and Afternoon: light surfaces and dark text.
+  static bool get isLight => palette.isLight;
 
   static Color get skyZenith => palette.skyZenith;
   static Color get skyIndigo => palette.skyIndigo;
@@ -158,7 +198,7 @@ abstract final class AppColors {
   /// stay white in both scenes.
   static const onBrand = Color(0xFFFFFFFF);
 
-  /// Hairline borders: light lines at night, dark lines by day.
+  /// Hairline borders: light lines at night, dark lines in the light scenes.
   static Color hairline([double alpha = 0.08]) =>
-      (isDay ? Colors.black : Colors.white).withValues(alpha: alpha);
+      (isLight ? Colors.black : Colors.white).withValues(alpha: alpha);
 }

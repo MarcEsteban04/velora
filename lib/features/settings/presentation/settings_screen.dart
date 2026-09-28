@@ -198,11 +198,12 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       SettingsTile(
                         icon: SettingsSheets.appearanceIcon(appearance),
-                        color: AppColors.isDay
-                            ? AppColors.ember
-                            : AppColors.lilac,
+                        color: SettingsSheets.appearanceColor(appearance),
                         title: 'Appearance',
-                        subtitle: appearance.description,
+                        subtitle: appearance == Appearance.automatic
+                            ? 'Follows the time of day · '
+                                  '${_sceneName(AppColors.scene)} now'
+                            : appearance.description,
                         value: appearance.label,
                         onTap: () async {
                           final picked = await SettingsSheets.appearance(
@@ -488,6 +489,12 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 }
+
+String _sceneName(Scene scene) => switch (scene) {
+  Scene.day => 'Day',
+  Scene.afternoon => 'Afternoon',
+  Scene.night => 'Night',
+};
 
 class _ProfileCard extends StatelessWidget {
   const _ProfileCard({

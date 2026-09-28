@@ -10,6 +10,8 @@ import '../theme/app_colors.dart';
 ///
 /// - Night: twinkling stars, a glowing moon and the odd shooting star.
 /// - Day: a sun with slow rays and drifting clouds.
+/// - Afternoon: golden hour. A big low sun sinking behind the far peaks,
+///   long beams, sunlit clouds and a few birds heading home.
 ///
 /// Colours come from the active palette, so it follows the appearance
 /// setting.
@@ -59,7 +61,7 @@ class _DuskBackdropState extends State<DuskBackdrop>
         painter: _DuskPainter(
           _controller,
           showMoon: widget.showMoon,
-          isDay: AppColors.isDay,
+          scene: AppColors.scene,
         ),
         child: const SizedBox.expand(),
       ),
@@ -129,15 +131,17 @@ class _FallingLeaf {
 }
 
 class _DuskPainter extends CustomPainter {
-  _DuskPainter(this.animation, {required this.showMoon, required this.isDay})
+  _DuskPainter(this.animation, {required this.showMoon, required this.scene})
     : super(repaint: animation);
 
   final Animation<double> animation;
   final bool showMoon;
 
-  /// Day swaps the moon, stars and shooting star for a sun and drifting
-  /// clouds. Everything else comes from the active palette.
-  final bool isDay;
+  /// Picks the sky's cast (sun, moon, stars, clouds, birds). Colours come
+  /// from the active palette.
+  final Scene scene;
+
+  bool get _light => scene != Scene.night;
 
   static const _tau = math.pi * 2;
 
@@ -169,13 +173,19 @@ class _DuskPainter extends CustomPainter {
     final rect = Offset.zero & size;
 
     _paintSky(canvas, rect);
-    if (isDay) {
-      if (showMoon) _paintSun(canvas, size, t);
-      _paintClouds(canvas, size, t);
-    } else {
-      _paintStars(canvas, size, t);
-      _paintShootingStar(canvas, size, t);
-      if (showMoon) _paintMoon(canvas, size, t);
+    switch (scene) {
+      case Scene.day:
+        if (showMoon) _paintSun(canvas, size, t);
+        _paintClouds(canvas, size, t);
+      case Scene.afternoon:
+        // Drawn before the ridges, so the peaks hide the sun's lower edge.
+        _paintLowSun(canvas, size, t, disc: showMoon);
+        _paintClouds(canvas, size, t, golden: true);
+        _paintBirds(canvas, size, t);
+      case Scene.night:
+        _paintStars(canvas, size, t);
+        _paintShootingStar(canvas, size, t);
+        if (showMoon) _paintMoon(canvas, size, t);
     }
 
     _paintRidge(
@@ -185,7 +195,7 @@ class _DuskPainter extends CustomPainter {
       top: AppColors.ridgeFarTop,
       base: AppColors.ridgeFarBase,
     );
-    _paintMist(canvas, size, t, y: 0.43, speed: 1, alpha: isDay ? 0.3 : 0.10);
+    _paintMist(canvas, size, t, y: 0.43, speed: 1, alpha: _light ? 0.3 : 0.10);
     _paintRidge(
       canvas,
       size,
@@ -193,7 +203,14 @@ class _DuskPainter extends CustomPainter {
       top: AppColors.ridgeMidTop,
       base: AppColors.ridgeMidBase,
     );
-    _paintMist(canvas, size, t, y: 0.52, speed: -1, alpha: isDay ? 0.24 : 0.08);
+    _paintMist(
+      canvas,
+      size,
+      t,
+      y: 0.52,
+      speed: -1,
+      alpha: _light ? 0.24 : 0.08,
+    );
     _paintRidge(
       canvas,
       size,
@@ -324,7 +341,94 @@ class _DuskPainter extends CustomPainter {
     );
   }
 
-  void _paintClouds(Canvas canvas, Size size, double t) {
+  /// The golden-hour sun, low on the right: a wide glow and slow beams,
+  /// and the disc itself where the sky is free of content.
+  void _paintLowSun(Canvas canvas, Size size, double t, {required bool disc}) {
+    final center = Offset(size.width * 0.8, size.height * 0.335);
+    final radius = size.width * 0.12;
+    final pulse = 0.92 + 0.08 * math.sin(t * _tau * 2);
+
+    canvas.drawCircle(
+      center,
+      radius * 5,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            AppColors.moon.withValues(alpha: 0.5 * pulse),
+            AppColors.skyRose.withValues(alpha: 0.18),
+            AppColors.skyRose.withValues(alpha: 0),
+          ],
+          stops: const [0, 0.45, 1],
+        ).createShader(Rect.fromCircle(center: center, radius: radius * 5)),
+    );
+    if (!disc) return;
+
+    // Long beams fanning up and out, swaying a little.
+    final beam = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    for (var i = 0; i < 7; i++) {
+      final a = math.pi + 0.25 + i * 0.34 + 0.04 * math.sin(t * _tau + i);
+      final dir = Offset(math.cos(a), math.sin(a));
+      final normal = Offset(-dir.dy, dir.dx);
+      final start = center + dir * radius * 1.1;
+      final end = center + dir * radius * 4.2;
+      beam.color = AppColors.moon.withValues(
+        alpha: (0.14 + 0.06 * math.sin(t * _tau * 3 + i)) * pulse,
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(start.dx + normal.dx * 2, start.dy + normal.dy * 2)
+          ..lineTo(end.dx + normal.dx * 14, end.dy + normal.dy * 14)
+          ..lineTo(end.dx - normal.dx * 14, end.dy - normal.dy * 14)
+          ..lineTo(start.dx - normal.dx * 2, start.dy - normal.dy * 2)
+          ..close(),
+        beam,
+      );
+    }
+
+    canvas.drawCircle(center, radius, Paint()..color = AppColors.moon);
+    canvas.drawCircle(
+      center,
+      radius * 0.8,
+      Paint()..color = const Color(0xFFFFD98E),
+    );
+    canvas.drawCircle(
+      center + Offset(-radius * 0.18, -radius * 0.2),
+      radius * 0.45,
+      Paint()..color = const Color(0xFFFFEBC0),
+    );
+  }
+
+  /// A few birds far off, flapping their way home.
+  void _paintBirds(Canvas canvas, Size size, double t) {
+    // (start x, height, size, cycles per loop).
+    const birds = [
+      (0.10, 0.17, 1.0, 1),
+      (0.16, 0.20, 0.8, 1),
+      (0.62, 0.12, 0.7, 2),
+    ];
+    final paint = Paint()
+      ..color = AppColors.ridgeNear.withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round;
+    for (final (x0, y, scale, cycles) in birds) {
+      final span = size.width * 1.2;
+      final x = ((x0 + t * cycles) % 1.0) * span - size.width * 0.1;
+      final cy = size.height * y + math.sin(t * _tau * 4 + x0 * 9) * 3;
+      final w = 9 * scale;
+      final flap = math.sin(t * _tau * 24 + x0 * 20) * w * 0.45;
+      canvas.drawPath(
+        Path()
+          ..moveTo(x - w, cy - flap)
+          ..quadraticBezierTo(x - w * 0.45, cy - w * 0.35, x, cy)
+          ..quadraticBezierTo(x + w * 0.45, cy - w * 0.35, x + w, cy - flap),
+        paint,
+      );
+    }
+  }
+
+  void _paintClouds(Canvas canvas, Size size, double t, {bool golden = false}) {
     // (x, y, scale, cycles per loop). Whole-number cycles keep the loop
     // seamless.
     const clouds = [
@@ -333,15 +437,18 @@ class _DuskPainter extends CustomPainter {
       (0.85, 0.05, 0.65, 2),
       (0.35, 0.24, 0.55, 2),
     ];
+    // Golden hour: fewer, flatter clouds, lit peach from below.
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
+      ..color = golden
+          ? const Color(0xFFFFE3C4).withValues(alpha: 0.8)
+          : Colors.white.withValues(alpha: 0.85)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-    for (final (x0, y, scale, cycles) in clouds) {
-      final w = size.width * 0.34 * scale;
+    for (final (x0, y, scale, cycles) in golden ? clouds.take(3) : clouds) {
+      final w = size.width * (golden ? 0.4 : 0.34) * scale;
       final span = size.width + w * 2;
       final x = ((x0 + t * cycles) % 1.0) * span - w;
       final cy = size.height * y;
-      final h = w * 0.34;
+      final h = w * (golden ? 0.26 : 0.34);
       final puffs = [
         Rect.fromCenter(center: Offset(x, cy), width: w, height: h),
         Rect.fromCircle(
@@ -469,7 +576,7 @@ class _DuskPainter extends CustomPainter {
         e.radius * 1.9,
         Paint()
           ..color = AppColors.ember.withValues(
-            alpha: (isDay ? 0.22 : 0.35) * twinkle,
+            alpha: (_light ? 0.22 : 0.35) * twinkle,
           )
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, e.radius * 2.2),
       );
@@ -522,8 +629,9 @@ class _DuskPainter extends CustomPainter {
             AppColors.night.withValues(alpha: 0.6),
             AppColors.night,
           ],
-          // By day the ground brightens sooner, so dark text reads well.
-          stops: isDay ? const [0.46, 0.66, 0.9] : const [0.58, 0.8, 1],
+          // In light scenes the ground brightens sooner, so dark text
+          // reads well.
+          stops: _light ? const [0.46, 0.66, 0.9] : const [0.58, 0.8, 1],
         ).createShader(rect),
     );
   }
@@ -532,5 +640,5 @@ class _DuskPainter extends CustomPainter {
   bool shouldRepaint(_DuskPainter oldDelegate) =>
       oldDelegate.animation != animation ||
       oldDelegate.showMoon != showMoon ||
-      oldDelegate.isDay != isDay;
+      oldDelegate.scene != scene;
 }

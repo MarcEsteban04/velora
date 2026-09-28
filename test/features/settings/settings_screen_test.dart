@@ -177,7 +177,7 @@ void main() {
     tester,
   ) async {
     await openSettings(tester);
-    expect(AppColors.isDay, isFalse);
+    expect(AppColors.isLight, isFalse);
 
     await tester.tap(find.text('Appearance'));
     await tester.pump();
@@ -186,10 +186,37 @@ void main() {
     await tester.pump();
     await frames(tester, 20);
 
-    expect(AppColors.isDay, isTrue);
+    expect(AppColors.isLight, isTrue);
     expect(AppPreferences(prefs).appearance, Appearance.day);
     // Still on Settings: the switch doesn't reset navigation.
     expect(find.text('Settings'), findsOneWidget);
+    addTearDown(() => AppColors.palette = Palette.nightPalette);
+  });
+
+  testWidgets('Afternoon is a light, warm scene of its own', (tester) async {
+    await openSettings(tester);
+    await tester.tap(find.text('Appearance'));
+    await tester.pump();
+    await frames(tester);
+    await tester.tap(find.text('Afternoon'));
+    await tester.pump();
+    await frames(tester, 20);
+
+    expect(AppColors.scene, Scene.afternoon);
+    expect(AppColors.isLight, isTrue);
+    expect(AppPreferences(prefs).appearance, Appearance.afternoon);
+    addTearDown(() => AppColors.palette = Palette.nightPalette);
+  });
+
+  testWidgets('Automatic says which scene it is showing now', (tester) async {
+    await prefs.setString('prefs.appearance', 'automatic');
+    await openSettings(tester);
+    final now = switch (AppColors.scene) {
+      Scene.day => 'Day',
+      Scene.afternoon => 'Afternoon',
+      Scene.night => 'Night',
+    };
+    expect(find.text('Follows the time of day · $now now'), findsOneWidget);
     addTearDown(() => AppColors.palette = Palette.nightPalette);
   });
 }

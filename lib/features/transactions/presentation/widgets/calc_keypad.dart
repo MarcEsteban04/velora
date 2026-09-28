@@ -39,7 +39,7 @@ class CalcKeypad extends StatelessWidget {
   final bool allowDecimal;
 
   static Color get _danger =>
-      AppColors.isDay ? const Color(0xFFD2463B) : const Color(0xFFF0766E);
+      AppColors.isLight ? const Color(0xFFD2463B) : const Color(0xFFF0766E);
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +182,7 @@ class _KeyState extends State<_Key> {
     _Tone.plain => AppColors.night.withValues(alpha: 0.85),
     _Tone.accent => AppColors.leaf.withValues(alpha: 0.18),
     _Tone.danger =>
-      AppColors.isDay ? const Color(0xFFFBE1DD) : const Color(0xFF4A1F24),
+      AppColors.isLight ? const Color(0xFFFBE1DD) : const Color(0xFF4A1F24),
     _Tone.solid => AppColors.leaf,
   };
 

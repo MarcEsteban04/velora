@@ -1,3 +1,5 @@
+import '../theme/scene_schedule.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,15 +17,25 @@ enum AutoLock {
   final String label;
 }
 
-/// Day or Night scene, or follow the phone's light/dark setting.
+/// A fixed scene, or Automatic: the scene that fits the time of day.
 enum Appearance {
-  night('Night', 'The valley at dusk, moon and stars'),
-  day('Day', 'Sunshine, clouds and blue sky'),
-  automatic('Automatic', 'Follows your phone’s light or dark mode');
+  day('Day'),
+  afternoon('Afternoon'),
+  night('Night'),
+  automatic('Automatic');
 
-  const Appearance(this.label, this.description);
+  const Appearance(this.label);
   final String label;
-  final String description;
+
+  String get description => switch (this) {
+    Appearance.day => 'Sunshine, clouds and blue sky',
+    Appearance.afternoon => 'Golden hour, a low sun and warm light',
+    Appearance.night => 'The valley at dusk, moon and stars',
+    Appearance.automatic =>
+      'Day from ${SceneSchedule.label(SceneSchedule.dayFrom)}, Afternoon '
+          'from ${SceneSchedule.label(SceneSchedule.afternoonFrom)}, Night '
+          'from ${SceneSchedule.label(SceneSchedule.nightFrom)}',
+  };
 }
 
 /// Preferences for this phone only. They aren't secret and aren't synced:
