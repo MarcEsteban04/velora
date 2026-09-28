@@ -8,7 +8,7 @@ import '../../../core/widgets/reveal.dart';
 import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
 import '../../budgets/application/budget_providers.dart';
-import '../../budgets/presentation/budgets_screen.dart';
+import '../../categories/presentation/categories_screen.dart';
 import '../../goals/application/goal_providers.dart';
 import '../../goals/presentation/goals_screen.dart';
 import '../../profile/data/profile_repository.dart';
@@ -201,7 +201,7 @@ class HomeScreen extends ConsumerWidget {
                   subtitle: 'Food or shopping is a great start',
                   done: hasBudget,
                   onTap: () =>
-                      Navigator.of(context).push(BudgetsScreen.route()),
+                      Navigator.of(context).push(CategoriesScreen.route()),
                 ),
                 SetupTask(
                   title: 'Add a savings goal',

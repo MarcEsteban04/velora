@@ -23,6 +23,21 @@ abstract interface class CategoryRepository {
   Future<List<Category>> fetchAll();
 
   Future<Category> create(CategoryDraft draft);
+
+  /// Renames or restyles a category.
+  Future<Category> update(String id, CategoryDraft draft);
+
+  /// Hides a category from the pickers, or brings it back.
+  Future<void> setHidden(String id, bool hidden);
+
+  /// Saves a new order: [ids] first to last.
+  Future<void> reorder(List<String> ids);
+
+  /// How many transactions use the category.
+  Future<int> usage(String id);
+
+  /// Deletes a category. Only offered when [usage] is zero.
+  Future<void> delete(String id);
 }
 
 class SupabaseTransactionRepository implements TransactionRepository {
@@ -74,8 +89,9 @@ class SupabaseCategoryRepository implements CategoryRepository {
     final rows = await _db
         .from('categories')
         .select()
-        .order('sort_order')
-        .order('name');
+        // postgrest-dart sorts descending unless told otherwise.
+        .order('sort_order', ascending: true)
+        .order('name', ascending: true);
     return rows.map(Category.fromRow).toList();
   }
 
@@ -87,10 +103,43 @@ class SupabaseCategoryRepository implements CategoryRepository {
     return _select();
   }
 
+  SupabaseQueryBuilder get _table => _db.from('categories');
+
   @override
-  Future<Category> create(CategoryDraft draft) async => Category.fromRow(
-    await _db.from('categories').insert(draft.toRow()).select().single(),
-  );
+  Future<Category> create(CategoryDraft draft) async =>
+      Category.fromRow(await _table.insert(draft.toRow()).select().single());
+
+  @override
+  Future<Category> update(String id, CategoryDraft draft) async =>
+      Category.fromRow(
+        await _table.update(draft.toUpdate()).eq('id', id).select().single(),
+      );
+
+  @override
+  Future<void> setHidden(String id, bool hidden) => _table
+      .update({
+        'archived_at': hidden ? DateTime.now().toUtc().toIso8601String() : null,
+      })
+      .eq('id', id);
+
+  @override
+  Future<void> reorder(List<String> ids) => Future.wait([
+    for (final (i, id) in ids.indexed)
+      _table.update({'sort_order': i}).eq('id', id),
+  ]);
+
+  @override
+  Future<int> usage(String id) async {
+    final res = await _db
+        .from('transactions')
+        .select('id')
+        .eq('category_id', id)
+        .count(CountOption.exact);
+    return res.count;
+  }
+
+  @override
+  Future<void> delete(String id) => _table.delete().eq('id', id);
 }
 
 final transactionRepositoryProvider = Provider<TransactionRepository>(

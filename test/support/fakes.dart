@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:velora/core/storage/app_preferences.dart';
 import 'package:velora/core/money/currency.dart';
 import 'package:velora/features/accounts/data/account_repository.dart';
@@ -216,20 +217,87 @@ class FakeCategories implements CategoryRepository {
   final FakeBackend db;
 
   @override
-  Future<List<Category>> fetchAll() async => List.of(db.categories);
+  Future<List<Category>> fetchAll() async =>
+      List.of(db.categories)..sort((a, b) {
+        final o = a.sortOrder.compareTo(b.sortOrder);
+        return o != 0 ? o : a.name.compareTo(b.name);
+      });
+
+  Category _copy(
+    Category c, {
+    String? name,
+    String? icon,
+    String? color,
+    int? sortOrder,
+    bool? hidden,
+  }) => Category(
+    id: c.id,
+    kind: c.kind,
+    name: name ?? c.name,
+    icon: icon ?? c.icon,
+    color: color ?? c.color,
+    sortOrder: sortOrder ?? c.sortOrder,
+    hidden: hidden ?? c.hidden,
+  );
+
+  int _index(String id) => db.categories.indexWhere((c) => c.id == id);
 
   @override
   Future<Category> create(CategoryDraft draft) async {
+    // Mirrors the database's unique (kind, lower(name)) index.
+    if (db.categories.any(
+      (c) =>
+          c.kind == draft.kind &&
+          c.name.toLowerCase() == draft.name.trim().toLowerCase(),
+    )) {
+      throw const PostgrestException(message: 'duplicate', code: '23505');
+    }
     final c = Category(
       id: db.nextId('cat'),
       kind: draft.kind,
       name: draft.name.trim(),
       icon: draft.icon,
       color: draft.color,
+      sortOrder: 100,
     );
     db.categories.add(c);
     return c;
   }
+
+  @override
+  Future<Category> update(String id, CategoryDraft draft) async =>
+      db.categories[_index(id)] = _copy(
+        db.categories[_index(id)],
+        name: draft.name.trim(),
+        icon: draft.icon,
+        color: draft.color,
+      );
+
+  @override
+  Future<void> setHidden(String id, bool hidden) async =>
+      db.categories[_index(id)] = _copy(
+        db.categories[_index(id)],
+        hidden: hidden,
+      );
+
+  @override
+  Future<void> reorder(List<String> ids) async {
+    for (final (i, id) in ids.indexed) {
+      db.categories[_index(id)] = _copy(
+        db.categories[_index(id)],
+        sortOrder: i,
+      );
+    }
+    db.categories.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+  }
+
+  @override
+  Future<int> usage(String id) async =>
+      db.transactions.where((t) => t.categoryId == id).length;
+
+  @override
+  Future<void> delete(String id) async =>
+      db.categories.removeWhere((c) => c.id == id);
 }
 
 class FakeBudgets implements BudgetRepository {

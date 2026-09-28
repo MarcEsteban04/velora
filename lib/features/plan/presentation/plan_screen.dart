@@ -11,7 +11,7 @@ import '../../../core/widgets/reveal.dart';
 import '../../../core/widgets/velora_mascot.dart';
 import '../../budgets/application/budget_providers.dart';
 import '../../budgets/presentation/budget_style.dart';
-import '../../budgets/presentation/budgets_screen.dart';
+import '../../categories/presentation/categories_screen.dart';
 import '../../goals/application/goal_providers.dart';
 import '../../goals/domain/goal.dart';
 import '../../goals/presentation/goal_style.dart';
@@ -75,7 +75,7 @@ class PlanScreen extends ConsumerWidget {
             child: _BudgetsCard(
               views: budgets,
               currency: currency,
-              onOpen: () => open(BudgetsScreen.route()),
+              onOpen: () => open(CategoriesScreen.route()),
             ),
           ),
           const SizedBox(height: 12),
@@ -84,6 +84,17 @@ class PlanScreen extends ConsumerWidget {
             child: _GoalsCard(
               goals: goals,
               onOpen: () => open(GoalsScreen.route()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 170),
+            child: _HubTile(
+              icon: Icons.category_rounded,
+              color: AppColors.ember,
+              title: 'Categories',
+              subtitle: 'Add, edit, reorder and hide',
+              onTap: () => open(CategoriesScreen.route()),
             ),
           ),
           Padding(
@@ -317,7 +328,7 @@ class _BudgetsCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _CardHeader(
-                label: 'BUDGETS',
+                label: 'CATEGORY BUDGETS',
                 action: v == null || v.isEmpty ? null : 'See all',
               ),
               const SizedBox(height: 12),
@@ -473,6 +484,56 @@ class _Invite extends StatelessWidget {
           ),
           Icon(Icons.chevron_right_rounded, color: AppColors.leafBright),
         ],
+      ),
+    );
+  }
+}
+
+/// A plain row on the hub that opens a screen.
+class _HubTile extends StatelessWidget {
+  const _HubTile({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      label: '$title. $subtitle',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: GlassCard(
+          radius: 22,
+          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          child: Row(
+            children: [
+              CategoryBadge(icon: icon, color: color, size: 40),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: text.titleMedium),
+                    Text(subtitle, style: text.labelMedium),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -9,6 +9,7 @@ import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/field_label.dart';
 import '../../../core/widgets/pressable_button.dart';
+import '../../categories/presentation/category_editor_sheet.dart';
 import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/presentation/widgets/account_avatar.dart';
@@ -22,7 +23,6 @@ import 'widgets/amount_display.dart';
 import 'widgets/calc_keypad.dart';
 import 'widgets/category_chips.dart';
 import 'widgets/kind_switcher.dart';
-import 'widgets/new_category_sheet.dart';
 
 /// Log (or edit) an expense, income or transfer.
 ///
@@ -329,8 +329,15 @@ class _TransactionEntryScreenState
     };
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final showPad = _padOpen && !keyboardOpen;
+    // Hidden categories stay off the picker, unless this transaction
+    // already uses one.
     final kindCategories =
-        categories.value?.where((c) => c.kind == _kind).toList() ?? const [];
+        categories.value
+            ?.where(
+              (c) => c.kind == _kind && (!c.hidden || c.id == _categoryId),
+            )
+            .toList() ??
+        const [];
 
     final form = <Widget>[
       if (!_isTransfer) ...[
@@ -431,7 +438,10 @@ class _TransactionEntryScreenState
             expanded: _showAllCategories,
             onSelected: (c) => setState(() => _categoryId = c.id),
             onCreate: () async {
-              final created = await NewCategorySheet.show(context, _kind);
+              final created = await CategoryEditorSheet.show(
+                context,
+                kind: _kind,
+              );
               if (created != null) setState(() => _categoryId = created.id);
             },
           ),

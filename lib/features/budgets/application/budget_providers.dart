@@ -56,7 +56,8 @@ final budgetStatusesProvider = Provider<List<BudgetView>?>((ref) {
   final byId = {for (final c in categories) c.id: c};
   final views = <BudgetView>[
     for (final b in budgets)
-      if (byId[b.categoryId] case final category?)
+      // A hidden category's budget steps aside with it.
+      if (byId[b.categoryId] case final category? when !category.hidden)
         (
           status: BudgetStatus.of(
             b,

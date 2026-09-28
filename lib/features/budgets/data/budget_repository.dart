@@ -22,7 +22,7 @@ class SupabaseBudgetRepository implements BudgetRepository {
 
   @override
   Future<List<Budget>> fetchAll() async {
-    final rows = await _table.select().order('created_at');
+    final rows = await _table.select().order('created_at', ascending: true);
     return rows.map(Budget.fromRow).toList();
   }
 

@@ -77,14 +77,14 @@ void main() {
     await frames(tester);
     expect(find.text('Give your money a job'), findsOneWidget);
 
-    // "Start with one" lists categories; pick Food.
-    await tester.tap(find.text('Food').last);
+    // Every category offers "Set budget"; Food is first.
+    await tester.tap(find.text('Set budget').first);
     await tester.pump();
     await frames(tester);
     expect(find.text('Food budget'), findsOneWidget);
     await tester.enterText(find.byType(TextField), '1000');
     await tester.pump();
-    await tester.tap(find.text('Set budget'));
+    await tester.tap(find.text('Set budget').last);
     await tester.pump();
     await frames(tester, 16);
 

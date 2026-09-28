@@ -8,6 +8,7 @@ class Category {
     required this.icon,
     required this.color,
     this.sortOrder = 0,
+    this.hidden = false,
   });
 
   final String id;
@@ -21,6 +22,9 @@ class Category {
   final String color;
   final int sortOrder;
 
+  /// Hidden categories leave the pickers but keep their history.
+  final bool hidden;
+
   factory Category.fromRow(Map<String, dynamic> row) => Category(
     id: row['id'] as String,
     kind: row['kind'] == 'income'
@@ -30,6 +34,8 @@ class Category {
     icon: row['icon'] as String,
     color: row['color'] as String,
     sortOrder: (row['sort_order'] as num?)?.toInt() ?? 0,
+    // Tolerates a database that hasn't had the migration yet.
+    hidden: row['archived_at'] != null,
   );
 }
 
@@ -46,11 +52,19 @@ class CategoryDraft {
   final String icon;
   final String color;
 
-  Map<String, Object> toRow() => {
+  /// A new category goes to the end of the list.
+  Map<String, Object> toRow({int sortOrder = 100}) => {
     'kind': kind.name,
     'name': name.trim(),
     'icon': icon,
     'color': color,
-    'sort_order': 100,
+    'sort_order': sortOrder,
+  };
+
+  /// The editable fields, for updating an existing category.
+  Map<String, Object> toUpdate() => {
+    'name': name.trim(),
+    'icon': icon,
+    'color': color,
   };
 }

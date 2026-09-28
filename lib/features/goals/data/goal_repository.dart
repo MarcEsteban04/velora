@@ -30,7 +30,10 @@ class SupabaseGoalRepository implements GoalRepository {
 
   @override
   Future<List<Goal>> fetchGoals() async {
-    final rows = await _db.from('goals').select().order('created_at');
+    final rows = await _db
+        .from('goals')
+        .select()
+        .order('created_at', ascending: true);
     return rows.map(Goal.fromRow).toList();
   }
 
