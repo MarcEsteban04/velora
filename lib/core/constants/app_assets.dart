@@ -10,4 +10,5 @@ abstract final class AppAssets {
   static const mascotGoals = '$_mascot/velora_goals_mascot.png';
   static const mascotAccounts = '$_mascot/velora_accounts_mascot.png';
   static const mascotStreak = '$_mascot/velora_streak_mascot.png';
+  static const mascotCategories = '$_mascot/velora_categories_mascot.png';
 }

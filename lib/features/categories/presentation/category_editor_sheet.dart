@@ -6,6 +6,7 @@ import '../../../core/errors/friendly_error.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/field_label.dart';
 import '../../../core/widgets/pressable_button.dart';
+import '../../../core/widgets/velora_mascot.dart';
 import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
@@ -189,11 +190,23 @@ class _EditorState extends ConsumerState<_Editor> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                existing == null
-                    ? 'New ${widget.kind.label.toLowerCase()} category'
-                    : 'Edit category',
-                style: text.headlineSmall,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      existing == null
+                          ? 'New ${widget.kind.label.toLowerCase()} category'
+                          : 'Edit category',
+                      style: text.headlineSmall,
+                    ),
+                  ),
+                  if (existing == null)
+                    const VeloraMascot(
+                      pose: MascotPose.categories,
+                      size: 64,
+                      halo: false,
+                    ),
+                ],
               ),
               const FieldLabel('Name'),
               TextField(

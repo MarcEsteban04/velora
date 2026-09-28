@@ -23,7 +23,10 @@ enum MascotPose {
   accounts(AppAssets.mascotAccounts),
 
   /// With a calendar of flames, for streaks.
-  streak(AppAssets.mascotStreak);
+  streak(AppAssets.mascotStreak),
+
+  /// Sorting category tiles into a folder, for categories.
+  categories(AppAssets.mascotCategories);
 
   const MascotPose(this.asset);
   final String asset;

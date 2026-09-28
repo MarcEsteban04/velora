@@ -90,8 +90,11 @@ class PlanScreen extends ConsumerWidget {
           FadeSlideIn(
             delay: const Duration(milliseconds: 170),
             child: _HubTile(
-              icon: Icons.category_rounded,
-              color: AppColors.ember,
+              leading: const VeloraMascot(
+                pose: MascotPose.categories,
+                size: 56,
+                halo: false,
+              ),
               title: 'Categories',
               subtitle: 'Add, edit, reorder and hide',
               onTap: () => open(CategoriesScreen.route()),
@@ -498,15 +501,13 @@ class _Invite extends StatelessWidget {
 /// A plain row on the hub that opens a screen.
 class _HubTile extends StatelessWidget {
   const _HubTile({
-    required this.icon,
-    required this.color,
+    required this.leading,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
 
-  final IconData icon;
-  final Color color;
+  final Widget leading;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -522,10 +523,10 @@ class _HubTile extends StatelessWidget {
         onTap: onTap,
         child: GlassCard(
           radius: 22,
-          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          padding: const EdgeInsets.fromLTRB(8, 6, 10, 6),
           child: Row(
             children: [
-              CategoryBadge(icon: icon, color: color, size: 40),
+              leading,
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
