@@ -23,14 +23,16 @@ import 'institutions.dart';
 import 'widgets/account_avatar.dart';
 import 'widgets/account_card.dart';
 import 'widgets/account_details_sheet.dart';
+import 'widgets/account_drawer.dart';
 import 'widgets/allocation_bar.dart';
 import 'widgets/wallet_insight_cards.dart';
 
-enum _WalletView { cards, list }
+enum _WalletView { cards, drawer, list }
 
 /// The Wallet tab: net worth, where the money lives, Velora's insight, the
 /// last week's balance and every account.
-/// It's shown as cards or as a compact list.
+/// It's shown as a grid of cards (the default), a drawer of stacked
+/// cards, or a compact list.
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
 
@@ -131,52 +133,58 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
-            child: _view == _WalletView.cards
-                ? GridView(
-                    key: const ValueKey('cards'),
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          mainAxisExtent: 164,
-                        ),
-                    children: [
-                      for (final (i, a) in accounts.indexed)
-                        FadeSlideIn(
-                          delay: Duration(milliseconds: 60 * i),
-                          child: _CardEntry(
-                            account: a,
-                            hidden: hidden,
-                            onTap: () => _open(a, hidden),
-                          ),
-                        ),
-                    ],
-                  )
-                : GlassCard(
-                    key: const ValueKey('list'),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      children: [
-                        for (final (i, a) in accounts.indexed) ...[
-                          if (i > 0)
-                            Divider(
-                              height: 1,
-                              indent: 74,
-                              color: AppColors.hairline(0.06),
-                            ),
-                          _ListRow(
-                            account: a,
-                            hidden: hidden,
-                            onTap: () => _open(a, hidden),
-                          ),
-                        ],
-                      ],
+            child: switch (_view) {
+              _WalletView.cards => GridView(
+                key: const ValueKey('cards'),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  mainAxisExtent: 164,
+                ),
+                children: [
+                  for (final (i, a) in accounts.indexed)
+                    FadeSlideIn(
+                      delay: Duration(milliseconds: 60 * i),
+                      child: _CardEntry(
+                        account: a,
+                        hidden: hidden,
+                        onTap: () => _open(a, hidden),
+                      ),
                     ),
-                  ),
+                ],
+              ),
+              _WalletView.drawer => AccountDrawer(
+                key: const ValueKey('drawer'),
+                accounts: accounts,
+                hidden: hidden,
+                onOpen: (a) => _open(a, hidden),
+              ),
+              _WalletView.list => GlassCard(
+                key: const ValueKey('list'),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  children: [
+                    for (final (i, a) in accounts.indexed) ...[
+                      if (i > 0)
+                        Divider(
+                          height: 1,
+                          indent: 74,
+                          color: AppColors.hairline(0.06),
+                        ),
+                      _ListRow(
+                        account: a,
+                        hidden: hidden,
+                        onTap: () => _open(a, hidden),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            },
           ),
         ],
       );
@@ -450,6 +458,7 @@ class _ViewToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           option(_WalletView.cards, Icons.grid_view_rounded, 'Grid'),
+          option(_WalletView.drawer, Icons.style_rounded, 'Drawer'),
           option(_WalletView.list, Icons.view_list_rounded, 'List'),
         ],
       ),
