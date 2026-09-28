@@ -119,11 +119,7 @@ class _AppShellState extends State<AppShell>
   }
 
   Widget _tab(int i) => switch (i) {
-    0 => HomeScreen(
-      onQuickAction: _onAction,
-      onOpenWallet: () => _select(1),
-      onOpenHistory: () => _select(3),
-    ),
+    0 => HomeScreen(onQuickAction: _onAction, onOpenHistory: () => _select(3)),
     1 => const WalletScreen(),
     2 => const ComingSoonTab(
       title: 'Plan',

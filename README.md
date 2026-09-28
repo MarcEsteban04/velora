@@ -7,7 +7,8 @@ A friendly companion for tracking spending, budgets and goals, guided by Velora 
 1. **Configure Supabase:** copy `.env.app.example` to `.env.app` and fill in your project URL and **publishable** key.
 2. **Create the schema:** run `supabase/migrations/*.sql` in the Supabase SQL Editor, or use `supabase db push`.
 3. **Enable anonymous sign-ins:** Dashboard → Authentication → Sign In / Providers → *Allow anonymous sign-ins*.
-4. Run it:
+4. **Deploy the AI insight (optional):** deploy `supabase/functions/wallet-insight` (Dashboard → Edge Functions, or `supabase functions deploy wallet-insight`), then add the secrets `GROQ_AI_API_KEY`, `GEMINI_AI_API_KEY` and `OPENAI_API_KEY` under Edge Functions → Secrets. The function tries Groq, then Gemini, then OpenAI (the backup). It only receives aggregated numbers, and the keys never ship in the app. Without it, the Wallet shows an insight worked out on the phone.
+5. Run it:
 
 ```bash
 flutter pub get

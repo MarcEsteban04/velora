@@ -3,7 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:velora/core/storage/app_preferences.dart';
 import 'package:velora/core/money/currency.dart';
 import 'package:velora/features/accounts/data/account_repository.dart';
+import 'package:velora/features/accounts/data/insight_repository.dart';
 import 'package:velora/features/accounts/domain/account.dart';
+import 'package:velora/features/accounts/domain/wallet_insight.dart';
 import 'package:velora/features/app_lock/data/pin_repository.dart';
 import 'package:velora/features/onboarding/application/onboarding_controller.dart';
 import 'package:velora/features/onboarding/data/onboarding_repository.dart';
@@ -223,6 +225,19 @@ class FakeCategories implements CategoryRepository {
   }
 }
 
+/// Stands in for the `wallet-insight` Edge Function. By default the AI is
+/// unavailable, so the app falls back to its own insight.
+class FakeInsights implements InsightRepository {
+  String? reply;
+  final requests = <WalletSnapshot>[];
+
+  @override
+  Future<String?> walletInsight(WalletSnapshot snapshot, CoachTone tone) async {
+    requests.add(snapshot);
+    return reply;
+  }
+}
+
 /// Keeps the PIN in memory. The real repository hashes on an isolate, which
 /// can't run inside a widget test's fake clock.
 class FakePins implements PinRepository {
@@ -251,8 +266,9 @@ class FakePins implements PinRepository {
 List<Override> fakeOverrides(
   FakeBackend db,
   FakePins pins,
-  SharedPreferences prefs,
-) => [
+  SharedPreferences prefs, {
+  FakeInsights? insights,
+}) => [
   sharedPreferencesProvider.overrideWithValue(prefs),
   onboardingRepositoryProvider.overrideWithValue(db),
   profileRepositoryProvider.overrideWithValue(db),
@@ -260,5 +276,6 @@ List<Override> fakeOverrides(
   transactionRepositoryProvider.overrideWithValue(FakeTransactions(db)),
   categoryRepositoryProvider.overrideWithValue(FakeCategories(db)),
   pinRepositoryProvider.overrideWithValue(pins),
+  insightRepositoryProvider.overrideWithValue(insights ?? FakeInsights()),
   deviceCurrencyProvider.overrideWithValue(Currencies.byCode('PHP')),
 ];

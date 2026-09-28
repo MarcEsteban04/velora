@@ -239,14 +239,14 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
 
     // Dashboard content.
-    expect(find.text('NET WORTH'), findsOneWidget);
-    expect(find.text('View wallet'), findsOneWidget);
-    expect(find.text('₱12,000.00'), findsWidgets);
+    expect(find.text('THIS MONTH'), findsOneWidget);
+    expect(find.text('NET WORTH'), findsNothing);
+    expect(find.text('₱0.00'), findsWidgets);
 
     // Hide balances masks every amount.
     await tester.tap(find.byIcon(Icons.visibility_rounded));
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('₱12,000.00'), findsNothing);
+    expect(find.text('₱0.00'), findsNothing);
 
     // Switch tabs.
     await tester.tap(find.bySemanticsLabel(RegExp('Plan tab')));
@@ -257,13 +257,13 @@ void main() {
       find.text('Budgets and goals that keep you on track.'),
       findsOneWidget,
     );
-    expect(find.text('NET WORTH'), findsNothing);
+    expect(find.text('THIS MONTH'), findsNothing);
     expect(find.text('Every peso, searchable and tidy.'), findsNothing);
 
     // Android back returns to Home instead of leaving the app.
     await tester.binding.handlePopRoute();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('NET WORTH'), findsOneWidget);
+    expect(find.text('THIS MONTH'), findsOneWidget);
     expect(
       find.text('Budgets and goals that keep you on track.'),
       findsNothing,

@@ -35,6 +35,12 @@ class AppPreferences {
   static const _kHideBalances = 'prefs.hideBalancesOnOpen';
   static const _kAutoLock = 'prefs.autoLock';
   static const _kAppearance = 'prefs.appearance';
+  static const _kInsight = 'cache.walletInsight.v1';
+
+  /// Today's AI insight, so reopening Wallet doesn't spend tokens.
+  String? get cachedInsight => _prefs.getString(_kInsight);
+  Future<void> setCachedInsight(String json) =>
+      _prefs.setString(_kInsight, json);
 
   /// Night by default: Velora's signature look.
   Appearance get appearance =>

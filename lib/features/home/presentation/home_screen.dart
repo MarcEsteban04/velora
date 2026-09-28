@@ -17,7 +17,7 @@ import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
 import '../application/balance_privacy.dart';
-import 'widgets/balance_hero.dart';
+import 'widgets/month_glance.dart';
 import 'widgets/coach_card.dart';
 import 'widgets/home_header.dart';
 import 'widgets/recent_activity.dart';
@@ -25,7 +25,7 @@ import 'widgets/setup_checklist.dart';
 
 /// The dashboard tab. From top to bottom:
 /// 1. Greeting, with a "hide balances" toggle.
-/// 2. Net worth, plus this month's money in and out.
+/// 2. This month's money in and out (net worth lives in Wallet).
 /// 3. Velora's coaching note, based on this month's real numbers.
 /// 4. "Get set up" checklist (hides once everything is done).
 /// 5. Recent activity.
@@ -35,12 +35,10 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({
     super.key,
     required this.onQuickAction,
-    required this.onOpenWallet,
     required this.onOpenHistory,
   });
 
   final ValueChanged<QuickAction> onQuickAction;
-  final VoidCallback onOpenWallet;
   final VoidCallback onOpenHistory;
 
   @override
@@ -63,7 +61,6 @@ class HomeScreen extends ConsumerWidget {
     final categoryById = {for (final c in categories) c.id: c};
     bool inMain(String id) => accountById[id]?.currencyCode == currency.code;
 
-    final netWorth = NetWorth.of(accounts, currency.code).totalMinor;
     final flow = FlowSummary.of(month, inCurrency: inMain);
 
     // The category with the most spending this month, for the coach.
@@ -137,14 +134,11 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 22),
           stagger(
-            BalanceHero(
-              netWorthMinor: netWorth,
+            MonthGlance(
               currency: currency,
-              accountCount: accounts.length,
               incomeMinor: flow.incomeMinor,
               spentMinor: flow.spentMinor,
               hidden: hidden,
-              onOpenWallet: onOpenWallet,
             ),
           ),
           const SizedBox(height: 16),

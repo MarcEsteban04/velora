@@ -14,6 +14,7 @@ import '../../../core/widgets/velora_mascot.dart';
 import '../../home/application/balance_privacy.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../shell/presentation/widgets/floating_nav_bar.dart';
+import '../application/wallet_insight_providers.dart';
 import '../data/account_repository.dart';
 import '../domain/account.dart';
 import 'account_form_screen.dart';
@@ -23,10 +24,12 @@ import 'widgets/account_avatar.dart';
 import 'widgets/account_card.dart';
 import 'widgets/account_details_sheet.dart';
 import 'widgets/allocation_bar.dart';
+import 'widgets/wallet_insight_cards.dart';
 
 enum _WalletView { cards, list }
 
-/// The Wallet tab: net worth, where the money lives, and every account.
+/// The Wallet tab: net worth, where the money lives, Velora's insight, the
+/// last week's balance and every account.
 /// It's shown as cards or as a compact list.
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -82,6 +85,33 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const SizedBox(height: 12),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 140),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: InsightCard(
+                      insight: ref.watch(walletInsightProvider).value,
+                      hidden: hidden,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: DailyBalanceCard(
+                      days: ref.watch(dailyBalancesProvider),
+                      currency: main,
+                      hidden: hidden,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 28, 0, 12),
             child: Row(

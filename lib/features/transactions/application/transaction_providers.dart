@@ -18,6 +18,14 @@ final monthTransactionsProvider =
       return ref.watch(transactionRepositoryProvider).fetchRange(start, end);
     });
 
+/// The last seven days, today included, for the daily balance chart.
+final weekTransactionsProvider = FutureProvider<List<Transaction>>((ref) {
+  final now = DateTime.now();
+  final start = DateTime(now.year, now.month, now.day - 6);
+  final end = DateTime(now.year, now.month, now.day + 1);
+  return ref.watch(transactionRepositoryProvider).fetchRange(start, end);
+});
+
 final recentTransactionsProvider = FutureProvider<List<Transaction>>(
   (ref) => ref.watch(transactionRepositoryProvider).fetchRecent(),
 );
@@ -45,6 +53,7 @@ class TransactionActions {
   void _refresh() => _container
     ..invalidate(monthTransactionsProvider)
     ..invalidate(recentTransactionsProvider)
+    ..invalidate(weekTransactionsProvider)
     ..invalidate(accountsProvider);
 
   Future<Transaction> create(TransactionDraft draft) async {

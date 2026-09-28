@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:velora/features/accounts/domain/account.dart';
-import 'package:velora/features/accounts/presentation/widgets/allocation_bar.dart';
+import 'package:velora/core/utils/percentages.dart';
 
 Account _a(
   String id,
