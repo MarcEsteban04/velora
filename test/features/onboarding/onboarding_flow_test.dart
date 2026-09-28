@@ -39,7 +39,7 @@ void main() {
 
   Future<void> typePin(WidgetTester tester, String pin) async {
     for (final d in pin.split('')) {
-      await tester.tap(find.text(d));
+      await tester.tap(find.text(d).last);
       await tester.pump(const Duration(milliseconds: 60));
     }
     await tester.pump(const Duration(milliseconds: 400));

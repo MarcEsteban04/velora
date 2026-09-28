@@ -90,6 +90,18 @@ void main() {
     expect(db.profile?.coachTone, CoachTone.direct);
   });
 
+  /// Scrolls Settings (the top route) until [label] is on screen.
+  Future<void> reveal(WidgetTester tester, String label) async {
+    await tester.scrollUntilVisible(
+      find.text(label),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    // Rows built ahead of the viewport count as found; bring it on screen.
+    await tester.ensureVisible(find.text(label));
+    await tester.pump();
+  }
+
   testWidgets('phone preferences persist on the device', (tester) async {
     await openSettings(tester);
 
@@ -97,6 +109,7 @@ void main() {
     await tester.pump();
     expect(prefs.getBool('prefs.hideBalancesOnOpen'), isTrue);
 
+    await reveal(tester, 'Auto-lock');
     await tester.tap(find.text('Auto-lock'));
     await tester.pump();
     await frames(tester);
@@ -109,11 +122,7 @@ void main() {
 
   testWidgets('lock now shows the lock screen', (tester) async {
     await openSettings(tester);
-    await tester.scrollUntilVisible(
-      find.text('Lock now'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await reveal(tester, 'Lock now');
     await tester.tap(find.text('Lock now'));
     await frames(tester);
     expect(find.text('Enter your PIN'), findsOneWidget);
@@ -121,6 +130,7 @@ void main() {
 
   testWidgets('change PIN needs the current one first', (tester) async {
     await openSettings(tester);
+    await reveal(tester, 'Change PIN');
     await tester.tap(find.text('Change PIN'));
     await tester.pump();
     await frames(tester);

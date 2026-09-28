@@ -11,6 +11,9 @@ import '../../profile/data/profile_repository.dart';
 import '../../profile/presentation/coach_tone_style.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../shell/presentation/widgets/floating_nav_bar.dart';
+import '../../streaks/application/streak_providers.dart';
+import '../../streaks/presentation/streak_sheet.dart';
+import '../../streaks/presentation/widgets/streak_chip.dart';
 import '../../shell/presentation/widgets/quick_actions.dart';
 import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/domain/category.dart';
@@ -24,7 +27,7 @@ import 'widgets/recent_activity.dart';
 import 'widgets/setup_checklist.dart';
 
 /// The dashboard tab. From top to bottom:
-/// 1. Greeting, with a "hide balances" toggle.
+/// 1. Streak chip, "hide balances" and settings, then the greeting.
 /// 2. This month's money in and out (net worth lives in Wallet).
 /// 3. Velora's coaching note, based on this month's real numbers.
 /// 4. "Get set up" checklist (hides once everything is done).
@@ -53,6 +56,8 @@ class HomeScreen extends ConsumerWidget {
     final categories =
         ref.watch(categoriesProvider).value ?? const <Category>[];
     final hidden = ref.watch(balancesHiddenProvider);
+    final streakOn = ref.watch(streakSettingsProvider).enabled;
+    final streak = streakOn ? ref.watch(streakProvider) : null;
     final text = Theme.of(context).textTheme;
 
     final name = profile?.name ?? 'friend';
@@ -108,6 +113,7 @@ class HomeScreen extends ConsumerWidget {
           ..invalidate(profileProvider)
           ..invalidate(monthTransactionsProvider)
           ..invalidate(recentTransactionsProvider)
+          ..invalidate(streakHistoryProvider)
           ..invalidate(categoriesProvider);
         await ref.read(accountsProvider.future);
       },
@@ -122,6 +128,12 @@ class HomeScreen extends ConsumerWidget {
         children: [
           stagger(
             HomeHeader(
+              leading: streak == null
+                  ? null
+                  : StreakChip(
+                      streak: streak,
+                      onTap: () => StreakSheet.show(context),
+                    ),
               name: name,
               now: DateTime.now(),
               balancesHidden: hidden,

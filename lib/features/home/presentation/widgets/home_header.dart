@@ -3,9 +3,12 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/widgets/round_icon_button.dart';
 
+/// The top of Home: the streak (when on) and the privacy and settings
+/// buttons, then the date and a one-line greeting across the full width.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
+    this.leading,
     required this.name,
     required this.balancesHidden,
     required this.onToggleBalances,
@@ -13,6 +16,8 @@ class HomeHeader extends StatelessWidget {
     required this.onOpenSettings,
   });
 
+  /// Shown top left, for example the streak chip.
+  final Widget? leading;
   final String name;
   final bool balancesHidden;
   final VoidCallback onToggleBalances;
@@ -30,44 +35,45 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                DateFormat('EEEE, MMMM d').format(now).toUpperCase(),
-                style: text.labelMedium?.copyWith(letterSpacing: 1.4),
-              ),
-              const SizedBox(height: 4),
-              // One line, like a headline; a long name shrinks to fit
-              // rather than wrapping.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '${greeting(now)}, $name!',
-                  maxLines: 1,
-                  style: text.displaySmall?.copyWith(fontSize: 24),
-                ),
-              ),
-            ],
+        Row(
+          children: [
+            ?leading,
+            const Spacer(),
+            RoundIconButton(
+              icon: balancesHidden
+                  ? Icons.visibility_off_rounded
+                  : Icons.visibility_rounded,
+              semanticLabel: balancesHidden ? 'Show balances' : 'Hide balances',
+              active: balancesHidden,
+              onTap: onToggleBalances,
+            ),
+            const SizedBox(width: 10),
+            RoundIconButton(
+              icon: Icons.settings_rounded,
+              semanticLabel: 'Settings',
+              onTap: onOpenSettings,
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Text(
+          DateFormat('EEEE, MMMM d').format(now).toUpperCase(),
+          style: text.labelMedium?.copyWith(letterSpacing: 1.4),
+        ),
+        const SizedBox(height: 4),
+        // One line, like a headline; a long name shrinks to fit rather than
+        // wrapping.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '${greeting(now)}, $name!',
+            maxLines: 1,
+            style: text.displaySmall?.copyWith(fontSize: 24),
           ),
-        ),
-        RoundIconButton(
-          icon: balancesHidden
-              ? Icons.visibility_off_rounded
-              : Icons.visibility_rounded,
-          semanticLabel: balancesHidden ? 'Show balances' : 'Hide balances',
-          active: balancesHidden,
-          onTap: onToggleBalances,
-        ),
-        const SizedBox(width: 10),
-        RoundIconButton(
-          icon: Icons.settings_rounded,
-          semanticLabel: 'Settings',
-          onTap: onOpenSettings,
         ),
       ],
     );

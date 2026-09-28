@@ -19,6 +19,9 @@ import '../../auth/application/session_actions.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/user_profile.dart';
 import '../../profile/presentation/coach_tone_style.dart';
+import '../../streaks/application/streak_providers.dart';
+import '../../streaks/presentation/streak_sheet.dart';
+import '../../streaks/presentation/streak_style.dart';
 import 'widgets/settings_section.dart';
 import 'widgets/settings_sheets.dart';
 
@@ -91,6 +94,8 @@ class SettingsScreen extends ConsumerWidget {
     final hideOnOpen = ref.watch(hideBalancesOnOpenProvider);
     final autoLock = ref.watch(autoLockProvider);
     final appearance = ref.watch(appearanceProvider);
+    final streak = ref.watch(streakSettingsProvider);
+    final streakCtl = ref.read(streakSettingsProvider.notifier);
     final name = profile?.name ?? 'friend';
     final currency = Currencies.byCode(profile?.currencyCode ?? 'USD');
     final tone = profile?.coachTone ?? CoachTone.balanced;
@@ -227,6 +232,53 @@ class SettingsScreen extends ConsumerWidget {
                           onChanged: (v) => ref
                               .read(hideBalancesOnOpenProvider.notifier)
                               .set(v),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                stagger(
+                  SettingsSection(
+                    title: 'Habits',
+                    children: [
+                      SettingsTile(
+                        icon: streak.icon,
+                        color: streak.enabled
+                            ? streak.color
+                            : AppColors.textMuted,
+                        title: 'Home streak',
+                        subtitle: 'Show your streak at the top of Home',
+                        onTap: () => streakCtl.save(
+                          streak.copyWith(enabled: !streak.enabled),
+                        ),
+                        trailing: Switch.adaptive(
+                          value: streak.enabled,
+                          activeTrackColor: AppColors.leaf,
+                          onChanged: (v) =>
+                              streakCtl.save(streak.copyWith(enabled: v)),
+                        ),
+                      ),
+                      SettingsTile(
+                        icon: Icons.flag_rounded,
+                        color: AppColors.ember,
+                        title: 'Streak goal',
+                        subtitle: streak.description,
+                        value: streak.label(currency),
+                        onTap: () => StreakSheet.editGoal(context, ref),
+                      ),
+                      SettingsTile(
+                        icon: Icons.bedtime_rounded,
+                        color: AppColors.lilac,
+                        title: 'Rest days',
+                        subtitle: 'Forgive one missed day each week',
+                        onTap: () => streakCtl.save(
+                          streak.copyWith(restDays: !streak.restDays),
+                        ),
+                        trailing: Switch.adaptive(
+                          value: streak.restDays,
+                          activeTrackColor: AppColors.leaf,
+                          onChanged: (v) =>
+                              streakCtl.save(streak.copyWith(restDays: v)),
                         ),
                       ),
                     ],

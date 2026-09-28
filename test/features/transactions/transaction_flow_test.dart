@@ -47,7 +47,7 @@ void main() {
     );
     await frames(tester, 16);
     for (final d in '2580'.split('')) {
-      await tester.tap(find.text(d));
+      await tester.tap(find.text(d).last);
       await tester.pump(const Duration(milliseconds: 60));
     }
     await frames(tester, 30);
