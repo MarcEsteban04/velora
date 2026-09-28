@@ -116,7 +116,7 @@ class _PinCreatorState extends State<PinCreator> {
                 key: ValueKey(_message ?? _done),
                 textAlign: TextAlign.center,
                 style: text.labelMedium?.copyWith(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: _message != null
                       ? AppColors.ember
                       : AppColors.leafBright,

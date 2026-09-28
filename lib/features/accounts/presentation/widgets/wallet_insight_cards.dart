@@ -240,7 +240,7 @@ class _WeekChange extends StatelessWidget {
                   ? 'Change this week hidden'
                   : '${up ? 'Up' : 'Down'} $amount this week',
               style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(fontSize: 14, color: color),
+                  ?.copyWith(fontSize: 13, color: color),
             ),
           ),
         ),
@@ -266,9 +266,13 @@ class _Bars extends StatelessWidget {
     final values = [for (final (_, v) in days) v];
     final hi = values.reduce((a, b) => a > b ? a : b);
     final lo = values.reduce((a, b) => a < b ? a : b);
-    // Scale between a floor and the top so small changes still show.
-    double heightOf(int v) =>
-        hi == lo ? 0.6 : 0.25 + 0.75 * (v - lo) / (hi - lo);
+    // Zoom in on the week's range so changes show, but never so far that a
+    // small expense looks like a crash: the scale always spans at least a
+    // quarter of the top balance.
+    final span = [hi - lo, hi ~/ 4, 1].reduce((a, b) => a > b ? a : b);
+    double heightOf(int v) => hi <= 0
+        ? 0.12
+        : (0.2 + 0.8 * (v - (hi - span)) / span).clamp(0.12, 1.0);
 
     return Semantics(
       label: hidden

@@ -184,7 +184,7 @@ class _NameSheetState extends State<_NameSheet> {
                 autofocus: true,
                 textCapitalization: TextCapitalization.words,
                 inputFormatters: [LengthLimitingTextInputFormatter(24)],
-                style: text.titleMedium?.copyWith(fontSize: 18),
+                style: text.titleMedium?.copyWith(fontSize: 16),
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.person_rounded),
                 ),

@@ -59,7 +59,7 @@ class StepHeader extends StatelessWidget {
             child: Text(
               title,
               textAlign: align,
-              style: text.displaySmall?.copyWith(fontSize: 30),
+              style: text.displaySmall?.copyWith(fontSize: 26),
             ),
           ),
           if (subtitle != null) ...[

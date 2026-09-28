@@ -283,7 +283,7 @@ class _RowTile extends StatelessWidget {
         ),
         title: Text(
           action.label,
-          style: text.titleMedium?.copyWith(fontSize: 16),
+          style: text.titleMedium?.copyWith(fontSize: 15),
         ),
         subtitle: Text(action.hint, style: text.labelMedium),
         trailing: Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),

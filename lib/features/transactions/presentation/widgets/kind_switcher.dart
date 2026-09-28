@@ -76,7 +76,7 @@ class KindSwitcher extends StatelessWidget {
                             child: AnimatedDefaultTextStyle(
                               duration: const Duration(milliseconds: 200),
                               style: text.titleMedium!.copyWith(
-                                fontSize: 15,
+                                fontSize: 14,
                                 color: k == value
                                     ? AppColors.onBrand
                                     : AppColors.textSecondary,

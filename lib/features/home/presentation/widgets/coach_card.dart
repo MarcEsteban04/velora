@@ -87,7 +87,7 @@ class CoachCard extends StatelessWidget {
                             child: Text(
                               actionLabel,
                               style: text.titleMedium?.copyWith(
-                                fontSize: 14,
+                                fontSize: 13,
                                 color: AppColors.onBrand,
                               ),
                             ),

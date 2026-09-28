@@ -57,7 +57,7 @@ class CurrencyStep extends ConsumerWidget {
                         padding: const EdgeInsets.all(12),
                         child: Text(
                           selected.symbol,
-                          style: text.displaySmall?.copyWith(fontSize: 28),
+                          style: text.displaySmall?.copyWith(fontSize: 24),
                         ),
                       ),
                     ),
@@ -70,7 +70,7 @@ class CurrencyStep extends ConsumerWidget {
                     children: [
                       Text(
                         selected.code,
-                        style: text.headlineSmall?.copyWith(fontSize: 26),
+                        style: text.headlineSmall?.copyWith(fontSize: 22),
                       ),
                       Text(selected.name, style: text.bodyMedium),
                     ],
@@ -134,7 +134,7 @@ class CurrencyStep extends ConsumerWidget {
                         c.symbol,
                         maxLines: 1,
                         style: text.headlineSmall?.copyWith(
-                          fontSize: 22,
+                          fontSize: 20,
                           color: c == selected
                               ? AppColors.leafBright
                               : AppColors.textPrimary,
@@ -181,7 +181,7 @@ class CurrencyStep extends ConsumerWidget {
                   'Browse all ${Currencies.all.length} currencies',
                   style: text.titleMedium?.copyWith(
                     color: AppColors.textSecondary,
-                    fontSize: 15,
+                    fontSize: 14,
                   ),
                 ),
               ],

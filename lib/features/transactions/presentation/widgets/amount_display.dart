@@ -123,7 +123,7 @@ class AmountDisplay extends StatelessWidget {
                         child: Text(
                           hasOp ? '= $big' : big,
                           style: text.displaySmall?.copyWith(
-                            fontSize: 58,
+                            fontSize: 52,
                             color: empty
                                 ? AppColors.textMuted.withValues(alpha: 0.45)
                                 : color,

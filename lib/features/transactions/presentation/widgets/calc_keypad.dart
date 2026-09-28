@@ -43,7 +43,7 @@ class CalcKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = AppTypography.textTheme.headlineSmall!.copyWith(fontSize: 26);
+    final style = AppTypography.textTheme.headlineSmall!.copyWith(fontSize: 24);
 
     Widget digit(String d, {String? spoken}) => _Key(
       label: spoken ?? d,

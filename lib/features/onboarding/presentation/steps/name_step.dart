@@ -60,7 +60,7 @@ class _NameStepState extends ConsumerState<NameStep> {
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
             autofillHints: const [AutofillHints.givenName],
-            style: text.titleMedium?.copyWith(fontSize: 20),
+            style: text.titleMedium?.copyWith(fontSize: 18),
             decoration: const InputDecoration(
               hintText: 'Your first name',
               prefixIcon: Icon(Icons.person_rounded),

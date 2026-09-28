@@ -114,7 +114,7 @@ class _SummaryRow extends StatelessWidget {
               textAlign: TextAlign.end,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: text.titleMedium?.copyWith(fontSize: 15),
+              style: text.titleMedium?.copyWith(fontSize: 14),
             ),
           ),
         ],

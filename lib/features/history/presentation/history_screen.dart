@@ -250,7 +250,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       onSelected: (_) => setState(() => _filter = kind),
                       showCheckmark: false,
                       labelStyle: text.labelMedium?.copyWith(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: _filter == kind
                             ? AppColors.night
                             : AppColors.textSecondary,
@@ -308,7 +308,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     Expanded(
                       child: Text(
                         _dayLabel(entry.key),
-                        style: text.titleMedium?.copyWith(fontSize: 15),
+                        style: text.titleMedium?.copyWith(fontSize: 14),
                       ),
                     ),
                     Builder(

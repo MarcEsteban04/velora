@@ -114,7 +114,7 @@ class _TaskRow extends StatelessWidget {
                     Text(
                       task.title,
                       style: text.titleMedium?.copyWith(
-                        fontSize: 15,
+                        fontSize: 14,
                         color: task.done
                             ? AppColors.textMuted
                             : AppColors.textPrimary,

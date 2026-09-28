@@ -699,7 +699,7 @@ class _LoggedAtCard extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: text.titleMedium?.copyWith(fontSize: 15),
+                    style: text.titleMedium?.copyWith(fontSize: 14),
                   ),
                 ),
               ],
@@ -935,7 +935,7 @@ class _AccountTile extends StatelessWidget {
                         a?.name ?? 'Choose an account',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: text.titleMedium?.copyWith(fontSize: 16),
+                        style: text.titleMedium?.copyWith(fontSize: 15),
                       ),
                       if (a != null)
                         Text.rich(
@@ -970,7 +970,7 @@ class _AccountTile extends StatelessWidget {
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: text.labelMedium?.copyWith(fontSize: 13),
+                          style: text.labelMedium?.copyWith(fontSize: 12),
                         ),
                     ],
                   ),

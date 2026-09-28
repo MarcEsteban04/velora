@@ -182,7 +182,7 @@ class _ChangePinScreenState extends ConsumerState<ChangePinScreen> {
                                 ? 'Too many tries. Try again in $countdown'
                                 : _message ?? '',
                             style: text.labelMedium?.copyWith(
-                              fontSize: 14,
+                              fontSize: 13,
                               color: AppColors.ember,
                             ),
                           ),

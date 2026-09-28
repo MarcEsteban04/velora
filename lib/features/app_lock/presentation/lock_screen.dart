@@ -186,7 +186,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                             : _message ?? '',
                         textAlign: TextAlign.center,
                         style: text.labelMedium?.copyWith(
-                          fontSize: 14,
+                          fontSize: 13,
                           color: AppColors.ember,
                         ),
                       ),

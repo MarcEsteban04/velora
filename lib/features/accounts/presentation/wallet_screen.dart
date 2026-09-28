@@ -276,7 +276,7 @@ class _NetWorthCard extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 fmt(v.round(), currency),
-                style: text.displaySmall?.copyWith(fontSize: 38),
+                style: text.displaySmall?.copyWith(fontSize: 32),
               ),
             ),
           ),
@@ -366,7 +366,7 @@ class _ListRow extends StatelessWidget {
           account.name,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: text.titleMedium?.copyWith(fontSize: 15),
+          style: text.titleMedium?.copyWith(fontSize: 14),
         ),
         subtitle: Text(
           '${account.type.label} · ${currency.code}'
@@ -377,7 +377,7 @@ class _ListRow extends StatelessWidget {
           hidden
               ? '${currency.symbol} ••••'
               : Money.format(account.balanceMinor, currency),
-          style: text.titleMedium?.copyWith(fontSize: 15),
+          style: text.titleMedium?.copyWith(fontSize: 14),
         ),
       ),
     );

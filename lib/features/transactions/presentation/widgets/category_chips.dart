@@ -111,7 +111,7 @@ class _CategoryChip extends StatelessWidget {
               Text(
                 category.name,
                 style: text.titleMedium?.copyWith(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -157,7 +157,7 @@ class _AddChip extends StatelessWidget {
                 Text(
                   'Add',
                   style: text.titleMedium?.copyWith(
-                    fontSize: 15,
+                    fontSize: 14,
                     color: AppColors.textSecondary,
                   ),
                 ),

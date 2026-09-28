@@ -31,7 +31,6 @@ class HomeHeader extends StatelessWidget {
     final text = Theme.of(context).textTheme;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Column(
@@ -42,9 +41,16 @@ class HomeHeader extends StatelessWidget {
                 style: text.labelMedium?.copyWith(letterSpacing: 1.4),
               ),
               const SizedBox(height: 4),
-              Text(
-                '${greeting(now)},\n$name!',
-                style: text.displaySmall?.copyWith(fontSize: 30),
+              // One line, like a headline; a long name shrinks to fit
+              // rather than wrapping.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${greeting(now)}, $name!',
+                  maxLines: 1,
+                  style: text.displaySmall?.copyWith(fontSize: 24),
+                ),
               ),
             ],
           ),

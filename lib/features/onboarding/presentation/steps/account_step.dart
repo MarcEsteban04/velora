@@ -128,7 +128,7 @@ class _AccountStepState extends ConsumerState<AccountStep> {
             decimal: currency.decimalDigits > 0,
           ),
           inputFormatters: [MoneyInputFormatter(currency.decimalDigits)],
-          style: text.titleMedium?.copyWith(fontSize: 20),
+          style: text.titleMedium?.copyWith(fontSize: 18),
           decoration: InputDecoration(
             hintText: '0',
             prefixIcon: Padding(
@@ -137,7 +137,7 @@ class _AccountStepState extends ConsumerState<AccountStep> {
                 currency.symbol,
                 style: text.titleMedium?.copyWith(
                   color: AppColors.leafBright,
-                  fontSize: 20,
+                  fontSize: 18,
                 ),
               ),
             ),

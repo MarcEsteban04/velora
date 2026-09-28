@@ -109,7 +109,7 @@ class _Flow extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     amount,
-                    style: text.titleMedium?.copyWith(fontSize: 15),
+                    style: text.titleMedium?.copyWith(fontSize: 14),
                   ),
                 ),
               ],

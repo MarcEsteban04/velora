@@ -85,7 +85,7 @@ class InstitutionPicker extends StatelessWidget {
               child: Text(
                 'Other',
                 style: text.titleMedium?.copyWith(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: AppColors.textSecondary,
                 ),
               ),

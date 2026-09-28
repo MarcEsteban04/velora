@@ -151,7 +151,7 @@ class AccountCard extends StatelessWidget {
                         obscured
                             ? '${currency.symbol} ••••••'
                             : Money.format(value.round(), currency),
-                        style: text.displaySmall?.copyWith(fontSize: 32),
+                        style: text.displaySmall?.copyWith(fontSize: 28),
                       ),
                     ),
                   ),
@@ -215,7 +215,7 @@ class AccountCard extends StatelessWidget {
                       name.isEmpty ? i.name : name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: text.titleMedium?.copyWith(fontSize: 15),
+                      style: text.titleMedium?.copyWith(fontSize: 14),
                     ),
                   ] else
                     Row(
@@ -235,7 +235,7 @@ class AccountCard extends StatelessWidget {
                             name.isEmpty ? type.defaultName : name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: text.titleMedium?.copyWith(fontSize: 15),
+                            style: text.titleMedium?.copyWith(fontSize: 14),
                           ),
                         ),
                       ],
@@ -266,7 +266,7 @@ class AccountCard extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       balance,
-                      style: text.displaySmall?.copyWith(fontSize: 22),
+                      style: text.displaySmall?.copyWith(fontSize: 20),
                     ),
                   ),
                 ],

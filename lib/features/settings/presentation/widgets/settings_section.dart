@@ -114,7 +114,7 @@ class SettingsTile extends StatelessWidget {
                           child: Text(
                             title,
                             style: text.titleMedium?.copyWith(
-                              fontSize: 15,
+                              fontSize: 14,
                               color: destructive
                                   ? AppColors.rust
                                   : AppColors.textPrimary,
@@ -154,7 +154,7 @@ class SettingsTile extends StatelessWidget {
                 Text(
                   value!,
                   style: text.labelMedium?.copyWith(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),

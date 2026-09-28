@@ -110,7 +110,7 @@ class TransactionTile extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: text.titleMedium?.copyWith(fontSize: 15),
+                      style: text.titleMedium?.copyWith(fontSize: 14),
                     ),
                     Text(
                       '$where · $when',
@@ -125,7 +125,7 @@ class TransactionTile extends StatelessWidget {
               Text(
                 signed,
                 style: text.titleMedium?.copyWith(
-                  fontSize: 15,
+                  fontSize: 14,
                   color: amountColor,
                 ),
               ),

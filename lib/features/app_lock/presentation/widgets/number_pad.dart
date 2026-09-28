@@ -27,7 +27,7 @@ class NumberPad extends StatelessWidget {
       onTap: () => onDigit(d),
       child: Text(
         d,
-        style: AppTypography.textTheme.displaySmall?.copyWith(fontSize: 30),
+        style: AppTypography.textTheme.displaySmall?.copyWith(fontSize: 28),
       ),
     );
 

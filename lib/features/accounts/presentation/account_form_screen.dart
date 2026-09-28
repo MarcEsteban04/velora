@@ -256,7 +256,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                         inputFormatters: [
                           MoneyInputFormatter(_currency.decimalDigits),
                         ],
-                        style: text.titleMedium?.copyWith(fontSize: 20),
+                        style: text.titleMedium?.copyWith(fontSize: 18),
                         decoration: InputDecoration(
                           hintText: '0',
                           prefixIcon: Padding(
@@ -265,7 +265,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                               _currency.symbol,
                               style: text.titleMedium?.copyWith(
                                 color: AppColors.leafBright,
-                                fontSize: 20,
+                                fontSize: 18,
                               ),
                             ),
                           ),
@@ -287,7 +287,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                             onChanged: (v) => setState(() => _include = v),
                             title: Text(
                               'Include in net worth',
-                              style: text.titleMedium?.copyWith(fontSize: 15),
+                              style: text.titleMedium?.copyWith(fontSize: 14),
                             ),
                             subtitle: Text(
                               'Turn off for money that isn’t really yours, like '
