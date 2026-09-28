@@ -3,127 +3,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:velora/app/velora_app.dart';
-import 'package:velora/core/money/currency.dart';
+import 'package:velora/features/profile/data/profile_repository.dart';
 import 'package:velora/core/widgets/round_icon_button.dart';
 import 'package:velora/core/theme/app_theme.dart';
-import 'package:velora/features/accounts/data/account_repository.dart';
 import 'package:velora/features/accounts/domain/account.dart';
-import 'package:velora/features/app_lock/data/pin_repository.dart';
 import 'package:velora/features/home/presentation/home_screen.dart';
-import 'package:velora/features/onboarding/application/onboarding_controller.dart';
-import 'package:velora/features/onboarding/data/onboarding_repository.dart';
 import 'package:velora/features/onboarding/presentation/onboarding_flow.dart';
-import 'package:velora/features/profile/data/profile_repository.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
+import 'package:velora/features/transactions/presentation/transaction_entry_screen.dart';
 
-/// Stands in for Supabase: one in-memory "backend" behind all three
-/// repositories, so the flow is tested end to end without the network.
-class _FakeBackend
-    implements OnboardingRepository, ProfileRepository, AccountRepository {
-  UserProfile? profile;
-  final accounts = <Account>[];
-  int completeCalls = 0;
-
-  @override
-  Future<void> complete({
-    required String displayName,
-    required String currencyCode,
-    required CoachTone coachTone,
-    required String accountName,
-    required AccountType accountType,
-    required int openingBalanceMinor,
-  }) async {
-    completeCalls++;
-    profile = UserProfile(
-      name: displayName,
-      currencyCode: currencyCode,
-      coachTone: coachTone,
-      onboardedAt: DateTime(2026),
-    );
-    accounts.add(
-      Account(
-        id: 'acc-1',
-        name: accountName,
-        type: accountType,
-        currencyCode: currencyCode,
-        openingBalanceMinor: openingBalanceMinor,
-        createdAt: DateTime(2026),
-      ),
-    );
-  }
-
-  @override
-  Future<UserProfile?> fetch() async => profile;
-
-  @override
-  Future<List<Account>> fetchAll() async => List.of(accounts);
-
-  @override
-  Future<Account> create(AccountDraft draft) async {
-    final a = _fromDraft('acc-${accounts.length + 1}', draft);
-    accounts.add(a);
-    return a;
-  }
-
-  @override
-  Future<Account> update(String id, AccountDraft draft) async {
-    final i = accounts.indexWhere((a) => a.id == id);
-    return accounts[i] = _fromDraft(id, draft);
-  }
-
-  @override
-  Future<void> delete(String id) async =>
-      accounts.removeWhere((a) => a.id == id);
-
-  Account _fromDraft(String id, AccountDraft d) => Account(
-    id: id,
-    name: d.name.trim(),
-    type: d.type,
-    currencyCode: d.currencyCode,
-    openingBalanceMinor: d.openingBalanceMinor,
-    includeInNetWorth: d.includeInNetWorth,
-    createdAt: DateTime(2026),
-  );
-}
-
-/// Keeps the PIN in memory. The real repository hashes on an isolate, which
-/// can't run inside a widget test's fake clock.
-class _FakePins implements PinRepository {
-  String? pin;
-
-  @override
-  Future<bool> hasPin() async => pin != null;
-
-  @override
-  Future<void> setPin(String value) async => pin = value;
-
-  @override
-  Future<PinCheck> verify(String value) async =>
-      value == pin ? const PinAccepted() : const PinRejected(4);
-
-  @override
-  Future<DateTime?> lockedUntil() async => null;
-
-  @override
-  Future<void> clear() async => pin = null;
-}
+import '../../support/fakes.dart';
 
 void main() {
-  late _FakeBackend backend;
-  late _FakePins pins;
+  late FakeBackend backend;
+  late FakePins pins;
 
   setUp(() {
-    backend = _FakeBackend();
-    pins = _FakePins();
+    backend = FakeBackend();
+    pins = FakePins();
   });
 
-  List<Override> overrides() => [
-    onboardingRepositoryProvider.overrideWithValue(backend),
-    profileRepositoryProvider.overrideWithValue(backend),
-    accountRepositoryProvider.overrideWithValue(backend),
-    pinRepositoryProvider.overrideWithValue(pins),
-    deviceCurrencyProvider.overrideWithValue(Currencies.byCode('PHP')),
-  ];
+  List<Override> overrides() => fakeOverrides(backend, pins);
 
   /// A typical phone (411x914 logical pixels), so full-height screens such
   /// as the PIN pad fit the way they do on a device.
@@ -376,7 +276,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('What would you like to log?'), findsNothing);
-    expect(find.textContaining('Income is coming next'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.byType(TransactionEntryScreen), findsOneWidget);
+    expect(find.text('Enter an amount'), findsOneWidget);
     semantics.dispose();
   });
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/money/currency.dart';
+import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/reveal.dart';
 import '../../accounts/data/account_repository.dart';
@@ -10,6 +11,10 @@ import '../../profile/data/profile_repository.dart';
 import '../../profile/presentation/coach_tone_style.dart';
 import '../../shell/presentation/widgets/floating_nav_bar.dart';
 import '../../shell/presentation/widgets/quick_actions.dart';
+import '../../transactions/application/transaction_providers.dart';
+import '../../transactions/domain/category.dart';
+import '../../transactions/domain/transaction.dart';
+import '../../transactions/presentation/transaction_entry_screen.dart';
 import '../application/balance_privacy.dart';
 import 'widgets/balance_hero.dart';
 import 'widgets/coach_card.dart';
@@ -20,8 +25,8 @@ import 'widgets/setup_checklist.dart';
 /// The dashboard tab. From top to bottom:
 /// 1. Greeting, with a "hide balances" toggle.
 /// 2. Net worth, plus this month's money in and out.
-/// 3. Velora's coaching note, with one next step.
-/// 4. "Get set up" checklist.
+/// 3. Velora's coaching note, based on this month's real numbers.
+/// 4. "Get set up" checklist (hides once everything is done).
 /// 5. Recent activity.
 ///
 /// Accounts themselves live in the Wallet tab.
@@ -30,21 +35,60 @@ class HomeScreen extends ConsumerWidget {
     super.key,
     required this.onQuickAction,
     required this.onOpenWallet,
+    required this.onOpenHistory,
   });
 
   final ValueChanged<QuickAction> onQuickAction;
   final VoidCallback onOpenWallet;
+  final VoidCallback onOpenHistory;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider).value;
-    final accounts = ref.watch(accountsProvider).value ?? const [];
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
+    final month =
+        ref.watch(monthTransactionsProvider(monthKey(DateTime.now()))).value ??
+        const <Transaction>[];
+    final recent =
+        ref.watch(recentTransactionsProvider).value ?? const <Transaction>[];
+    final categories =
+        ref.watch(categoriesProvider).value ?? const <Category>[];
     final hidden = ref.watch(balancesHiddenProvider);
     final text = Theme.of(context).textTheme;
 
     final name = profile?.name ?? 'friend';
     final currency = Currencies.byCode(profile?.currencyCode ?? 'USD');
+    final accountById = {for (final a in accounts) a.id: a};
+    final categoryById = {for (final c in categories) c.id: c};
+    bool inMain(String id) => accountById[id]?.currencyCode == currency.code;
+
     final netWorth = NetWorth.of(accounts, currency.code).totalMinor;
+    final flow = FlowSummary.of(month, inCurrency: inMain);
+
+    // The category with the most spending this month, for the coach.
+    final spendByCategory = <String, int>{};
+    for (final t in month) {
+      if (t.kind == TransactionKind.expense &&
+          t.categoryId != null &&
+          inMain(t.accountId)) {
+        spendByCategory.update(
+          t.categoryId!,
+          (v) => v + t.amountMinor,
+          ifAbsent: () => t.amountMinor,
+        );
+      }
+    }
+    final topCategory = spendByCategory.isEmpty
+        ? null
+        : categoryById[(spendByCategory.entries.toList()
+                    ..sort((a, b) => b.value.compareTo(a.value)))
+                  .first
+                  .key]
+              ?.name;
+    final expenseCount = month
+        .where((t) => t.kind == TransactionKind.expense)
+        .length;
+    final hasExpense = recent.any((t) => t.kind == TransactionKind.expense);
 
     var i = 0;
     Widget stagger(Widget child) => FadeSlideIn(
@@ -52,14 +96,9 @@ class HomeScreen extends ConsumerWidget {
       child: child,
     );
 
-    Widget section(String title, {String? trailing}) => Padding(
+    Widget section(String title) => Padding(
       padding: const EdgeInsets.fromLTRB(4, 28, 4, 12),
-      child: Row(
-        children: [
-          Expanded(child: Text(title, style: text.titleMedium)),
-          if (trailing != null) Text(trailing, style: text.labelMedium),
-        ],
-      ),
+      child: Text(title, style: text.titleMedium),
     );
 
     return RefreshIndicator(
@@ -68,7 +107,9 @@ class HomeScreen extends ConsumerWidget {
       onRefresh: () async {
         ref
           ..invalidate(accountsProvider)
-          ..invalidate(profileProvider);
+          ..invalidate(profileProvider)
+          ..invalidate(monthTransactionsProvider)
+          ..invalidate(recentTransactionsProvider);
         await ref.read(accountsProvider.future);
       },
       child: ListView(
@@ -96,8 +137,8 @@ class HomeScreen extends ConsumerWidget {
               netWorthMinor: netWorth,
               currency: currency,
               accountCount: accounts.length,
-              incomeMinor: 0,
-              spentMinor: 0,
+              incomeMinor: flow.incomeMinor,
+              spentMinor: flow.spentMinor,
               hidden: hidden,
               onOpenWallet: onOpenWallet,
             ),
@@ -107,7 +148,19 @@ class HomeScreen extends ConsumerWidget {
             stagger(
               CoachCard(
                 toneLabel: profile.coachTone.label,
-                message: profile.coachTone.firstStepsMessage(name),
+                message: expenseCount == 0
+                    ? profile.coachTone.firstStepsMessage(name)
+                    : profile.coachTone.monthInsight(
+                        name: name,
+                        spent: hidden
+                            ? 'Your spending'
+                            : Money.format(flow.spentMinor, currency),
+                        topCategory: topCategory,
+                        expenseCount: expenseCount,
+                        spendingAheadOfIncome:
+                            flow.incomeMinor > 0 &&
+                            flow.spentMinor > flow.incomeMinor,
+                      ),
                 actionLabel: 'Log an expense',
                 onAction: () => onQuickAction(QuickAction.expense),
               ),
@@ -124,7 +177,7 @@ class HomeScreen extends ConsumerWidget {
                 SetupTask(
                   title: 'Log your first expense',
                   subtitle: 'Takes about three seconds',
-                  done: false,
+                  done: hasExpense,
                   onTap: () => onQuickAction(QuickAction.expense),
                 ),
                 const SetupTask(
@@ -141,7 +194,18 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           section('Recent activity'),
-          stagger(const RecentActivity()),
+          stagger(
+            RecentActivity(
+              transactions: recent,
+              accounts: accountById,
+              categories: categoryById,
+              hidden: hidden,
+              onSeeAll: onOpenHistory,
+              onOpen: (t) =>
+                  Navigator.of(context)
+                      .push(TransactionEntryScreen.route(existing: t)),
+            ),
+          ),
         ],
       ),
     );

@@ -6,7 +6,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
 import '../../../core/widgets/velora_mascot.dart';
 import '../../accounts/presentation/wallet_screen.dart';
+import '../../history/presentation/history_screen.dart';
 import '../../home/presentation/home_screen.dart';
+import '../../transactions/domain/transaction.dart';
+import '../../transactions/presentation/transaction_entry_screen.dart';
 import 'widgets/coming_soon_tab.dart';
 import 'widgets/floating_nav_bar.dart';
 import 'widgets/quick_actions.dart';
@@ -86,14 +89,20 @@ class _AppShellState extends State<AppShell>
 
   void _onAction(QuickAction action) {
     setState(() => _actionsOpen = false);
+    final kind = switch (action) {
+      QuickAction.expense => TransactionKind.expense,
+      QuickAction.income => TransactionKind.income,
+      QuickAction.transfer => TransactionKind.transfer,
+      QuickAction.scan || QuickAction.ask => null,
+    };
+    if (kind != null) {
+      Navigator.of(context).push(TransactionEntryScreen.route(kind: kind));
+      return;
+    }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(
-            "${action.label} is coming next. It's the next thing we're building!",
-          ),
-        ),
+        SnackBar(content: Text('${action.label} is coming soon!')),
       );
   }
 
@@ -109,7 +118,11 @@ class _AppShellState extends State<AppShell>
   }
 
   Widget _tab(int i) => switch (i) {
-    0 => HomeScreen(onQuickAction: _onAction, onOpenWallet: () => _select(1)),
+    0 => HomeScreen(
+      onQuickAction: _onAction,
+      onOpenWallet: () => _select(1),
+      onOpenHistory: () => _select(3),
+    ),
     1 => const WalletScreen(),
     2 => const ComingSoonTab(
       title: 'Plan',
@@ -127,16 +140,7 @@ class _AppShellState extends State<AppShell>
         ),
       ],
     ),
-    _ => const ComingSoonTab(
-      title: 'History',
-      subtitle: 'Every peso, searchable and tidy.',
-      pose: MascotPose.coin,
-      previews: [
-        (Icons.search_rounded, 'Search and filter every transaction'),
-        (Icons.calendar_month_rounded, 'Daily summaries at a glance'),
-        (Icons.ios_share_rounded, 'Export to a spreadsheet anytime'),
-      ],
-    ),
+    _ => const HistoryScreen(),
   };
 
   @override

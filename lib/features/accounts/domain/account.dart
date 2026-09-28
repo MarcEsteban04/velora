@@ -9,7 +9,8 @@ class Account {
     required this.openingBalanceMinor,
     required this.createdAt,
     this.includeInNetWorth = true,
-  });
+    int? balanceMinor,
+  }) : balanceMinor = balanceMinor ?? openingBalanceMinor;
 
   final String id;
   final String name;
@@ -24,8 +25,20 @@ class Account {
   /// household wallet). Such accounts are listed but not counted.
   final bool includeInNetWorth;
 
-  /// The current balance. Until transactions exist, it's the opening balance.
-  int get balanceMinor => openingBalanceMinor;
+  /// The live balance: opening balance plus all transactions. The database
+  /// computes it (the `account_balances` view).
+  final int balanceMinor;
+
+  Account withBalance(int minor) => Account(
+    id: id,
+    name: name,
+    type: type,
+    currencyCode: currencyCode,
+    openingBalanceMinor: openingBalanceMinor,
+    createdAt: createdAt,
+    includeInNetWorth: includeInNetWorth,
+    balanceMinor: minor,
+  );
 
   factory Account.fromRow(Map<String, dynamic> row) => Account(
     id: row['id'] as String,

@@ -46,6 +46,41 @@ extension CoachToneStyle on CoachTone {
     CoachTone.direct => 'No data, no insights. Log your first expense.',
   };
 
+  /// A note about this month's real numbers. It never invents a statistic.
+  String monthInsight({
+    required String name,
+    required String spent,
+    required String? topCategory,
+    required int expenseCount,
+    required bool spendingAheadOfIncome,
+  }) {
+    final top = topCategory;
+    if (spendingAheadOfIncome) {
+      return switch (this) {
+        CoachTone.gentle =>
+          "You've spent a little more than came in this month, $name. "
+              'A slower week could even it out.',
+        CoachTone.balanced =>
+          'Spending ($spent) is ahead of income this month.'
+              '${top == null ? '' : ' $top is the biggest slice.'}',
+        CoachTone.direct =>
+          "You're spending more than you earn this month."
+              '${top == null ? '' : ' Cut back on $top.'}',
+      };
+    }
+    return switch (this) {
+      CoachTone.gentle =>
+        '$expenseCount ${expenseCount == 1 ? 'expense' : 'expenses'} logged '
+            'this month${top == null ? '' : ', mostly $top'}. '
+            "You're doing lovely!",
+      CoachTone.balanced =>
+        '$spent spent this month${top == null ? '' : ', most on $top'}. '
+            'Nice and steady.',
+      CoachTone.direct =>
+        '$spent out this month.${top == null ? '' : ' Top category: $top.'}',
+    };
+  }
+
   String get headsUpExample => switch (this) {
     CoachTone.gentle =>
       "Spending's picking up a little. Maybe a slower day tomorrow?",

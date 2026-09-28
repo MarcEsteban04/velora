@@ -27,6 +27,10 @@ abstract final class AppTheme {
       textTheme: AppTypography.textTheme,
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        // Float above the floating nav bar (and onboarding's bottom
+        // buttons), so a snackbar never covers a tab or turns a tab tap into
+        // an accidental Undo.
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 104),
         backgroundColor: AppColors.surfaceRaised,
         contentTextStyle: AppTypography.textTheme.bodyMedium?.copyWith(
           color: AppColors.textPrimary,

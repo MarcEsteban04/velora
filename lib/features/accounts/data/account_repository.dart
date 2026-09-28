@@ -25,8 +25,18 @@ class SupabaseAccountRepository implements AccountRepository {
 
   @override
   Future<List<Account>> fetchAll() async {
-    final rows = await _table.select().order('created_at', ascending: true);
-    return rows.map(Account.fromRow).toList();
+    final (rows, balances) = await (
+      _table.select().order('created_at', ascending: true),
+      _db.from('account_balances').select(),
+    ).wait;
+    final byId = {
+      for (final b in balances)
+        b['account_id'] as String: (b['balance_minor'] as num).toInt(),
+    };
+    return rows
+        .map(Account.fromRow)
+        .map((a) => a.withBalance(byId[a.id] ?? a.openingBalanceMinor))
+        .toList();
   }
 
   @override
