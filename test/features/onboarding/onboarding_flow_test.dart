@@ -339,7 +339,10 @@ void main() {
 
     // + opens quick actions; picking one closes the panel with a note.
     await tester.tap(find.bySemanticsLabel(RegExp('Add: open quick actions')));
-    await tester.pump(const Duration(milliseconds: 600));
+    // Let the spring-in animation settle before tapping a tile.
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 60));
+    }
     expect(find.text('What would you like to log?'), findsOneWidget);
     await tester.tap(find.text('Money coming in'));
     await tester.pump();
