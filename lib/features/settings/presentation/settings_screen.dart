@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/constants/app_info.dart';
 import '../../../core/errors/friendly_error.dart';
 import '../../../core/money/currency.dart';
 import '../../../core/storage/app_preferences.dart';
@@ -19,6 +18,9 @@ import '../../auth/application/session_actions.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/backup_status.dart';
 import '../../auth/presentation/backup_sheet.dart';
+import '../../updates/application/update_providers.dart';
+import '../../updates/domain/app_release.dart';
+import '../../updates/presentation/update_sheet.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/user_profile.dart';
 import '../../profile/presentation/coach_tone_style.dart';
@@ -62,6 +64,33 @@ class SettingsScreen extends ConsumerWidget {
         friendlyError(error, action: 'save that'),
         tone: ToastTone.error,
       );
+    }
+  }
+
+  /// Opens the update if there is one; otherwise checks again and says
+  /// what it found.
+  Future<void> _checkForUpdates(BuildContext context, WidgetRef ref) async {
+    final toast = Toast.of(context);
+    if (ref.read(updateCheckProvider).value case final UpdateAvailable u) {
+      await UpdateSheet.show(context, u);
+      return;
+    }
+    try {
+      final result = await ref.refresh(updateCheckProvider.future);
+      if (!context.mounted) return;
+      switch (result) {
+        case UpdateAvailable():
+          await UpdateSheet.show(context, result);
+        case UpToDate(:final installed):
+          toast.show('You’re on the latest version, ${installed.name}.');
+        case UpdatesNotSetUp():
+          toast.show(
+            'Updates aren’t set up for this account yet.',
+            tone: ToastTone.info,
+          );
+      }
+    } on Object catch (error) {
+      toast.error(friendlyError(error, action: 'check for updates'));
     }
   }
 
@@ -109,6 +138,8 @@ class SettingsScreen extends ConsumerWidget {
     final appearance = ref.watch(appearanceProvider);
     final zone = ref.watch(timeZoneProvider);
     final backup = ref.watch(backupStatusProvider);
+    final installed = ref.watch(installedVersionProvider).value;
+    final update = ref.watch(updateCheckProvider);
     final streak = ref.watch(streakSettingsProvider);
     final streakCtl = ref.read(streakSettingsProvider.notifier);
     final name = profile?.name ?? 'friend';
@@ -401,10 +432,27 @@ class SettingsScreen extends ConsumerWidget {
                         subtitle: 'Your data is private to you. Your PIN never leaves this phone.',
                       ),
                       SettingsTile(
+                        icon: Icons.system_update_rounded,
+                        color: AppColors.sky,
+                        title: 'Check for updates',
+                        subtitle: switch (update) {
+                          AsyncValue(isLoading: true) => 'Checking…',
+                          AsyncValue(value: UpdateAvailable(:final release)) =>
+                            'Velora ${release.versionName} is ready to install',
+                          AsyncValue(value: UpToDate()) =>
+                            'You’re on the latest version',
+                          AsyncValue(value: UpdatesNotSetUp()) =>
+                            'Not set up for this account yet',
+                          _ => 'Couldn’t check. Tap to try again.',
+                        },
+                        badge: update.value is UpdateAvailable ? 'NEW' : null,
+                        onTap: () => _checkForUpdates(context, ref),
+                      ),
+                      SettingsTile(
                         icon: Icons.info_rounded,
                         color: AppColors.textSecondary,
                         title: 'Version',
-                        value: AppInfo.version,
+                        value: installed?.name ?? '…',
                       ),
                     ],
                   ),

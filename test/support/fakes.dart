@@ -27,6 +27,8 @@ import 'package:velora/features/profile/domain/user_profile.dart';
 import 'package:velora/features/transactions/data/transaction_repository.dart';
 import 'package:velora/features/transactions/domain/category.dart';
 import 'package:velora/features/transactions/domain/transaction.dart';
+import 'package:velora/features/updates/data/update_repository.dart';
+import 'package:velora/features/updates/domain/app_release.dart';
 
 /// An in-memory stand-in for Supabase. One store sits behind every fake
 /// repository, so tests run the real app end to end without a network.
@@ -553,6 +555,47 @@ class FakeAuth implements AuthRepository {
   }
 }
 
+/// The releases bucket in memory. Set [latest] to publish a version.
+class FakeUpdates implements UpdateRepository {
+  static const current = InstalledVersion(name: '0.1.0', code: 1);
+
+  AppRelease? latest;
+  bool allowed = true;
+  int checks = 0;
+
+  @override
+  Future<InstalledVersion> installed() async => current;
+
+  @override
+  Future<UpdateCheck> check() async {
+    checks++;
+    if (!allowed) return const UpdatesNotSetUp(current);
+    final l = latest;
+    return l != null && l.versionCode > current.code
+        ? UpdateAvailable(current, l)
+        : const UpToDate(current);
+  }
+
+  @override
+  Future<String> downloadUrl(AppRelease release) async =>
+      'https://example.test/${release.apkPath}';
+}
+
+/// Plays back an install without Android.
+class FakeInstaller implements UpdateInstaller {
+  final urls = <String>[];
+
+  @override
+  Stream<InstallProgress> install(String url, AppRelease release) {
+    urls.add(url);
+    return Stream.fromIterable(const [
+      Downloading(0.5),
+      Downloading(1),
+      HandedToInstaller(),
+    ]);
+  }
+}
+
 /// Every override the full app needs to run on the fakes above. [prefs]
 /// comes from `SharedPreferences.getInstance()` after
 /// `SharedPreferences.setMockInitialValues`.
@@ -564,9 +607,13 @@ List<Override> fakeOverrides(
   FakeAsk? ask,
   FakeReceiptStorage? receipts,
   FakeAuth? auth,
+  FakeUpdates? updates,
+  FakeInstaller? installer,
 }) => [
   sharedPreferencesProvider.overrideWithValue(prefs),
   authRepositoryProvider.overrideWithValue(auth ?? FakeAuth(db)),
+  updateRepositoryProvider.overrideWithValue(updates ?? FakeUpdates()),
+  updateInstallerProvider.overrideWithValue(installer ?? FakeInstaller()),
   onboardingRepositoryProvider.overrideWithValue(db),
   profileRepositoryProvider.overrideWithValue(db),
   accountRepositoryProvider.overrideWithValue(FakeAccounts(db)),

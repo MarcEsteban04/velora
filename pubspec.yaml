@@ -1,7 +1,7 @@
 name: velora
 description: "Velora: a friendly companion for tracking your money."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: ^3.13.0
@@ -16,6 +16,8 @@ dependencies:
   http: ^1.6.0
   image_picker: ^1.2.3
   intl: ^0.20.3
+  ota_update: ^7.1.0
+  package_info_plus: ^10.2.1
   shared_preferences: ^2.5.5
   supabase_flutter: ^2.17.2
   timezone: ^0.11.1

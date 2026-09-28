@@ -2,13 +2,13 @@
 abstract final class AppAssets {
   static const _mascot = 'assets/images/mascot';
 
-  static const mascotWave = '$_mascot/velora_wave.png';
-  static const mascotCoin = '$_mascot/velora_coin.png';
-  static const mascotWallet = '$_mascot/velora_wallet.png';
-  static const mascotThumbsUp = '$_mascot/velora_thumbs_up.png';
-  static const mascotBudget = '$_mascot/velora_budget_mascot.png';
-  static const mascotGoals = '$_mascot/velora_goals_mascot.png';
-  static const mascotAccounts = '$_mascot/velora_accounts_mascot.png';
-  static const mascotStreak = '$_mascot/velora_streak_mascot.png';
-  static const mascotCategories = '$_mascot/velora_categories_mascot.png';
+  static const mascotWave = '$_mascot/velora_wave.webp';
+  static const mascotCoin = '$_mascot/velora_coin.webp';
+  static const mascotWallet = '$_mascot/velora_wallet.webp';
+  static const mascotThumbsUp = '$_mascot/velora_thumbs_up.webp';
+  static const mascotBudget = '$_mascot/velora_budget_mascot.webp';
+  static const mascotGoals = '$_mascot/velora_goals_mascot.webp';
+  static const mascotAccounts = '$_mascot/velora_accounts_mascot.webp';
+  static const mascotStreak = '$_mascot/velora_streak_mascot.webp';
+  static const mascotCategories = '$_mascot/velora_categories_mascot.webp';
 }

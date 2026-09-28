@@ -12,6 +12,7 @@ import '../core/widgets/velora_mascot.dart';
 import '../features/shell/presentation/app_shell.dart';
 import '../features/onboarding/presentation/onboarding_flow.dart';
 import '../features/profile/data/profile_repository.dart';
+import '../features/updates/presentation/update_prompter.dart';
 import '../features/welcome/presentation/welcome_screen.dart';
 
 /// Chooses the first screen: Welcome for new users, Home for returning ones.
@@ -41,7 +42,7 @@ class AppGate extends ConsumerWidget {
         onGetStarted: () => Navigator.of(context).push(OnboardingFlow.route()),
       );
     } else {
-      screen = const AppShell(key: ValueKey('shell'));
+      screen = const UpdatePrompter(key: ValueKey('shell'), child: AppShell());
     }
 
     return AnimatedSwitcher(
