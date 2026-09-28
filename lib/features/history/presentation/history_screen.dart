@@ -23,6 +23,8 @@ import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/category_style.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
+import '../../receipts/presentation/widgets/receipt_attachment.dart';
+import '../../receipts/presentation/widgets/receipt_image.dart';
 import 'widgets/day_group.dart';
 import 'widgets/history_filter.dart';
 import 'widgets/month_calendar.dart';
@@ -146,6 +148,47 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
+  /// Shows the receipt (to replace or remove), or adds one.
+  Future<void> _receipt(Transaction t) async {
+    final actions = TransactionActions.of(context);
+    final toast = Toast.of(context);
+    Future<void> attach() async {
+      final photo = await chooseReceiptPhoto(context, ref);
+      if (photo == null) return;
+      try {
+        await actions.attachReceipt(t.id, photo);
+        toast.show('Receipt attached', icon: Icons.attach_file_rounded);
+      } on Object catch (error) {
+        toast.error(friendlyError(error, action: 'upload the receipt'));
+      }
+    }
+
+    if (!t.hasReceipt) return attach();
+    final action = await ReceiptViewer.show(
+      context,
+      path: t.receiptPath,
+      canEdit: true,
+    );
+    if (!mounted) return;
+    switch (action) {
+      case ReceiptViewerAction.replace:
+        await attach();
+      case ReceiptViewerAction.remove:
+        try {
+          await actions.removeReceipt(t);
+          toast.show(
+            'Receipt removed',
+            tone: ToastTone.info,
+            icon: Icons.delete_outline_rounded,
+          );
+        } on Object catch (error) {
+          toast.error(friendlyError(error, action: 'remove the receipt'));
+        }
+      case null:
+        break;
+    }
+  }
+
   void _edit(Transaction t) =>
       Navigator.of(context).push(TransactionEntryScreen.route(existing: t));
 
@@ -199,6 +242,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       onEdit: _edit,
       onRepeat: _repeat,
       onDelete: _delete,
+      onReceipt: _receipt,
     );
 
     Widget group(

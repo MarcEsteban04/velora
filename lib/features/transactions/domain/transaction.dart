@@ -13,6 +13,7 @@ class Transaction {
     this.toAmountMinor,
     this.categoryId,
     this.note,
+    this.receiptPath,
   });
 
   final String id;
@@ -29,6 +30,11 @@ class Transaction {
   final String? note;
   final DateTime occurredAt;
 
+  /// Where its receipt photo is stored, if it has one.
+  final String? receiptPath;
+
+  bool get hasReceipt => receiptPath != null;
+
   factory Transaction.fromRow(Map<String, dynamic> row) => Transaction(
     id: row['id'] as String,
     kind:
@@ -40,6 +46,8 @@ class Transaction {
     toAmountMinor: (row['to_amount_minor'] as num?)?.toInt(),
     categoryId: row['category_id'] as String?,
     note: row['note'] as String?,
+    // Tolerates a database that hasn't had the receipts migration yet.
+    receiptPath: row['receipt_path'] as String?,
     occurredAt: AppClock.wall(DateTime.parse(row['occurred_at'] as String)),
   );
 
@@ -52,6 +60,7 @@ class Transaction {
     categoryId: categoryId,
     note: note,
     occurredAt: occurredAt,
+    receiptPath: receiptPath,
   );
 }
 
@@ -67,6 +76,7 @@ class TransactionDraft {
     this.toAmountMinor,
     this.categoryId,
     this.note,
+    this.receiptPath,
   });
 
   final TransactionKind kind;
@@ -77,6 +87,11 @@ class TransactionDraft {
   final String? categoryId;
   final String? note;
   final DateTime occurredAt;
+
+  /// Only sent when set, so an edit never clears a receipt by accident
+  /// (and it works before the receipts migration). Undo uses it to put a
+  /// deleted transaction's receipt back.
+  final String? receiptPath;
 
   Map<String, Object?> toRow() {
     final trimmed = note?.trim();
@@ -91,6 +106,7 @@ class TransactionDraft {
       'category_id': kind == TransactionKind.transfer ? null : categoryId,
       'note': (trimmed == null || trimmed.isEmpty) ? null : trimmed,
       'occurred_at': AppClock.toUtc(occurredAt).toIso8601String(),
+      'receipt_path': ?receiptPath,
     };
   }
 }

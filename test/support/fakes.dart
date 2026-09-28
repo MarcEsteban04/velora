@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
@@ -17,6 +19,7 @@ import 'package:velora/features/goals/domain/goal.dart';
 import 'package:velora/features/onboarding/application/onboarding_controller.dart';
 import 'package:velora/features/onboarding/data/onboarding_repository.dart';
 import 'package:velora/features/profile/data/profile_repository.dart';
+import 'package:velora/features/receipts/data/receipt_storage.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
 import 'package:velora/features/transactions/data/transaction_repository.dart';
 import 'package:velora/features/transactions/domain/category.dart';
@@ -168,17 +171,19 @@ class FakeTransactions implements TransactionRepository {
   FakeTransactions(this.db);
   final FakeBackend db;
 
-  Transaction _from(String id, TransactionDraft d) => Transaction(
-    id: id,
-    kind: d.kind,
-    amountMinor: d.amountMinor,
-    accountId: d.accountId,
-    toAccountId: d.toAccountId,
-    toAmountMinor: d.toAmountMinor,
-    categoryId: d.categoryId,
-    note: d.note?.trim().isEmpty ?? true ? null : d.note!.trim(),
-    occurredAt: d.occurredAt,
-  );
+  Transaction _from(String id, TransactionDraft d, {String? receipt}) =>
+      Transaction(
+        id: id,
+        kind: d.kind,
+        amountMinor: d.amountMinor,
+        accountId: d.accountId,
+        toAccountId: d.toAccountId,
+        toAmountMinor: d.toAmountMinor,
+        categoryId: d.categoryId,
+        note: d.note?.trim().isEmpty ?? true ? null : d.note!.trim(),
+        occurredAt: d.occurredAt,
+        receiptPath: d.receiptPath ?? receipt,
+      );
 
   List<Transaction> get _newestFirst =>
       List.of(db.transactions)
@@ -206,12 +211,53 @@ class FakeTransactions implements TransactionRepository {
   @override
   Future<Transaction> update(String id, TransactionDraft draft) async {
     final i = db.transactions.indexWhere((t) => t.id == id);
-    return db.transactions[i] = _from(id, draft);
+    // Like the database: an edit leaves the receipt alone.
+    return db.transactions[i] = _from(
+      id,
+      draft,
+      receipt: db.transactions[i].receiptPath,
+    );
   }
 
   @override
   Future<void> delete(String id) async =>
       db.transactions.removeWhere((t) => t.id == id);
+
+  @override
+  Future<Transaction> setReceipt(String id, String? path) async {
+    final i = db.transactions.indexWhere((t) => t.id == id);
+    final t = db.transactions[i];
+    return db.transactions[i] = Transaction(
+      id: t.id,
+      kind: t.kind,
+      amountMinor: t.amountMinor,
+      accountId: t.accountId,
+      toAccountId: t.toAccountId,
+      toAmountMinor: t.toAmountMinor,
+      categoryId: t.categoryId,
+      note: t.note,
+      occurredAt: t.occurredAt,
+      receiptPath: path,
+    );
+  }
+}
+
+/// Keeps receipt photos in memory, like the private `receipts` bucket.
+class FakeReceiptStorage implements ReceiptStorage {
+  final files = <String, Uint8List>{};
+
+  @override
+  Future<String> upload(String transactionId, Uint8List jpeg) async {
+    final path = 'me/$transactionId.jpg';
+    files[path] = jpeg;
+    return path;
+  }
+
+  @override
+  Future<String> url(String path) async => 'https://example.test/$path';
+
+  @override
+  Future<void> remove(String path) async => files.remove(path);
 }
 
 class FakeCategories implements CategoryRepository {
@@ -453,6 +499,7 @@ List<Override> fakeOverrides(
   SharedPreferences prefs, {
   FakeInsights? insights,
   FakeAsk? ask,
+  FakeReceiptStorage? receipts,
 }) => [
   sharedPreferencesProvider.overrideWithValue(prefs),
   onboardingRepositoryProvider.overrideWithValue(db),
@@ -464,6 +511,7 @@ List<Override> fakeOverrides(
   insightRepositoryProvider.overrideWithValue(insights ?? FakeInsights()),
   budgetRepositoryProvider.overrideWithValue(FakeBudgets(db)),
   askRepositoryProvider.overrideWithValue(ask ?? FakeAsk()),
+  receiptStorageProvider.overrideWithValue(receipts ?? FakeReceiptStorage()),
   goalRepositoryProvider.overrideWithValue(FakeGoals(db)),
   deviceCurrencyProvider.overrideWithValue(Currencies.byCode('PHP')),
 ];

@@ -48,7 +48,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   ReceiptScan? _scan;
   ParsedTransaction? _proposal;
   ProposalStatus _status = ProposalStatus.pending;
-  String? _savedId;
+  Transaction? _saved;
 
   Future<void> _take({required bool camera}) async {
     final toast = Toast.of(context);
@@ -61,7 +61,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
         _photo = photo;
         _stage = _Stage.reading;
         _status = ProposalStatus.pending;
-        _savedId = null;
+        _saved = null;
       });
       await _read(photo);
     } on PlatformException catch (error) {
@@ -111,12 +111,25 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     final toast = Toast.of(context);
     setState(() => _status = ProposalStatus.saving);
     try {
-      final saved = await TransactionActions.of(context).create(p.toDraft());
+      final actions = TransactionActions.of(context);
+      var saved = await actions.create(p.toDraft());
+      // The photo you scanned comes along as the receipt.
+      if (_photo case final photo?) {
+        try {
+          saved = await actions.attachReceipt(saved.id, photo.bytes);
+        } on Object catch (error) {
+          friendlyError(error, action: 'upload the receipt');
+          toast.error(
+            'Logged, but the receipt photo didn’t upload. Add it from '
+            'History.',
+          );
+        }
+      }
       HapticFeedback.heavyImpact();
       if (mounted) {
         setState(() {
           _status = ProposalStatus.saved;
-          _savedId = saved.id;
+          _saved = saved;
         });
       }
     } on Object catch (error) {
@@ -126,15 +139,18 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   }
 
   Future<void> _undo() async {
-    final id = _savedId;
-    if (id == null) return;
+    final saved = _saved;
+    if (saved == null) return;
     final toast = Toast.of(context);
+    final actions = TransactionActions.of(context);
     try {
-      await TransactionActions.of(context).delete(id);
+      // Undo takes the uploaded photo with it.
+      if (saved.hasReceipt) await actions.removeReceipt(saved);
+      await actions.delete(saved.id);
       if (mounted) {
         setState(() {
           _status = ProposalStatus.undone;
-          _savedId = null;
+          _saved = null;
         });
       }
     } on Object catch (error) {
@@ -146,8 +162,12 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     final p = _proposal;
     if (p == null) return;
     setState(() => _status = ProposalStatus.edited);
-    Navigator.of(context)
-        .push(TransactionEntryScreen.route(prefill: p.toDraft()));
+    Navigator.of(context).push(
+      TransactionEntryScreen.route(
+        prefill: p.toDraft(),
+        receipt: _photo?.bytes,
+      ),
+    );
   }
 
   void _restart() => setState(() {
@@ -156,7 +176,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
     _scan = null;
     _proposal = null;
     _status = ProposalStatus.pending;
-    _savedId = null;
+    _saved = null;
   });
 
   @override

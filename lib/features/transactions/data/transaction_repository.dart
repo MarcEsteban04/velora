@@ -17,6 +17,9 @@ abstract interface class TransactionRepository {
   Future<Transaction> update(String id, TransactionDraft draft);
 
   Future<void> delete(String id);
+
+  /// Sets or clears the stored receipt path.
+  Future<Transaction> setReceipt(String id, String? path);
 }
 
 abstract interface class CategoryRepository {
@@ -79,6 +82,16 @@ class SupabaseTransactionRepository implements TransactionRepository {
 
   @override
   Future<void> delete(String id) => _table.delete().eq('id', id);
+
+  @override
+  Future<Transaction> setReceipt(String id, String? path) async =>
+      Transaction.fromRow(
+        await _table
+            .update({'receipt_path': path})
+            .eq('id', id)
+            .select()
+            .single(),
+      );
 }
 
 class SupabaseCategoryRepository implements CategoryRepository {

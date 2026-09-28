@@ -1,9 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 
 import '../../accounts/data/account_repository.dart';
 import '../../budgets/application/budget_providers.dart';
+import '../../receipts/data/receipt_storage.dart';
 import '../../streaks/application/streak_providers.dart';
 import '../data/transaction_repository.dart';
 import '../domain/category.dart';
@@ -54,17 +57,20 @@ DateTime monthKey(DateTime d) => DateTime(d.year, d.month);
 class TransactionActions {
   TransactionActions(ProviderContainer container)
     : _repo = container.read(transactionRepositoryProvider),
+      _storage = container.read(receiptStorageProvider),
       _invalidate = container.invalidate;
 
   /// From inside a provider, such as Ask Velora's chat.
   TransactionActions.fromRef(Ref ref)
     : _repo = ref.read(transactionRepositoryProvider),
+      _storage = ref.read(receiptStorageProvider),
       _invalidate = ref.invalidate;
 
   factory TransactionActions.of(BuildContext context) =>
       TransactionActions(ProviderScope.containerOf(context, listen: false));
 
   final TransactionRepository _repo;
+  final ReceiptStorage _storage;
   final void Function(ProviderOrFamily) _invalidate;
 
   void _refresh() {
@@ -96,5 +102,29 @@ class TransactionActions {
   Future<void> delete(String id) async {
     await _repo.delete(id);
     _refresh();
+  }
+
+  /// Uploads [photo] as the transaction's receipt (replacing any earlier
+  /// one) and remembers where it is.
+  Future<Transaction> attachReceipt(String id, Uint8List photo) async {
+    final path = await _storage.upload(id, photo);
+    final t = await _repo.setReceipt(id, path);
+    _refresh();
+    return t;
+  }
+
+  /// Forgets the receipt and deletes the photo.
+  Future<Transaction> removeReceipt(Transaction t) async {
+    final updated = await _repo.setReceipt(t.id, null);
+    if (t.receiptPath case final path?) {
+      // The photo going is secondary; the transaction is already updated.
+      try {
+        await _storage.remove(path);
+      } on Object {
+        // Left behind, it's harmless and private.
+      }
+    }
+    _refresh();
+    return updated;
   }
 }

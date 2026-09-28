@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/field_label.dart';
 import '../../../core/widgets/pressable_button.dart';
 import '../../categories/presentation/category_editor_sheet.dart';
+import '../../receipts/presentation/widgets/receipt_attachment.dart';
 import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/presentation/widgets/account_avatar.dart';
@@ -42,6 +43,7 @@ class TransactionEntryScreen extends ConsumerStatefulWidget {
     this.existing,
     this.initialDay,
     this.prefill,
+    this.receipt,
   });
 
   final TransactionKind initialKind;
@@ -55,11 +57,15 @@ class TransactionEntryScreen extends ConsumerStatefulWidget {
   /// saved as new, never as an edit.
   final TransactionDraft? prefill;
 
+  /// A receipt photo to attach on save, for example the one just scanned.
+  final Uint8List? receipt;
+
   static Route<void> route({
     TransactionKind kind = TransactionKind.expense,
     Transaction? existing,
     DateTime? day,
     TransactionDraft? prefill,
+    Uint8List? receipt,
   }) => MaterialPageRoute(
     fullscreenDialog: true,
     builder: (_) => TransactionEntryScreen(
@@ -67,6 +73,7 @@ class TransactionEntryScreen extends ConsumerStatefulWidget {
       existing: existing,
       initialDay: day,
       prefill: prefill,
+      receipt: receipt,
     ),
   );
 
@@ -108,6 +115,15 @@ class _TransactionEntryScreenState
   bool _showAllCategories = false;
   bool _toAmountTouched = false;
   bool _saving = false;
+
+  /// A new receipt photo, uploaded when the transaction is saved.
+  late Uint8List? _receipt = widget.receipt;
+
+  /// The stored receipt is to be removed on save.
+  bool _dropReceipt = false;
+
+  String? get _storedReceipt =>
+      _dropReceipt ? null : widget.existing?.receiptPath;
 
   bool get _isEdit => widget.existing != null;
   bool get _isTransfer => _kind == TransactionKind.transfer;
@@ -226,6 +242,18 @@ class _TransactionEntryScreenState
       final saved = _isEdit
           ? await actions.update(widget.existing!.id, draft)
           : await actions.create(draft);
+      // The receipt goes second: if it fails, the transaction is safe.
+      var receiptFailed = false;
+      try {
+        if (_receipt case final photo?) {
+          await actions.attachReceipt(saved.id, photo);
+        } else if (_dropReceipt && widget.existing!.hasReceipt) {
+          await actions.removeReceipt(widget.existing!);
+        }
+      } on Object catch (error) {
+        receiptFailed = true;
+        friendlyError(error, action: 'upload the receipt');
+      }
       if (!mounted) return;
       HapticFeedback.heavyImpact();
       Navigator.of(context).pop();
@@ -237,6 +265,12 @@ class _TransactionEntryScreenState
             ? null
             : ToastAction('Undo', () => actions.delete(saved.id)),
       );
+      if (receiptFailed) {
+        toast.show(
+          'Saved, but the receipt didn’t upload. Try again from History.',
+          tone: ToastTone.error,
+        );
+      }
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -499,6 +533,18 @@ class _TransactionEntryScreenState
         onPickTime: _pickTime,
         onQuickDay: _setDay,
       ),
+      if (!_isTransfer) ...[
+        const SizedBox(height: 18),
+        ReceiptAttachment(
+          bytes: _receipt,
+          path: _storedReceipt,
+          onPicked: (b) => setState(() => _receipt = b),
+          onRemoved: () => setState(() {
+            _receipt = null;
+            _dropReceipt = true;
+          }),
+        ),
+      ],
     ];
 
     return Scaffold(

@@ -29,6 +29,7 @@ class TransactionMenu {
     required this.onEdit,
     required this.onRepeat,
     required this.onDelete,
+    required this.onReceipt,
   });
 
   final void Function(Transaction) onEdit;
@@ -36,6 +37,9 @@ class TransactionMenu {
   /// Logs the same thing again, now.
   final void Function(Transaction) onRepeat;
   final void Function(Transaction) onDelete;
+
+  /// Views the receipt, or adds one when there's none.
+  final void Function(Transaction) onReceipt;
 }
 
 /// One day: a header with the day's net and a timeline of its
@@ -398,11 +402,26 @@ class _TransactionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.titleMedium,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.titleMedium,
+                          ),
+                        ),
+                        if (t.hasReceipt) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.attach_file_rounded,
+                            size: 15,
+                            color: AppColors.leafBright,
+                            semanticLabel: 'Has a receipt',
+                          ),
+                        ],
+                      ],
                     ),
                     if (subtitle != null)
                       Text(
@@ -496,6 +515,15 @@ class _MoreButton extends StatelessWidget {
                   'Log again now',
                   AppColors.textPrimary,
                 ),
+                if (transaction.kind != TransactionKind.transfer)
+                  (
+                    'receipt',
+                    transaction.hasReceipt
+                        ? Icons.receipt_long_rounded
+                        : Icons.add_a_photo_rounded,
+                    transaction.hasReceipt ? 'View receipt' : 'Add receipt',
+                    AppColors.textPrimary,
+                  ),
                 (
                   'delete',
                   Icons.delete_outline_rounded,
@@ -521,6 +549,8 @@ class _MoreButton extends StatelessWidget {
         menu.onEdit(transaction);
       case 'repeat':
         menu.onRepeat(transaction);
+      case 'receipt':
+        menu.onReceipt(transaction);
       case 'delete':
         menu.onDelete(transaction);
     }
