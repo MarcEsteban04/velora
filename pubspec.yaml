@@ -24,6 +24,7 @@ flutter:
 
   assets:
     - assets/images/mascot/
+    - assets/images/accounts/
 
   fonts:
     - family: Fredoka

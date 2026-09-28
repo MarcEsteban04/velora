@@ -18,6 +18,8 @@ import '../data/account_repository.dart';
 import '../domain/account.dart';
 import 'account_form_screen.dart';
 import 'account_type_style.dart';
+import 'institutions.dart';
+import 'widgets/account_avatar.dart';
 import 'widgets/account_card.dart';
 import 'widgets/account_details_sheet.dart';
 import 'widgets/allocation_bar.dart';
@@ -300,6 +302,7 @@ class _CardEntry extends StatelessWidget {
             obscured: hidden,
             compact: true,
             excluded: !account.includeInNetWorth,
+            institution: Institutions.forAccount(account),
           ),
         ),
       ),
@@ -328,15 +331,7 @@ class _ListRow extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: LinearGradient(colors: account.type.gradient),
-          ),
-          child: Icon(account.type.icon, color: Colors.white, size: 22),
-        ),
+        leading: AccountAvatar(account: account),
         title: Text(
           account.name,
           maxLines: 1,

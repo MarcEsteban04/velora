@@ -5,6 +5,8 @@ import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/account.dart';
 import '../account_type_style.dart';
+import '../institutions.dart';
+import 'institution_logo.dart';
 
 /// A bank-card-style tile for an account. The gradient animates when the type
 /// changes, and [countUp] rolls the balance up from zero.
@@ -19,6 +21,7 @@ class AccountCard extends StatelessWidget {
     this.obscured = false,
     this.compact = false,
     this.excluded = false,
+    this.institution,
   });
 
   final String name;
@@ -37,10 +40,13 @@ class AccountCard extends StatelessWidget {
   /// Marks an account that isn't counted in net worth (compact layout only).
   final bool excluded;
 
+  /// When set, the card wears the bank's or e-wallet's brand colours and logo.
+  final Institution? institution;
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final colors = type.gradient;
+    final colors = institution?.gradient ?? type.gradient;
     if (compact) return _buildCompact(context, text, colors);
 
     return Semantics(
@@ -80,15 +86,18 @@ class AccountCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(13),
+                      if (institution case final i?)
+                        InstitutionLogo(institution: i, height: 38)
+                      else
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Icon(type.icon, color: Colors.white, size: 22),
                         ),
-                        child: Icon(type.icon, color: Colors.white, size: 22),
-                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -197,29 +206,39 @@ class AccountCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(11),
+                  if (institution case final i?) ...[
+                    InstitutionLogo(institution: i, height: 28),
+                    const SizedBox(height: 8),
+                    Text(
+                      name.isEmpty ? i.name : name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium?.copyWith(fontSize: 15),
+                    ),
+                  ] else
+                    Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Icon(type.icon, color: Colors.white, size: 18),
                         ),
-                        child: Icon(type.icon, color: Colors.white, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          name.isEmpty ? type.defaultName : name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: text.titleMedium?.copyWith(fontSize: 15),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            name.isEmpty ? type.defaultName : name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.titleMedium?.copyWith(fontSize: 15),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
+                      ],
+                    ),
+                  SizedBox(height: institution == null ? 8 : 2),
                   Text(
                     excluded
                         ? 'Not in net worth'

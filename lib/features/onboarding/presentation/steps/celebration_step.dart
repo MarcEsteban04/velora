@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/widgets/reveal.dart';
 import '../../../../core/widgets/velora_mascot.dart';
+import '../../../accounts/presentation/institutions.dart';
 import '../../../accounts/presentation/widgets/account_card.dart';
 import '../../application/onboarding_controller.dart';
 import '../widgets/confetti_burst.dart';
@@ -49,6 +50,7 @@ class _CelebrationStepState extends ConsumerState<CelebrationStep> {
                 type: draft.accountType,
                 currency: draft.currency,
                 balanceMinor: draft.openingBalanceMinor,
+                institution: Institutions.match(draft.accountName),
                 countUp: true,
               ),
             ),

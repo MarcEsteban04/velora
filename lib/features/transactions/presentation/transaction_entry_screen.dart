@@ -11,7 +11,7 @@ import '../../../core/widgets/field_label.dart';
 import '../../../core/widgets/pressable_button.dart';
 import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
-import '../../accounts/presentation/account_type_style.dart';
+import '../../accounts/presentation/widgets/account_avatar.dart';
 import '../../profile/data/profile_repository.dart';
 import '../application/amount_expression.dart';
 import '../application/transaction_providers.dart';
@@ -914,22 +914,7 @@ class _AccountTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    gradient: a == null
-                        ? null
-                        : LinearGradient(colors: a.type.gradient),
-                    color: a == null ? AppColors.surfaceRaised : null,
-                  ),
-                  child: Icon(
-                    a?.type.icon ?? Icons.add_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
+                AccountAvatar(account: a, size: 46),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

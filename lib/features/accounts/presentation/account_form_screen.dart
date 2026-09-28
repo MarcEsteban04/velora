@@ -16,7 +16,9 @@ import '../data/account_repository.dart';
 import '../domain/account.dart';
 import 'account_type_style.dart';
 import 'widgets/account_card.dart';
+import 'institutions.dart';
 import 'widgets/account_type_picker.dart';
+import 'widgets/institution_picker.dart';
 
 /// Add or edit an account. The card at the top previews exactly how the
 /// account will look while the user fills in the form.
@@ -55,6 +57,40 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       ? widget.defaultCurrency
       : Currencies.byCode(widget.account!.currencyCode);
   late bool _include = widget.account?.includeInNetWorth ?? true;
+
+  /// Chosen bank or e-wallet. Existing accounts start with the one saved,
+  /// or the one recognised from their name.
+  late Institution? _institution = widget.account == null
+      ? null
+      : Institutions.forAccount(widget.account!);
+
+  /// Only a choice the user actually made gets saved; a name match keeps
+  /// working on its own.
+  bool _institutionPicked = false;
+
+  void _pickInstitution(Institution? i) {
+    final previous = _institution;
+    setState(() {
+      _institution = i;
+      _institutionPicked = true;
+      if (i != null) _type = i.type;
+      // Fill in the name, unless the user typed their own.
+      final current = _name.text.trim();
+      final untouched =
+          current.isEmpty ||
+          current == previous?.name ||
+          AccountType.values.any((t) => t.defaultName == current);
+      if (i != null && untouched) _name.text = i.name;
+    });
+  }
+
+  void _setType(AccountType t) => setState(() {
+    _type = t;
+    if (_institution != null && _institution!.type != t) {
+      _institution = null;
+      _institutionPicked = true;
+    }
+  });
   late final _name = TextEditingController(text: widget.account?.name ?? '');
   late final _balance = TextEditingController(
     text: widget.account == null
@@ -95,6 +131,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       currencyCode: _currency.code,
       openingBalanceMinor: _balanceMinor,
       includeInNetWorth: _include,
+      institutionId: _institutionPicked ? _institution?.id : null,
     );
     final repo = ref.read(accountRepositoryProvider);
     try {
@@ -162,13 +199,25 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                           type: _type,
                           currency: _currency,
                           balanceMinor: _balanceMinor,
+                          // A picked brand wins; otherwise recognise the name
+                          // as it's typed.
+                          institution: _institutionPicked
+                              ? _institution
+                              : _institution ?? Institutions.match(_name.text),
                         ),
                       ),
                       const FieldLabel('Account type'),
-                      AccountTypePicker(
-                        selected: _type,
-                        onChanged: (t) => setState(() => _type = t),
-                      ),
+                      AccountTypePicker(selected: _type, onChanged: _setType),
+                      if (Institutions.ofType(_type).isNotEmpty) ...[
+                        FieldLabel(
+                          _type == AccountType.bank ? 'Bank' : 'E-wallet',
+                        ),
+                        InstitutionPicker(
+                          type: _type,
+                          selected: _institution,
+                          onChanged: _pickInstitution,
+                        ),
+                      ],
                       const FieldLabel('Account name'),
                       TextField(
                         controller: _name,

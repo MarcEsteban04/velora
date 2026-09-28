@@ -102,6 +102,7 @@ class FakeAccounts implements AccountRepository {
     currencyCode: d.currencyCode,
     openingBalanceMinor: d.openingBalanceMinor,
     includeInNetWorth: d.includeInNetWorth,
+    institutionId: d.institutionId,
     createdAt: DateTime(2026),
   );
 

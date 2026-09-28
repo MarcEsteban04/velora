@@ -7,8 +7,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/reveal.dart';
 import '../../../accounts/domain/account.dart';
 import '../../../accounts/presentation/account_type_style.dart';
+import '../../../accounts/presentation/institutions.dart';
 import '../../../accounts/presentation/widgets/account_card.dart';
 import '../../../accounts/presentation/widgets/account_type_picker.dart';
+import '../../../accounts/presentation/widgets/institution_picker.dart';
 import '../../application/onboarding_controller.dart';
 import '../widgets/step_layout.dart';
 
@@ -40,6 +42,22 @@ class _AccountStepState extends ConsumerState<AccountStep> {
     _nameController.dispose();
     _balanceController.dispose();
     super.dispose();
+  }
+
+  /// Picking a bank or e-wallet names the account after it, and the card
+  /// then wears its brand (recognised from the name).
+  void _pickInstitution(Institution? i) {
+    final notifier = ref.read(onboardingControllerProvider.notifier);
+    if (i == null) {
+      if (Institutions.match(_nameController.text) != null) {
+        final type = ref.read(onboardingControllerProvider).accountType;
+        _nameController.text = type.defaultName;
+        notifier.setAccountName(type.defaultName);
+      }
+      return;
+    }
+    _nameController.text = i.name;
+    notifier.setAccountType(i.type, name: i.name);
   }
 
   void _selectType(AccountType type) {
@@ -75,10 +93,21 @@ class _AccountStepState extends ConsumerState<AccountStep> {
             type: draft.accountType,
             currency: currency,
             balanceMinor: draft.openingBalanceMinor,
+            institution: Institutions.match(draft.accountName),
           ),
         ),
         const FieldLabel('Account type'),
         AccountTypePicker(selected: draft.accountType, onChanged: _selectType),
+        if (Institutions.ofType(draft.accountType).isNotEmpty) ...[
+          FieldLabel(
+            draft.accountType == AccountType.bank ? 'Bank' : 'E-wallet',
+          ),
+          InstitutionPicker(
+            type: draft.accountType,
+            selected: Institutions.match(draft.accountName),
+            onChanged: _pickInstitution,
+          ),
+        ],
         const FieldLabel('Account name'),
         TextField(
           controller: _nameController,

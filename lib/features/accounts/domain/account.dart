@@ -9,6 +9,7 @@ class Account {
     required this.openingBalanceMinor,
     required this.createdAt,
     this.includeInNetWorth = true,
+    this.institutionId,
     int? balanceMinor,
   }) : balanceMinor = balanceMinor ?? openingBalanceMinor;
 
@@ -25,6 +26,10 @@ class Account {
   /// household wallet). Such accounts are listed but not counted.
   final bool includeInNetWorth;
 
+  /// The bank or e-wallet it belongs to (a key in `Institutions`), if one
+  /// was chosen.
+  final String? institutionId;
+
   /// The live balance: opening balance plus all transactions. The database
   /// computes it (the `account_balances` view).
   final int balanceMinor;
@@ -37,6 +42,7 @@ class Account {
     openingBalanceMinor: openingBalanceMinor,
     createdAt: createdAt,
     includeInNetWorth: includeInNetWorth,
+    institutionId: institutionId,
     balanceMinor: minor,
   );
 
@@ -51,6 +57,7 @@ class Account {
     createdAt: DateTime.parse(row['created_at'] as String),
     // Reads tolerate a database that hasn't had the migration yet.
     includeInNetWorth: row['include_in_net_worth'] as bool? ?? true,
+    institutionId: row['institution'] as String?,
   );
 }
 
@@ -62,6 +69,7 @@ class AccountDraft {
     required this.currencyCode,
     required this.openingBalanceMinor,
     this.includeInNetWorth = true,
+    this.institutionId,
   });
 
   final String name;
@@ -69,6 +77,7 @@ class AccountDraft {
   final String currencyCode;
   final int openingBalanceMinor;
   final bool includeInNetWorth;
+  final String? institutionId;
 
   Map<String, Object> toRow() => {
     'name': name.trim(),
@@ -76,6 +85,7 @@ class AccountDraft {
     'currency_code': currencyCode,
     'opening_balance_minor': openingBalanceMinor,
     'include_in_net_worth': includeInNetWorth,
+    'institution': ?institutionId,
   };
 }
 

@@ -4,7 +4,7 @@ import '../../../../core/money/currency.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../accounts/domain/account.dart';
-import '../../../accounts/presentation/account_type_style.dart';
+import '../../../accounts/presentation/widgets/account_avatar.dart';
 
 /// Pick an account, with each one's live balance so you know where the money
 /// will come from.
@@ -74,19 +74,7 @@ class AccountPickerSheet extends StatelessWidget {
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
                           ),
-                          leading: Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(13),
-                              gradient: LinearGradient(colors: a.type.gradient),
-                            ),
-                            child: Icon(
-                              a.type.icon,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
+                          leading: AccountAvatar(account: a, size: 42),
                           title: Text(a.name, style: text.titleMedium),
                           subtitle: Text(
                             disabled

@@ -12,6 +12,7 @@ import '../../data/account_repository.dart';
 import '../../domain/account.dart';
 import '../account_form_screen.dart';
 import '../account_type_style.dart';
+import '../institutions.dart';
 import 'account_card.dart';
 
 /// Everything about one account, with Edit and a confirmed Delete.
@@ -125,6 +126,7 @@ class _AccountDetailsSheetState extends ConsumerState<AccountDetailsSheet> {
               currency: currency,
               balanceMinor: a.balanceMinor,
               obscured: widget.hidden,
+              institution: Institutions.forAccount(a),
             ),
             const SizedBox(height: 16),
             for (final (label, value) in rows)
