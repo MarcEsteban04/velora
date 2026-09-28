@@ -12,6 +12,7 @@ import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/category_style.dart';
 import '../application/category_actions.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Creates a category, or edits one: name, icon and color, plus hide and
 /// delete for existing ones. Returns the saved category, or null.
@@ -72,8 +73,7 @@ class _EditorState extends ConsumerState<_Editor> {
   );
 
   void _toast(String message) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      Toast.of(context).show(message, tone: ToastTone.error);
 
   Future<void> _save() async {
     if (_name.text.trim().isEmpty || _busy || _taken) return;

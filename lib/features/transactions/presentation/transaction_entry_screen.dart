@@ -23,6 +23,7 @@ import 'widgets/amount_display.dart';
 import 'widgets/calc_keypad.dart';
 import 'widgets/category_chips.dart';
 import 'widgets/kind_switcher.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Log (or edit) an expense, income or transfer.
 ///
@@ -189,7 +190,7 @@ class _TransactionEntryScreenState
       occurredAt: _when,
     );
     final actions = TransactionActions.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     try {
       final saved = _isEdit
           ? await actions.update(widget.existing!.id, draft)
@@ -197,29 +198,20 @@ class _TransactionEntryScreenState
       if (!mounted) return;
       HapticFeedback.heavyImpact();
       Navigator.of(context).pop();
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              _isEdit
-                  ? 'Changes saved'
-                  : '${_kind.label} saved · ${Money.format(amountMinor, currency)}',
-            ),
-            action: _isEdit
-                ? null
-                : SnackBarAction(
-                    label: 'Undo',
-                    textColor: AppColors.leafBright,
-                    onPressed: () => actions.delete(saved.id),
-                  ),
-          ),
-        );
+      toast.show(
+        _isEdit
+            ? 'Changes saved'
+            : '${_kind.label} saved · ${Money.format(amountMinor, currency)}',
+        action: _isEdit
+            ? null
+            : ToastAction('Undo', () => actions.delete(saved.id)),
+      );
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(error, action: 'save that'))),
+      toast.show(
+        friendlyError(error, action: 'save that'),
+        tone: ToastTone.error,
       );
     }
   }
@@ -246,24 +238,21 @@ class _TransactionEntryScreenState
     );
     if (ok != true || !mounted) return;
     final actions = TransactionActions.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     try {
       await actions.delete(existing.id);
       if (!mounted) return;
       Navigator.of(context).pop();
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('Transaction deleted'),
-          action: SnackBarAction(
-            label: 'Undo',
-            textColor: AppColors.leafBright,
-            onPressed: () => actions.create(existing.toDraft()),
-          ),
-        ),
+      toast.show(
+        'Transaction deleted',
+        tone: ToastTone.info,
+        icon: Icons.delete_outline_rounded,
+        action: ToastAction('Undo', () => actions.create(existing.toDraft())),
       );
     } on Object catch (error) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(error, action: 'delete that'))),
+      toast.show(
+        friendlyError(error, action: 'delete that'),
+        tone: ToastTone.error,
       );
     }
   }

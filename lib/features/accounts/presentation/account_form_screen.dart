@@ -19,6 +19,7 @@ import 'widgets/account_card.dart';
 import 'institutions.dart';
 import 'widgets/account_type_picker.dart';
 import 'widgets/institution_picker.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Add or edit an account. The card at the top previews exactly how the
 /// account will look while the user fills in the form.
@@ -147,10 +148,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(friendlyError(error, action: 'save the account')),
-        ),
+      Toast.of(context).show(
+        friendlyError(error, action: 'save the account'),
+        tone: ToastTone.error,
       );
     }
   }

@@ -75,6 +75,12 @@ void main() {
 
     expect(find.bySemanticsLabel(RegExp(r'^1 day streak')), findsOneWidget);
 
+    // The "saved" island tucks itself away on its own.
+    expect(find.text('Undo'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5));
+    await frames(tester, 8);
+    expect(find.text('Undo'), findsNothing);
+
     // The chip opens the details.
     await tester.tap(find.byType(StreakChip));
     await frames(tester, 12);

@@ -13,6 +13,7 @@ import 'widgets/lock_scaffold.dart';
 import 'widgets/number_pad.dart';
 import 'widgets/pin_creator.dart';
 import 'widgets/pin_dots.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Change PIN: prove you know the current one (with the same attempt limits
 /// as the lock screen), then create and confirm a new one.
@@ -100,18 +101,17 @@ class _ChangePinScreenState extends ConsumerState<ChangePinScreen> {
   }
 
   Future<void> _save(String pin) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     final navigator = Navigator.of(context);
     try {
       await ref.read(pinRepositoryProvider).setPin(pin);
       await Future<void>.delayed(const Duration(milliseconds: 450));
       navigator.pop();
-      messenger.showSnackBar(const SnackBar(content: Text('PIN changed')));
+      toast.show('PIN changed');
     } on Object catch (error) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(friendlyError(error, action: 'change your PIN')),
-        ),
+      toast.show(
+        friendlyError(error, action: 'change your PIN'),
+        tone: ToastTone.error,
       );
     }
   }

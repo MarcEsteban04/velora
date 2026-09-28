@@ -23,6 +23,7 @@ import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/category_style.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
 import '../../transactions/presentation/widgets/transaction_tile.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Every transaction, one month at a time: a summary card, kind filters and
 /// search, grouped by day. Swipe to delete (with Undo) and tap to edit.
@@ -53,25 +54,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Future<void> _delete(Transaction t) async {
     setState(() => _removed.add(t.id));
     final actions = TransactionActions.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     try {
       await actions.delete(t.id);
       HapticFeedback.mediumImpact();
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: const Text('Transaction deleted'),
-            action: SnackBarAction(
-              label: 'Undo',
-              textColor: AppColors.leafBright,
-              onPressed: () => actions.create(t.toDraft()),
-            ),
-          ),
-        );
+      toast.show(
+        'Transaction deleted',
+        tone: ToastTone.info,
+        icon: Icons.delete_outline_rounded,
+        action: ToastAction('Undo', () => actions.create(t.toDraft())),
+      );
     } on Object catch (error) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(error, action: 'delete that'))),
+      toast.show(
+        friendlyError(error, action: 'delete that'),
+        tone: ToastTone.error,
       );
       // The delete failed, so bring the row back.
       if (mounted) setState(() => _removed.remove(t.id));

@@ -42,8 +42,10 @@ final walletSnapshotProvider = Provider<WalletSnapshot?>((ref) {
   final categories = ref.watch(categoriesProvider);
   final profile = ref.watch(profileProvider).value;
   final daily = ref.watch(dailyBalancesProvider);
+  final last30 = ref.watch(last30DaysTransactionsProvider);
   if (!accounts.hasValue ||
       !month.hasValue ||
+      !last30.hasValue ||
       !categories.hasValue ||
       profile == null ||
       daily == null) {
@@ -76,6 +78,25 @@ final walletSnapshotProvider = Provider<WalletSnapshot?>((ref) {
             .key;
   final top = categories.value!.where((c) => c.id == topId).firstOrNull;
 
+  // Only days actually tracked count toward the pace: someone who joined
+  // today has one day of data, whatever the date.
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final joined = profile.onboardedAt.toLocal();
+  final sinceJoin =
+      today.difference(DateTime(joined.year, joined.month, joined.day)).inDays +
+      1;
+  final trackedDays = sinceJoin.clamp(1, 30);
+  final windowStart = DateTime(now.year, now.month, now.day - trackedDays + 1);
+  final recentSpent = last30.value!
+      .where(
+        (t) =>
+            t.kind == TransactionKind.expense &&
+            byId[t.accountId]?.currencyCode == main &&
+            !t.occurredAt.toLocal().isBefore(windowStart),
+      )
+      .fold(0, (s, t) => s + t.amountMinor);
+
   final types = worth.byType.entries.where((e) => e.value > 0).toList();
   final percents = percentagesSummingTo100([for (final e in types) e.value]);
 
@@ -89,7 +110,9 @@ final walletSnapshotProvider = Provider<WalletSnapshot?>((ref) {
     weekChangeMinor: daily.last.$2 - daily.first.$2,
     monthIncomeMinor: flow.incomeMinor,
     monthSpentMinor: flow.spentMinor,
-    dayOfMonth: DateTime.now().day,
+    dayOfMonth: now.day,
+    trackedDays: trackedDays,
+    recentSpentMinor: recentSpent,
     topCategory: top?.name,
   );
 });

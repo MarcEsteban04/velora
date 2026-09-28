@@ -28,9 +28,25 @@ String localInsight(WalletSnapshot s, CoachTone tone) {
 
   final runway = s.runwayMonths;
   if (runway == null) {
-    return '${money(s.netWorthMinor)} across ${s.accountCount} '
-        '${s.accountCount == 1 ? 'account' : 'accounts'}. Log a few expenses '
-        "and I'll tell you how long it would last.$week";
+    final where =
+        '${money(s.netWorthMinor)} across ${s.accountCount} '
+        '${s.accountCount == 1 ? 'account' : 'accounts'}.';
+    // Too early for a pace: say so instead of guessing from a day or two.
+    if (s.trackedDays < WalletSnapshot.minDaysForRunway) {
+      final left = WalletSnapshot.minDaysForRunway - s.trackedDays;
+      final days = '${s.trackedDays} ${s.trackedDays == 1 ? 'day' : 'days'}';
+      return switch (tone) {
+        CoachTone.gentle =>
+          '$where You’re $days in. Keep logging and in $left more '
+              '${left == 1 ? 'day' : 'days'} I’ll show how long it lasts.',
+        CoachTone.balanced =>
+          '$where $days tracked so far. After a week, I’ll tell you how '
+              'long it would last.',
+        CoachTone.direct => '$where $days of data. A week unlocks your runway.',
+      };
+    }
+    return '$where Log a few expenses and I’ll tell you how long it would '
+        'last.$week';
   }
 
   final r = runway >= 10

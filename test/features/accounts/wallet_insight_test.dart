@@ -45,6 +45,7 @@ WalletSnapshot _snapshot({
   int spent = 200000,
   int week = 0,
   int day = 10,
+  int tracked = 10,
 }) => WalletSnapshot(
   currencyCode: 'PHP',
   netWorthMinor: netWorth,
@@ -54,6 +55,8 @@ WalletSnapshot _snapshot({
   monthIncomeMinor: 0,
   monthSpentMinor: spent,
   dayOfMonth: day,
+  trackedDays: tracked,
+  recentSpentMinor: spent,
 );
 
 void main() {
@@ -121,9 +124,10 @@ void main() {
 
   group('localInsight', () {
     test('reads runway at this month’s pace, in the coaching tone', () {
-      // ₱2,000 spent by the 10th is ₱6,000 a month: ₱12,000 lasts 2 months.
+      // ₱2,000 over 10 tracked days is about ₱6,088 a month, so ₱12,000
+      // lasts about 2 months.
       final s = _snapshot();
-      expect(s.runwayMonths, closeTo(2, 0.001));
+      expect(s.runwayMonths, closeTo(1.97, 0.01));
       expect(
         localInsight(s, CoachTone.balanced),
         'Roughly 2.0 months of runway. A bit more buffer would help.',
@@ -152,6 +156,20 @@ void main() {
       );
     });
 
+    test('a new user gets no runway guess from a day of data', () {
+      // Joined today, on the 28th, and logged ₱352: that isn't a whole
+      // month's spending, so no "83 months".
+      final s = _snapshot(netWorth: 3114994, spent: 35200, day: 28, tracked: 1);
+      expect(s.runwayMonths, isNull);
+      expect(
+        localInsight(s, CoachTone.balanced),
+        '₱31,149.94 across 2 accounts. 1 day tracked so far. After a week, '
+        'I’ll tell you how long it would last.',
+      );
+      // A week in, the pace counts.
+      expect(_snapshot(tracked: 7).runwayMonths, isNotNull);
+    });
+
     test('the snapshot sent to the AI carries numbers only', () {
       expect(_snapshot().toJson().keys, {
         'currency',
@@ -162,6 +180,8 @@ void main() {
         'month_income_minor',
         'month_spent_minor',
         'day_of_month',
+        'tracked_days',
+        'recent_spent_minor',
         'top_category',
       });
     });

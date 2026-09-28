@@ -24,6 +24,7 @@ import '../../streaks/presentation/streak_sheet.dart';
 import '../../streaks/presentation/streak_style.dart';
 import 'widgets/settings_section.dart';
 import 'widgets/settings_sheets.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Settings: profile, preferences, security, backup, about and a guarded
 /// "Start over". Profile fields save to Supabase; the phone-only
@@ -42,19 +43,18 @@ class SettingsScreen extends ConsumerWidget {
     CoachTone? coachTone,
     required String done,
   }) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     try {
       await ref
           .read(profileRepositoryProvider)
           .update(name: name, currencyCode: currencyCode, coachTone: coachTone);
       final _ = await ref.refresh(profileProvider.future);
       HapticFeedback.selectionClick();
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(done)));
+      toast.show(done);
     } on Object catch (error) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(error, action: 'save that'))),
+      toast.show(
+        friendlyError(error, action: 'save that'),
+        tone: ToastTone.error,
       );
     }
   }

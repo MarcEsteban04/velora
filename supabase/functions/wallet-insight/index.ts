@@ -22,6 +22,10 @@ interface Snapshot {
   month_income_minor: number;
   month_spent_minor: number;
   day_of_month: number;
+  /// Days of real tracking (since joining, up to 30).
+  tracked_days: number;
+  /// Spending over those tracked days.
+  recent_spent_minor: number;
   top_category: string | null;
 }
 
@@ -81,6 +85,11 @@ function parse(body: unknown): { snapshot: Snapshot; tone: Tone } | null {
     }
     allocation[k] = v;
   }
+  // Older app versions don't send these; treat them as "just started".
+  const tracked = isInt(r.tracked_days) ? r.tracked_days : 1;
+  const recent = isInt(r.recent_spent_minor) ? r.recent_spent_minor : 0;
+  if (tracked < 1 || tracked > 30 || recent < 0) return null;
+
   const top = r.top_category;
   if (top !== null && top !== undefined && typeof top !== "string") {
     return null;
@@ -97,6 +106,8 @@ function parse(body: unknown): { snapshot: Snapshot; tone: Tone } | null {
       month_income_minor: r.month_income_minor as number,
       month_spent_minor: r.month_spent_minor as number,
       day_of_month: r.day_of_month as number,
+      tracked_days: tracked,
+      recent_spent_minor: recent,
       // A category name is user-editable text: keep it short and plain.
       top_category: typeof top === "string"
         ? top.replace(/[^\p{L}\p{N} &'-]/gu, "").slice(0, 40) || null
@@ -120,9 +131,17 @@ function prompts(s: Snapshot, tone: Tone): { system: string; user: string } {
     "Use only the numbers given. Do not invent facts, give investment advice,",
     "or use emojis, markdown, quotes or greetings. Amounts are in",
     `${s.currency}; write them with the currency symbol and no decimals when`,
-    "they are whole. A useful angle: runway (how many months net worth lasts",
-    "at this month's spending pace), the week's change, where the money sits,",
-    "or the top spending category.",
+    "they are whole.",
+    `The user has tracked their money for ${s.tracked_days} day(s), so`,
+    "spending figures cover those days only, not a whole month.",
+    s.tracked_days < 7
+      ? "They have tracked for less than a week: do NOT estimate runway, " +
+        "monthly spending or how long money will last. Say it's early and " +
+        "comment on what they have (net worth, where it sits, today's " +
+        "logging)."
+      : "Useful angles: runway (months net worth lasts at the pace of " +
+        "spending_per_month), the week's change, where the money sits, or " +
+        "the top spending category.",
   ].join(" ");
   const user = JSON.stringify({
     currency: s.currency,
@@ -131,8 +150,13 @@ function prompts(s: Snapshot, tone: Tone): { system: string; user: string } {
     share_by_account_type_percent: s.allocation_percent,
     change_over_last_7_days: major(s.week_change_minor),
     income_this_month: major(s.month_income_minor),
-    spent_this_month: major(s.month_spent_minor),
+    spent_this_month_so_far: major(s.month_spent_minor),
     day_of_month: s.day_of_month,
+    tracked_days: s.tracked_days,
+    spent_over_tracked_days: major(s.recent_spent_minor),
+    spending_per_month: s.tracked_days >= 7
+      ? major(Math.round(s.recent_spent_minor * 30.44 / s.tracked_days))
+      : null,
     top_spending_category: s.top_category,
   });
   return { system, user };

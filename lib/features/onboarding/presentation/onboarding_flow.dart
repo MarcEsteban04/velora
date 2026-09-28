@@ -18,6 +18,7 @@ import 'steps/pin_step.dart';
 import 'steps/promise_step.dart';
 import 'steps/ready_step.dart';
 import 'widgets/onboarding_progress.dart';
+import '../../../core/widgets/island_toast.dart';
 
 enum OnboardingStep {
   name,
@@ -113,10 +114,9 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(friendlyError(error, action: 'save your setup')),
-        ),
+      Toast.of(context).show(
+        friendlyError(error, action: 'save your setup'),
+        tone: ToastTone.error,
       );
       return;
     }

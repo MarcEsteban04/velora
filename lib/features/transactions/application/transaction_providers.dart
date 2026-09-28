@@ -28,6 +28,14 @@ final weekTransactionsProvider = FutureProvider<List<Transaction>>((ref) {
   return ref.watch(transactionRepositoryProvider).fetchRange(start, end);
 });
 
+/// The last 30 days, today included, for spending pace.
+final last30DaysTransactionsProvider = FutureProvider<List<Transaction>>((ref) {
+  final now = DateTime.now();
+  final start = DateTime(now.year, now.month, now.day - 29);
+  final end = DateTime(now.year, now.month, now.day + 1);
+  return ref.watch(transactionRepositoryProvider).fetchRange(start, end);
+});
+
 final recentTransactionsProvider = FutureProvider<List<Transaction>>(
   (ref) => ref.watch(transactionRepositoryProvider).fetchRecent(),
 );
@@ -56,6 +64,7 @@ class TransactionActions {
     ..invalidate(monthTransactionsProvider)
     ..invalidate(recentTransactionsProvider)
     ..invalidate(weekTransactionsProvider)
+    ..invalidate(last30DaysTransactionsProvider)
     ..invalidate(streakHistoryProvider)
     ..invalidate(budgetTransactionsProvider)
     ..invalidate(accountsProvider);

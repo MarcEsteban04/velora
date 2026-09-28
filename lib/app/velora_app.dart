@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/widgets/island_toast.dart';
 import '../core/navigation/app_navigator.dart';
 import '../core/storage/app_preferences.dart';
 import '../core/theme/app_colors.dart';
@@ -78,7 +79,10 @@ class _VeloraAppState extends ConsumerState<VeloraApp>
       theme: theme,
       navigatorKey: appNavigatorKey,
       // The lock sits above the navigator, so it covers every route.
-      builder: (context, child) => AppLockGate(child: child!),
+      // Toasts sit above everything, the lock screen included, and outlive
+      // the screen that showed them.
+      builder: (context, child) =>
+          IslandToastHost(child: AppLockGate(child: child!)),
       home: const AppGate(),
     );
   }

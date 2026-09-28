@@ -7,6 +7,7 @@ import '../application/app_lock_controller.dart';
 import '../data/pin_repository.dart';
 import 'widgets/lock_scaffold.dart';
 import 'widgets/pin_creator.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Shown once to users who onboarded before PINs existed, and after a failed
 /// PIN save, so every onboarded user ends up protected.
@@ -47,12 +48,9 @@ class PinSetupScreen extends ConsumerWidget {
                 ref.read(appLockProvider.notifier).pinCreated();
               } on Object catch (error) {
                 if (!context.mounted) return;
-                ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      friendlyError(error, action: 'save your PIN'),
-                    ),
-                  ),
+                Toast.of(context).show(
+                  friendlyError(error, action: 'save your PIN'),
+                  tone: ToastTone.error,
                 );
               }
             },

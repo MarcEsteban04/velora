@@ -13,6 +13,7 @@ import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
 import 'widgets/floating_nav_bar.dart';
 import 'widgets/quick_actions.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// The signed-in app: four tabs under a floating nav bar, plus the quick
 /// actions opened from the "+" button.
@@ -99,11 +100,11 @@ class _AppShellState extends State<AppShell>
       Navigator.of(context).push(TransactionEntryScreen.route(kind: kind));
       return;
     }
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text('${action.label} is coming soon!')),
-      );
+    Toast.of(context).show(
+      '${action.label} is coming soon!',
+      tone: ToastTone.info,
+      icon: Icons.auto_awesome_rounded,
+    );
   }
 
   bool _onScroll(UserScrollNotification n) {

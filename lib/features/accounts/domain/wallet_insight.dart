@@ -69,6 +69,8 @@ class WalletSnapshot {
     required this.monthIncomeMinor,
     required this.monthSpentMinor,
     required this.dayOfMonth,
+    required this.trackedDays,
+    required this.recentSpentMinor,
     this.topCategory,
   });
 
@@ -84,13 +86,23 @@ class WalletSnapshot {
 
   /// How far into the month we are, so spending can be read in context.
   final int dayOfMonth;
+
+  /// Days of real tracking behind the spending pace: since joining, up to
+  /// the last 30. A pace from a day or two of data means little.
+  final int trackedDays;
+
+  /// Spending over those [trackedDays].
+  final int recentSpentMinor;
   final String? topCategory;
 
-  /// Months the current net worth would last at this month's spending pace.
-  /// Null until there's spending to measure.
+  /// Runway needs about a week of tracking to be worth saying.
+  static const minDaysForRunway = 7;
+
+  /// Months the current net worth would last at the recent spending pace.
+  /// Null until there's a week of tracking and some spending to measure.
   double? get runwayMonths {
-    if (monthSpentMinor <= 0 || dayOfMonth <= 0) return null;
-    final monthlyPace = monthSpentMinor * 30 / dayOfMonth;
+    if (trackedDays < minDaysForRunway || recentSpentMinor <= 0) return null;
+    final monthlyPace = recentSpentMinor * 30.44 / trackedDays;
     return netWorthMinor / monthlyPace;
   }
 
@@ -103,6 +115,8 @@ class WalletSnapshot {
     'month_income_minor': monthIncomeMinor,
     'month_spent_minor': monthSpentMinor,
     'day_of_month': dayOfMonth,
+    'tracked_days': trackedDays,
+    'recent_spent_minor': recentSpentMinor,
     'top_category': topCategory,
   };
 
@@ -115,5 +129,7 @@ class WalletSnapshot {
     monthIncomeMinor ~/ 50000,
     accountCount,
     topCategory,
+    // A new insight once there's enough history for runway.
+    trackedDays >= minDaysForRunway,
   ].join('|');
 }

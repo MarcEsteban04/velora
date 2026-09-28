@@ -26,6 +26,7 @@ import '../../transactions/presentation/category_style.dart';
 import '../../transactions/presentation/widgets/kind_switcher.dart';
 import '../application/category_actions.dart';
 import 'category_editor_sheet.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Every category, with budgets for expenses: set limits, add custom
 /// categories, edit, reorder by dragging, and hide or restore.
@@ -84,13 +85,14 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     ids.insert(to, ids.removeAt(from));
     HapticFeedback.selectionClick();
     setState(() => _pendingOrder = ids);
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     try {
       await CategoryActions.of(context).reorder(ids);
       await ref.read(categoriesProvider.future);
     } on Object catch (error) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(error, action: 'save the order'))),
+      toast.show(
+        friendlyError(error, action: 'save the order'),
+        tone: ToastTone.error,
       );
     } finally {
       if (mounted) setState(() => _pendingOrder = null);
@@ -98,15 +100,14 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
   }
 
   Future<void> _restore(Category c) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     try {
       await CategoryActions.of(context).setHidden(c.id, false);
       HapticFeedback.selectionClick();
     } on Object catch (error) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(friendlyError(error, action: 'show the category')),
-        ),
+      toast.show(
+        friendlyError(error, action: 'show the category'),
+        tone: ToastTone.error,
       );
     }
   }

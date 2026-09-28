@@ -35,7 +35,8 @@ class AppPreferences {
   static const _kHideBalances = 'prefs.hideBalancesOnOpen';
   static const _kAutoLock = 'prefs.autoLock';
   static const _kAppearance = 'prefs.appearance';
-  static const _kInsight = 'cache.walletInsight.v1';
+  // v2: insights now know how many days were tracked.
+  static const _kInsight = 'cache.walletInsight.v2';
 
   /// Today's AI insight, so reopening Wallet doesn't spend tokens.
   String? get cachedInsight => _prefs.getString(_kInsight);

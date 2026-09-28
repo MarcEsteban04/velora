@@ -14,6 +14,7 @@ import '../application/goal_providers.dart';
 import '../domain/goal.dart';
 import 'goal_editor_sheet.dart';
 import 'goal_style.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// One goal up close: progress, what it needs, money in and out, and its
 /// history. It stays live while money is added.
@@ -52,7 +53,7 @@ class _DetailState extends ConsumerState<_Detail> {
     );
     if (amount == null || amount <= 0 || !mounted) return;
     final wasDone = p.isDone;
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     try {
       await GoalActions.of(context)
           .addEntry(p.goal.id, adding ? amount : -amount);
@@ -65,10 +66,9 @@ class _DetailState extends ConsumerState<_Detail> {
         HapticFeedback.selectionClick();
       }
     } on Object catch (error) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(friendlyError(error, action: 'update the goal')),
-        ),
+      toast.show(
+        friendlyError(error, action: 'update the goal'),
+        tone: ToastTone.error,
       );
     }
   }

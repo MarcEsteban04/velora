@@ -10,6 +10,7 @@ import '../../../core/widgets/pressable_button.dart';
 import '../application/goal_providers.dart';
 import '../domain/goal.dart';
 import 'goal_style.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Creates or edits a goal: name, target, optional date, icon and color.
 /// It saves on its own and closes when done.
@@ -86,7 +87,7 @@ class _EditorState extends State<_Editor> {
 
   Future<void> _run(Future<void> Function() job, String action) async {
     setState(() => _busy = true);
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     final nav = Navigator.of(context);
     try {
       await job();
@@ -94,9 +95,7 @@ class _EditorState extends State<_Editor> {
       nav.pop();
     } on Object catch (error) {
       if (mounted) setState(() => _busy = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(error, action: action))),
-      );
+      toast.show(friendlyError(error, action: action), tone: ToastTone.error);
     }
   }
 

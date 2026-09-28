@@ -11,6 +11,7 @@ import '../../transactions/presentation/category_style.dart';
 import '../application/budget_providers.dart';
 import '../domain/budget.dart';
 import 'budget_style.dart';
+import '../../../core/widgets/island_toast.dart';
 
 /// Sets, changes or removes one category's budget. It saves on its own and
 /// closes when done.
@@ -86,7 +87,7 @@ class _EditorState extends State<_Editor> {
 
   Future<void> _run(Future<void> Function() job, String action) async {
     setState(() => _busy = true);
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     final nav = Navigator.of(context);
     try {
       await job();
@@ -94,9 +95,7 @@ class _EditorState extends State<_Editor> {
       nav.pop();
     } on Object catch (error) {
       if (mounted) setState(() => _busy = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(friendlyError(error, action: action))),
-      );
+      toast.show(friendlyError(error, action: action), tone: ToastTone.error);
     }
   }
 

@@ -14,6 +14,7 @@ import '../account_form_screen.dart';
 import '../account_type_style.dart';
 import '../institutions.dart';
 import 'account_card.dart';
+import '../../../../core/widgets/island_toast.dart';
 
 /// Everything about one account, with Edit and a confirmed Delete.
 class AccountDetailsSheet extends ConsumerStatefulWidget {
@@ -77,20 +78,23 @@ class _AccountDetailsSheetState extends ConsumerState<AccountDetailsSheet> {
     if (confirmed != true || !mounted) return;
 
     setState(() => _deleting = true);
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = Toast.of(context);
     try {
       await ref.read(accountRepositoryProvider).delete(a.id);
       ref.invalidate(accountsProvider);
       HapticFeedback.mediumImpact();
       if (mounted) Navigator.pop(context);
-      messenger.showSnackBar(SnackBar(content: Text('“${a.name}” deleted')));
+      toast.show(
+        '“${a.name}” deleted',
+        tone: ToastTone.info,
+        icon: Icons.delete_outline_rounded,
+      );
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _deleting = false);
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(friendlyError(error, action: 'delete the account')),
-        ),
+      toast.show(
+        friendlyError(error, action: 'delete the account'),
+        tone: ToastTone.error,
       );
     }
   }
