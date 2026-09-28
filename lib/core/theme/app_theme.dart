@@ -22,7 +22,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: scheme,
-      scaffoldBackgroundColor: AppColors.forestNight,
+      scaffoldBackgroundColor: AppColors.night,
       fontFamily: AppTypography.body,
       textTheme: AppTypography.textTheme,
       snackBarTheme: SnackBarThemeData(

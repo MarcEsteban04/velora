@@ -33,6 +33,6 @@ test/                         # Mirrors lib/
 
 ## Design system
 
-- **Palette:** forest greens from the mascot's cap and tee, plus rust and cream from its fur. Every color is defined in `lib/core/theme/app_colors.dart`.
+- **Palette:** leaf green from the mascot's cap, rust and cream from its fur, and a Himalayan dusk (the red panda's home) for the scene colors. Every color is defined in `lib/core/theme/app_colors.dart`.
 - **Type:** Fredoka for display text and the wordmark, Nunito for everything else.
 - **Motion:** every animation respects the OS "reduce motion" setting.

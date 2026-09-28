@@ -49,3 +49,8 @@ app.*.map.json
 
 # Local design references (third-party screenshots, not for distribution)
 /references_img/
+
+# Local environment files (may contain secrets)
+.env
+.env.*
+!.env.example

@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/pressable_button.dart';
-import 'widgets/forest_backdrop.dart';
+import 'widgets/dusk_backdrop.dart';
 import 'widgets/mascot_hero.dart';
 
 /// The first screen users see.
@@ -66,12 +66,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
-        systemNavigationBarColor: AppColors.forestNight,
+        systemNavigationBarColor: AppColors.night,
       ),
       child: Scaffold(
         body: Stack(
           children: [
-            const Positioned.fill(child: ForestBackdrop()),
+            const Positioned.fill(child: DuskBackdrop()),
             SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
