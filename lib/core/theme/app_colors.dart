@@ -35,6 +35,10 @@ abstract final class AppColors {
   static const ember = Color(0xFFF0A15E);
   static const cream = Color(0xFFFBF1E4);
 
+  // Supporting accents for icons and illustrations.
+  static const sky = Color(0xFF8AB4FF);
+  static const lilac = Color(0xFFB79CFF);
+
   // Surfaces.
   static const surface = Color(0xFF15122B);
   static const surfaceRaised = Color(0xFF1F1B3A);

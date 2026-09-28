@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
-import 'speech_bubble.dart';
+import '../../../../core/widgets/speech_bubble.dart';
 
 /// Velora the red panda, floating in place with a halo, a ground shadow and
 /// a speech bubble. Tapping it makes it hop and say something new.

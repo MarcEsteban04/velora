@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
 /// A cream speech bubble with a speaker tag and a tail pointing down-left
 /// toward the speaker.

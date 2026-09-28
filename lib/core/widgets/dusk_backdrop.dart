@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
 /// An animated Himalayan dusk drawn entirely in code: twinkling stars, a
 /// glowing moon, the odd shooting star, layered ridges with a pine line,

@@ -6,7 +6,8 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/pressable_button.dart';
-import 'widgets/dusk_backdrop.dart';
+import '../../../core/widgets/reveal.dart';
+import '../../../core/widgets/dusk_backdrop.dart';
 import 'widgets/mascot_hero.dart';
 
 /// The first screen users see.
@@ -99,7 +100,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           child: Column(
                             children: [
                               const Spacer(),
-                              _Reveal(
+                              Reveal(
                                 animation: _intro,
                                 interval: const Interval(
                                   0,
@@ -113,7 +114,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              _Reveal(
+                              Reveal(
                                 animation: _intro,
                                 interval: const Interval(
                                   0.25,
@@ -123,7 +124,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 child: const _Wordmark(),
                               ),
                               const SizedBox(height: 14),
-                              _Reveal(
+                              Reveal(
                                 animation: _intro,
                                 interval: const Interval(
                                   0.35,
@@ -140,7 +141,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               ),
                               const Spacer(flex: 2),
                               const SizedBox(height: 32),
-                              _Reveal(
+                              Reveal(
                                 animation: _intro,
                                 interval: const Interval(
                                   0.5,
@@ -155,7 +156,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 ),
                               ),
                               const SizedBox(height: 18),
-                              _Reveal(
+                              Reveal(
                                 animation: _intro,
                                 interval: const Interval(
                                   0.6,
@@ -242,45 +243,6 @@ class _PrivacyNote extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Fades a child in and slides it up (optionally scaling it too) over one
-/// [interval] of a shared intro animation, for a staggered entrance.
-class _Reveal extends StatelessWidget {
-  const _Reveal({
-    required this.animation,
-    required this.interval,
-    required this.child,
-    this.scaleFrom = 1,
-  });
-
-  final Animation<double> animation;
-  final Curve interval;
-  final double scaleFrom;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final curved = CurvedAnimation(parent: animation, curve: interval);
-
-    return AnimatedBuilder(
-      animation: curved,
-      child: child,
-      builder: (context, child) {
-        final v = curved.value;
-        return Opacity(
-          opacity: v.clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(0, (1 - v) * 24),
-            child: Transform.scale(
-              scale: scaleFrom + (1 - scaleFrom) * v,
-              child: child,
-            ),
-          ),
-        );
-      },
     );
   }
 }
