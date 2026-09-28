@@ -17,6 +17,8 @@ class AccountCard extends StatelessWidget {
     required this.balanceMinor,
     this.countUp = false,
     this.obscured = false,
+    this.compact = false,
+    this.excluded = false,
   });
 
   final String name;
@@ -28,10 +30,18 @@ class AccountCard extends StatelessWidget {
   /// Hides the balance (for example when "hide balances" is on).
   final bool obscured;
 
+  /// Half-width layout for the Wallet grid: name, type and currency, and a
+  /// balance that shrinks to fit.
+  final bool compact;
+
+  /// Marks an account that isn't counted in net worth (compact layout only).
+  final bool excluded;
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final colors = type.gradient;
+    if (compact) return _buildCompact(context, text, colors);
 
     return Semantics(
       label:
@@ -132,6 +142,110 @@ class AccountCard extends StatelessWidget {
                             : Money.format(value.round(), currency),
                         style: text.displaySmall?.copyWith(fontSize: 32),
                       ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompact(
+    BuildContext context,
+    TextTheme text,
+    List<Color> colors,
+  ) {
+    final balance = obscured
+        ? '${currency.symbol} ••••••'
+        : Money.format(balanceMinor, currency);
+
+    return Semantics(
+      label:
+          '$name, ${type.label} account, balance '
+          '${obscured ? 'hidden' : balance}'
+          '${excluded ? ', not counted in net worth' : ''}',
+      excludeSemantics: true,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: colors,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned(
+              right: -46,
+              top: -46,
+              child: _Ring(size: 120, alpha: 0.12),
+            ),
+            Positioned(
+              right: -30,
+              bottom: -60,
+              child: _Ring(size: 110, alpha: 0.08),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Icon(type.icon, color: Colors.white, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          name.isEmpty ? type.defaultName : name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.titleMedium?.copyWith(fontSize: 15),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    excluded
+                        ? 'Not in net worth'
+                        : '${type.label} · ${currency.code}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.labelMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'BALANCE',
+                    style: text.labelMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      letterSpacing: 1.4,
+                      fontSize: 10,
+                    ),
+                  ),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      balance,
+                      style: text.displaySmall?.copyWith(fontSize: 22),
                     ),
                   ),
                 ],

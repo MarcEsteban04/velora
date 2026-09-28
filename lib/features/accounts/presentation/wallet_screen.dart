@@ -100,21 +100,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
             child: _view == _WalletView.cards
-                ? Column(
+                ? GridView(
                     key: const ValueKey('cards'),
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          mainAxisExtent: 164,
+                        ),
                     children: [
                       for (final (i, a) in accounts.indexed)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: FadeSlideIn(
-                            delay: Duration(milliseconds: 60 * i),
-                            child: _CardEntry(
-                              account: a,
-                              hidden: hidden,
-                              onTap: () => _open(a, hidden),
-                            ),
+                        FadeSlideIn(
+                          delay: Duration(milliseconds: 60 * i),
+                          child: _CardEntry(
+                            account: a,
+                            hidden: hidden,
+                            onTap: () => _open(a, hidden),
                           ),
                         ),
+                      _AddTile(onTap: _add, compact: true),
                     ],
                   )
                 : GlassCard(
@@ -139,8 +147,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     ),
                   ),
           ),
-          const SizedBox(height: 4),
-          _AddTile(onTap: _add),
+          if (_view == _WalletView.list) ...[
+            const SizedBox(height: 12),
+            _AddTile(onTap: _add),
+          ],
         ],
       );
     }
@@ -285,28 +295,17 @@ class _CardEntry extends StatelessWidget {
           HapticFeedback.selectionClick();
           onTap();
         },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Opacity(
-              opacity: account.includeInNetWorth ? 1 : 0.6,
-              child: AccountCard(
-                name: account.name,
-                type: account.type,
-                currency: Currencies.byCode(account.currencyCode),
-                balanceMinor: account.balanceMinor,
-                obscured: hidden,
-              ),
-            ),
-            if (!account.includeInNetWorth)
-              Padding(
-                padding: const EdgeInsets.only(left: 6, top: 6),
-                child: Text(
-                  'Not counted in net worth',
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ),
-          ],
+        child: Opacity(
+          opacity: account.includeInNetWorth ? 1 : 0.6,
+          child: AccountCard(
+            name: account.name,
+            type: account.type,
+            currency: Currencies.byCode(account.currencyCode),
+            balanceMinor: account.balanceMinor,
+            obscured: hidden,
+            compact: true,
+            excluded: !account.includeInNetWorth,
+          ),
         ),
       ),
     );
@@ -414,7 +413,7 @@ class _ViewToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          option(_WalletView.cards, Icons.view_agenda_rounded, 'Cards'),
+          option(_WalletView.cards, Icons.grid_view_rounded, 'Grid'),
           option(_WalletView.list, Icons.view_list_rounded, 'List'),
         ],
       ),
@@ -423,9 +422,12 @@ class _ViewToggle extends StatelessWidget {
 }
 
 class _AddTile extends StatelessWidget {
-  const _AddTile({required this.onTap});
+  const _AddTile({required this.onTap, this.compact = false});
 
   final VoidCallback onTap;
+
+  /// Grid cell: an icon above the label, filling the cell.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -443,14 +445,15 @@ class _AddTile extends StatelessWidget {
           child: CustomPaint(
             painter: const _DashedBorderPainter(),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 22),
-              child: Row(
+              padding: EdgeInsets.symmetric(vertical: compact ? 0 : 22),
+              child: Flex(
+                direction: compact ? Axis.vertical : Axis.horizontal,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.add_rounded, color: AppColors.leafBright),
-                  const SizedBox(width: 8),
+                  SizedBox(width: compact ? 0 : 8, height: compact ? 6 : 0),
                   Text(
-                    'Add another account',
+                    compact ? 'Add account' : 'Add another account',
                     style: text.titleMedium?.copyWith(
                       color: AppColors.leafBright,
                       fontSize: 15,
