@@ -28,6 +28,7 @@ import '../../streaks/application/streak_providers.dart';
 import '../../streaks/presentation/streak_sheet.dart';
 import '../../streaks/presentation/streak_style.dart';
 import 'widgets/settings_section.dart';
+import 'widgets/nav_bar_style_sheet.dart';
 import 'widgets/settings_sheets.dart';
 import 'widgets/time_zone_sheet.dart';
 import '../application/time_zone_actions.dart';
@@ -136,6 +137,7 @@ class SettingsScreen extends ConsumerWidget {
     final hideOnOpen = ref.watch(hideBalancesOnOpenProvider);
     final autoLock = ref.watch(autoLockProvider);
     final appearance = ref.watch(appearanceProvider);
+    final navBar = ref.watch(navBarStyleProvider);
     final zone = ref.watch(timeZoneProvider);
     final backup = ref.watch(backupStatusProvider);
     final installed = ref.watch(installedVersionProvider).value;
@@ -214,6 +216,25 @@ class SettingsScreen extends ConsumerWidget {
                             HapticFeedback.selectionClick();
                             await ref
                                 .read(appearanceProvider.notifier)
+                                .set(picked);
+                          }
+                        },
+                      ),
+                      SettingsTile(
+                        icon: Icons.space_dashboard_rounded,
+                        color: AppColors.leafBright,
+                        title: 'Navigation bar',
+                        subtitle: navBar.description,
+                        value: navBar.label,
+                        onTap: () async {
+                          final picked = await NavBarStyleSheet.show(
+                            context,
+                            navBar,
+                          );
+                          if (picked != null) {
+                            HapticFeedback.selectionClick();
+                            await ref
+                                .read(navBarStyleProvider.notifier)
                                 .set(picked);
                           }
                         },

@@ -64,6 +64,8 @@ void main() {
 
   Future<void> openBackup(WidgetTester tester) async {
     await tester.scrollUntilVisible(find.text('Back up your space'), 200);
+    await tester.ensureVisible(find.text('Back up your space'));
+    await frames(tester, 8);
     await tester.tap(find.text('Back up your space'));
     await tester.pump();
     await frames(tester);

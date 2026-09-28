@@ -38,6 +38,16 @@ enum Appearance {
   };
 }
 
+/// How the bottom navigation looks.
+enum NavBarStyle {
+  classic('Classic', 'Four tabs with + raised in the middle'),
+  split('Split', 'Four tabs in a pill, + beside it');
+
+  const NavBarStyle(this.label, this.description);
+  final String label;
+  final String description;
+}
+
 /// Preferences for this phone only. They aren't secret and aren't synced:
 /// how the app behaves here, not who you are. Profile settings live in
 /// Supabase.
@@ -50,6 +60,7 @@ class AppPreferences {
   static const _kAutoLock = 'prefs.autoLock';
   static const _kAppearance = 'prefs.appearance';
   static const _kTimeZone = 'prefs.timeZone';
+  static const _kNavBar = 'prefs.navBarStyle';
   // v2: insights now know how many days were tracked.
   static const _kInsight = 'cache.walletInsight.v3';
   static const _kHomeInsight = 'cache.homeInsight.v2';
@@ -70,6 +81,12 @@ class AppPreferences {
       Appearance.night;
   Future<void> setAppearance(Appearance value) =>
       _prefs.setString(_kAppearance, value.name);
+
+  NavBarStyle get navBarStyle =>
+      NavBarStyle.values.asNameMap()[_prefs.getString(_kNavBar)] ??
+      NavBarStyle.classic;
+  Future<void> setNavBarStyle(NavBarStyle value) =>
+      _prefs.setString(_kNavBar, value.name);
 
   /// An IANA zone name, like "Asia/Manila". The Philippines by default.
   String get timeZone => _prefs.getString(_kTimeZone) ?? AppClock.defaultZone;
@@ -123,6 +140,20 @@ class AutoLockSetting extends Notifier<AutoLock> {
   Future<void> set(AutoLock value) async {
     state = value;
     await ref.read(appPreferencesProvider).setAutoLock(value);
+  }
+}
+
+final navBarStyleProvider = NotifierProvider<NavBarStyleSetting, NavBarStyle>(
+  NavBarStyleSetting.new,
+);
+
+class NavBarStyleSetting extends Notifier<NavBarStyle> {
+  @override
+  NavBarStyle build() => ref.watch(appPreferencesProvider).navBarStyle;
+
+  Future<void> set(NavBarStyle value) async {
+    state = value;
+    await ref.read(appPreferencesProvider).setNavBarStyle(value);
   }
 }
 

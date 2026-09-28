@@ -22,7 +22,7 @@ import '../../shell/presentation/widgets/quick_actions.dart';
 import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
-import '../../transactions/presentation/transaction_entry_screen.dart';
+import '../../transactions/presentation/transaction_details_sheet.dart';
 import '../application/balance_privacy.dart';
 import '../application/home_insight_provider.dart';
 import '../application/home_spending_providers.dart';
@@ -220,9 +220,8 @@ class HomeScreen extends ConsumerWidget {
               categories: categoryById,
               hidden: hidden,
               onSeeAll: onOpenHistory,
-              onOpen: (t) =>
-                  Navigator.of(context)
-                      .push(TransactionEntryScreen.route(existing: t)),
+              // Read only, like History: editing is a deliberate step.
+              onOpen: (t) => TransactionDetailsSheet.show(context, t),
             ),
           ),
         ],

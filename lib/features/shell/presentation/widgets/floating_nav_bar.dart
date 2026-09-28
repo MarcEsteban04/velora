@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/storage/app_preferences.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class NavDestination {
@@ -18,12 +19,15 @@ class NavDestination {
   final String label;
 }
 
-/// A frosted, floating tab bar with a raised "+" in the middle.
+/// A frosted, floating tab bar, in one of two [style]s:
 ///
-/// - A soft pill slides to the active tab.
-/// - The "+" turns into a "×" while quick actions are open.
-/// - Setting [visible] to false slides the bar out of the way (while
-///   scrolling down).
+/// - Classic: a raised round "+" in the middle; a soft pill slides to the
+///   active tab.
+/// - Split: the four tabs in a pill, the active one in a rounded tile, and
+///   a rounded-square "+" beside it.
+///
+/// The "+" turns into a "×" while quick actions are open. Setting
+/// [visible] to false slides the bar out of the way (while scrolling down).
 class FloatingNavBar extends StatelessWidget {
   const FloatingNavBar({
     super.key,
@@ -33,6 +37,7 @@ class FloatingNavBar extends StatelessWidget {
     required this.onAdd,
     required this.addOpen,
     this.visible = true,
+    this.style = NavBarStyle.classic,
   }) : assert(destinations.length == 4);
 
   final List<NavDestination> destinations;
@@ -41,6 +46,7 @@ class FloatingNavBar extends StatelessWidget {
   final VoidCallback onAdd;
   final bool addOpen;
   final bool visible;
+  final NavBarStyle style;
 
   static const barHeight = 70.0;
   static const _centerGap = 76.0;
@@ -65,26 +71,126 @@ class FloatingNavBar extends StatelessWidget {
           heightFactor: 1,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
-            child: SizedBox(
-              height: barHeight + 24,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.bottomCenter,
-                children: [
-                  _Bar(
+            child: style == NavBarStyle.split
+                ? _SplitNav(
                     destinations: destinations,
                     currentIndex: currentIndex,
                     onSelect: onSelect,
+                    onAdd: onAdd,
+                    addOpen: addOpen,
+                  )
+                : SizedBox(
+                    height: barHeight + 24,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        _Bar(
+                          destinations: destinations,
+                          currentIndex: currentIndex,
+                          onSelect: onSelect,
+                        ),
+                        Positioned(
+                          top: 0,
+                          child: _AddButton(open: addOpen, onTap: onAdd),
+                        ),
+                      ],
+                    ),
                   ),
-                  Positioned(
-                    top: 0,
-                    child: _AddButton(open: addOpen, onTap: onAdd),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The Split style: tabs in a pill, "+" as its own tile on the right.
+class _SplitNav extends StatelessWidget {
+  const _SplitNav({
+    required this.destinations,
+    required this.currentIndex,
+    required this.onSelect,
+    required this.onAdd,
+    required this.addOpen,
+  });
+
+  final List<NavDestination> destinations;
+  final int currentIndex;
+  final ValueChanged<int> onSelect;
+  final VoidCallback onAdd;
+  final bool addOpen;
+
+  static const _inset = 7.0;
+
+  @override
+  Widget build(BuildContext context) {
+    const radius = BorderRadius.all(Radius.circular(30));
+    const height = FloatingNavBar.barHeight;
+
+    return SizedBox(
+      height: height,
+      child: Row(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: radius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    color: AppColors.surface.withValues(alpha: 0.72),
+                    border: Border.all(color: AppColors.hairline(0.09)),
                   ),
-                ],
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final slot = (constraints.maxWidth - _inset * 2) / 4;
+                      return Stack(
+                        children: [
+                          AnimatedPositioned(
+                            duration: const Duration(milliseconds: 340),
+                            curve: Curves.easeOutCubic,
+                            left: _inset + currentIndex * slot,
+                            top: _inset,
+                            bottom: _inset,
+                            width: slot,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(23),
+                                color: AppColors.leaf.withValues(alpha: 0.2),
+                              ),
+                            ),
+                          ),
+                          for (var i = 0; i < 4; i++)
+                            Positioned(
+                              left: _inset + i * slot,
+                              top: 0,
+                              bottom: 0,
+                              width: slot,
+                              child: _Tab(
+                                destination: destinations[i],
+                                selected: i == currentIndex,
+                                onTap: () => onSelect(i),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          const SizedBox(width: 10),
+          _AddButton(
+            open: addOpen,
+            onTap: onAdd,
+            size: height,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -221,10 +327,17 @@ class _Tab extends StatelessWidget {
 }
 
 class _AddButton extends StatelessWidget {
-  const _AddButton({required this.open, required this.onTap});
+  const _AddButton({
+    required this.open,
+    required this.onTap,
+    this.size = 62,
+    this.shape = const CircleBorder(),
+  });
 
   final bool open;
   final VoidCallback onTap;
+  final double size;
+  final OutlinedBorder shape;
 
   @override
   Widget build(BuildContext context) {
@@ -239,20 +352,21 @@ class _AddButton extends StatelessWidget {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 260),
-          width: 62,
-          height: 62,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
+          width: size,
+          height: size,
+          decoration: ShapeDecoration(
+            shape: shape.copyWith(
+              side: BorderSide(
+                color: Colors.white.withValues(alpha: open ? 0.14 : 0.22),
+                width: 1.5,
+              ),
+            ),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: open
                   ? [AppColors.surfaceRaised, AppColors.surface]
                   : [AppColors.leafBright, AppColors.leafShadow],
-            ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: open ? 0.14 : 0.22),
-              width: 1.5,
             ),
           ),
           child: AnimatedRotation(

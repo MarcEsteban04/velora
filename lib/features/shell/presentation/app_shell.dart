@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/storage/app_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
@@ -200,13 +202,16 @@ class _AppShellState extends State<AppShell>
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: FloatingNavBar(
-                  destinations: _destinations,
-                  currentIndex: _index,
-                  onSelect: _select,
-                  onAdd: _toggleActions,
-                  addOpen: _actionsOpen,
-                  visible: _navVisible,
+                child: Consumer(
+                  builder: (context, ref, _) => FloatingNavBar(
+                    destinations: _destinations,
+                    currentIndex: _index,
+                    onSelect: _select,
+                    onAdd: _toggleActions,
+                    addOpen: _actionsOpen,
+                    visible: _navVisible,
+                    style: ref.watch(navBarStyleProvider),
+                  ),
                 ),
               ),
             ],
