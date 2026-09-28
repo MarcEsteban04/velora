@@ -1,14 +1,52 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:velora/app/velora_app.dart';
 import 'package:velora/features/accounts/domain/account.dart';
+import 'package:velora/features/payoneer/data/invoice_reader.dart';
 import 'package:velora/features/payoneer/domain/invoice.dart';
+import 'package:velora/features/payoneer/domain/invoice_scan.dart';
+import 'package:velora/features/receipts/data/receipt_reader.dart';
+import 'package:velora/features/receipts/domain/receipt.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
 import 'package:velora/features/transactions/domain/transaction.dart';
 
 import '../../support/fakes.dart';
+
+/// A 1×1 PNG stands in for the invoice page.
+final _pixel = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+);
+
+class _FakeDocs implements InvoiceDocumentSource {
+  @override
+  Future<ReceiptPhoto?> take({required bool camera}) async =>
+      ReceiptPhoto(bytes: _pixel, path: 'invoice.png');
+
+  @override
+  Future<ReceiptPhoto?> import() async =>
+      ReceiptPhoto(bytes: _pixel, path: 'invoice.png');
+}
+
+class _FakeInvoiceReader implements InvoiceReader {
+  _FakeInvoiceReader(this.scan);
+  InvoiceScan? scan;
+  String? userName;
+
+  @override
+  Future<InvoiceScan?> read(
+    ReceiptPhoto page, {
+    required String userName,
+    required String currencyCode,
+  }) async {
+    this.userName = userName;
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    return scan;
+  }
+}
 
 void main() {
   late FakeBackend db;
@@ -56,13 +94,20 @@ void main() {
     }
   }
 
-  Future<void> openPayoneer(WidgetTester tester) async {
+  Future<void> openPayoneer(
+    WidgetTester tester, {
+    InvoiceReader? reader,
+  }) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakeOverrides(db, pins, prefs),
+        overrides: [
+          ...fakeOverrides(db, pins, prefs),
+          invoiceDocumentSourceProvider.overrideWithValue(_FakeDocs()),
+          if (reader != null) invoiceReaderProvider.overrideWithValue(reader),
+        ],
         child: const VeloraApp(),
       ),
     );
@@ -160,5 +205,69 @@ void main() {
     expect(nextInvoiceReference('2026-7'), '2026-8');
     expect(nextInvoiceReference('Acme'), isNull);
     expect(nextInvoiceReference(null), isNull);
+  });
+
+  testWidgets('import a paid invoice: logged, marked paid, then undone', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final reader = _FakeInvoiceReader(
+      InvoiceScan(
+        amountMinor: 200000,
+        source: ReceiptSource.ai,
+        currencyCode: 'USD',
+        reference: 'INV-0012',
+        client: 'Acme Studio',
+        issuedOn: DateTime(2026, 9, 15),
+        paid: true,
+        paidMinor: 198000,
+      ),
+    );
+    await openPayoneer(tester, reader: reader);
+    await tester.tap(find.text('Scan'));
+    await tester.pump();
+    await frames(tester, 16);
+    expect(find.text('Scan and it’s logged'), findsOneWidget);
+
+    await tester.tap(find.text('Import a PDF or image'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Finding the amount…'), findsOneWidget);
+    await frames(tester, 16);
+
+    // Logged straight away, no confirm step.
+    expect(find.text('Logged as paid'), findsOneWidget);
+    expect(reader.userName, 'Marc');
+    final invoice = db.invoices.single;
+    expect(invoice.reference, 'INV-0012');
+    expect(invoice.client, 'Acme Studio');
+    expect(invoice.status, InvoiceStatus.paid);
+    final salary = db.transactions.single;
+    expect(salary.kind, TransactionKind.income);
+    expect(salary.accountId, 'payo');
+    expect(salary.amountMinor, 198000);
+    expect(salary.categoryId, 'salary');
+
+    await tester.tap(find.text('Undo'));
+    await tester.pump();
+    await frames(tester);
+    expect(find.text('Undone'), findsOneWidget);
+    expect(db.invoices, isEmpty);
+    expect(db.transactions, isEmpty);
+    semantics.dispose();
+  });
+
+  testWidgets('a page with no invoice offers another try', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openPayoneer(tester, reader: _FakeInvoiceReader(null));
+    await tester.tap(find.text('Scan'));
+    await tester.pump();
+    await frames(tester, 16);
+    await tester.tap(find.text('Take a photo'));
+    await tester.pump();
+    await frames(tester, 16);
+    expect(find.text('I couldn’t read an invoice'), findsOneWidget);
+    expect(db.invoices, isEmpty);
+    semantics.dispose();
   });
 }

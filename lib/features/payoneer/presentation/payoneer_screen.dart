@@ -27,6 +27,7 @@ import '../domain/invoice.dart';
 import '../domain/payoneer_activity.dart';
 import 'invoice_sheet.dart';
 import 'mark_paid_sheet.dart';
+import 'scan_invoice_screen.dart';
 import 'widgets/payoneer_balance_card.dart';
 import 'widgets/payoneer_fields.dart';
 import 'withdraw_sheet.dart';
@@ -135,6 +136,8 @@ class _PayoneerScreenState extends ConsumerState<PayoneerScreen> {
             main: main,
             onWithdraw: () => WithdrawSheet.show(context, account: account),
             onInvoice: () => InvoiceSheet.show(context, account: account),
+            onScan: () =>
+                Navigator.of(context).push(ScanInvoiceScreen.route(account)),
           ),
         ),
         if (cross) ...[
@@ -153,8 +156,8 @@ class _PayoneerScreenState extends ConsumerState<PayoneerScreen> {
               ? const _EmptyRow(
                   icon: Icons.receipt_long_rounded,
                   text:
-                      'No invoices waiting. Tap New invoice when you send '
-                      'one.',
+                      'No invoices waiting. Tap New invoice, or Scan the '
+                      'PDF, when you send one.',
                 )
               : Column(
                   children: [

@@ -21,18 +21,23 @@ abstract final class InvoiceSheet {
     BuildContext context, {
     required Account account,
     Invoice? invoice,
+    InvoiceDraft? draft,
   }) => showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _InvoiceSheet(account: account, invoice: invoice),
+    builder: (_) =>
+        _InvoiceSheet(account: account, invoice: invoice, draft: draft),
   );
 }
 
 class _InvoiceSheet extends ConsumerStatefulWidget {
-  const _InvoiceSheet({required this.account, this.invoice});
+  const _InvoiceSheet({required this.account, this.invoice, this.draft});
 
   final Account account;
   final Invoice? invoice;
+
+  /// A new invoice filled in from elsewhere, such as a scan.
+  final InvoiceDraft? draft;
 
   @override
   ConsumerState<_InvoiceSheet> createState() => _InvoiceSheetState();
@@ -49,21 +54,25 @@ class _InvoiceSheetState extends ConsumerState<_InvoiceSheet> {
       .firstOrNull;
 
   late final _client = TextEditingController(
-    text: widget.invoice?.client ?? _last?.client ?? '',
+    text: widget.invoice?.client ?? widget.draft?.client ?? _last?.client ?? '',
   );
   late final _reference = TextEditingController(
     text:
         widget.invoice?.reference ??
+        widget.draft?.reference ??
         nextInvoiceReference(_last?.reference) ??
         '',
   );
   late final _amount = TextEditingController(
-    text: switch (widget.invoice?.amountMinor ?? _last?.amountMinor) {
+    text: switch (widget.invoice?.amountMinor ??
+        widget.draft?.amountMinor ??
+        _last?.amountMinor) {
       final m? => Money.toInputText(m, _currency),
       null => '',
     },
   );
-  late DateTime _issuedOn = widget.invoice?.issuedOn ?? _today;
+  late DateTime _issuedOn =
+      widget.invoice?.issuedOn ?? widget.draft?.issuedOn ?? _today;
   bool _busy = false;
 
   static DateTime get _today {

@@ -27,6 +27,7 @@ import '../../transactions/presentation/transaction_entry_screen.dart';
 import '../application/receipt_to_transaction.dart';
 import '../data/receipt_reader.dart';
 import '../domain/receipt.dart';
+import 'widgets/scanning_preview.dart';
 
 enum _Stage { start, reading, result, failed }
 
@@ -223,7 +224,16 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
           onGallery: () => _take(camera: false),
         ),
       ],
-      _Stage.reading => [_Reading(photo: _photo!)],
+      _Stage.reading => [
+        ScanningPreview(
+          bytes: _photo!.bytes,
+          steps: const [
+            'Finding the total…',
+            'Reading the store and date…',
+            'Picking a category…',
+          ],
+        ),
+      ],
       _Stage.failed => [
         _Failed(
           photo: _photo,
@@ -394,105 +404,6 @@ class _Start extends StatelessWidget {
 }
 
 /// The photo with a scan line sweeping over it while it's read.
-class _Reading extends StatefulWidget {
-  const _Reading({required this.photo});
-
-  final ReceiptPhoto photo;
-
-  @override
-  State<_Reading> createState() => _ReadingState();
-}
-
-class _ReadingState extends State<_Reading>
-    with SingleTickerProviderStateMixin {
-  late final _sweep = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1600),
-  )..repeat(reverse: true);
-  late final Timer _ticker;
-  int _step = 0;
-
-  static const _steps = [
-    'Finding the total…',
-    'Reading the store and date…',
-    'Picking a category…',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = Timer.periodic(
-      const Duration(milliseconds: 1400),
-      (_) => setState(() => _step = (_step + 1) % _steps.length),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ticker.cancel();
-    _sweep.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 420),
-            child: Stack(
-              children: [
-                Image.memory(
-                  widget.photo.bytes,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  gaplessPlayback: true,
-                ),
-                Positioned.fill(
-                  child: ColoredBox(
-                    color: AppColors.night.withValues(alpha: 0.35),
-                  ),
-                ),
-                Positioned.fill(
-                  child: AnimatedBuilder(
-                    animation: _sweep,
-                    builder: (context, _) => Align(
-                      alignment: Alignment(0, _sweep.value * 2 - 1),
-                      child: Container(
-                        height: 3,
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.leafBright,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Semantics(
-          liveRegion: true,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: Text(
-              _steps[_step],
-              key: ValueKey(_step),
-              style: text.titleMedium,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _SourceRow extends StatelessWidget {
   const _SourceRow({required this.photo, required this.source});
 

@@ -20,6 +20,7 @@ class PayoneerBalanceCard extends StatelessWidget {
     required this.main,
     required this.onWithdraw,
     required this.onInvoice,
+    required this.onScan,
   });
 
   final Account account;
@@ -32,6 +33,9 @@ class PayoneerBalanceCard extends StatelessWidget {
   final Currency main;
   final VoidCallback onWithdraw;
   final VoidCallback onInvoice;
+
+  /// Scan or import an invoice.
+  final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +78,41 @@ class PayoneerBalanceCard extends StatelessWidget {
                         style: text.titleMedium?.copyWith(color: white),
                       ),
                     const Spacer(),
+                    Semantics(
+                      button: true,
+                      label: 'Scan or import an invoice',
+                      excludeSemantics: true,
+                      child: Material(
+                        color: white.withValues(alpha: 0.14),
+                        shape: const StadiumBorder(),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: onScan,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.document_scanner_rounded,
+                                  size: 16,
+                                  color: white,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Scan',
+                                  style: text.labelMedium?.copyWith(
+                                    color: white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 9,

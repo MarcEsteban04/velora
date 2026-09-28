@@ -101,6 +101,22 @@ abstract final class AiClient {
     );
   }
 
+  /// The image's type from its first bytes: photos are JPEG, rendered PDF
+  /// pages and screenshots are often PNG or WebP.
+  @visibleForTesting
+  static String imageMime(Uint8List bytes) {
+    bool starts(List<int> sig, [int at = 0]) =>
+        bytes.length >= at + sig.length &&
+        [for (var i = 0; i < sig.length; i++) bytes[at + i] == sig[i]]
+            .every((ok) => ok);
+    if (starts(const [0x89, 0x50, 0x4E, 0x47])) return 'image/png';
+    if (starts(const [0x52, 0x49, 0x46, 0x46]) &&
+        starts(const [0x57, 0x45, 0x42, 0x50], 8)) {
+      return 'image/webp';
+    }
+    return 'image/jpeg';
+  }
+
   /// Both of Groq's models think before answering, and the thinking counts
   /// against max_tokens. Short replies need little of it: keep gpt-oss's
   /// light and hidden, and switch Qwen's off.
@@ -157,7 +173,8 @@ abstract final class AiClient {
                         'type': 'image_url',
                         'image_url': {
                           'url':
-                              'data:image/jpeg;base64,${base64Encode(r.image!)}',
+                              'data:${imageMime(r.image!)};base64,'
+                              '${base64Encode(r.image!)}',
                         },
                       },
                     ]
@@ -197,7 +214,7 @@ abstract final class AiClient {
                 if (i == last && r.image != null)
                   {
                     'inline_data': {
-                      'mime_type': 'image/jpeg',
+                      'mime_type': imageMime(r.image!),
                       'data': base64Encode(r.image!),
                     },
                   },
