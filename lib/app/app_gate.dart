@@ -8,7 +8,7 @@ import '../core/widgets/dusk_backdrop.dart';
 import '../core/widgets/pressable_button.dart';
 import '../core/widgets/reveal.dart';
 import '../core/widgets/velora_mascot.dart';
-import '../features/home/presentation/home_screen.dart';
+import '../features/shell/presentation/app_shell.dart';
 import '../features/onboarding/presentation/onboarding_flow.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/welcome/presentation/welcome_screen.dart';
@@ -40,7 +40,7 @@ class AppGate extends ConsumerWidget {
         onGetStarted: () => Navigator.of(context).push(OnboardingFlow.route()),
       );
     } else {
-      screen = const HomeScreen(key: ValueKey('home'));
+      screen = const AppShell(key: ValueKey('shell'));
     }
 
     return AnimatedSwitcher(

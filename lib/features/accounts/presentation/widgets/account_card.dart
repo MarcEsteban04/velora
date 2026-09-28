@@ -16,6 +16,7 @@ class AccountCard extends StatelessWidget {
     required this.currency,
     required this.balanceMinor,
     this.countUp = false,
+    this.obscured = false,
   });
 
   final String name;
@@ -23,6 +24,9 @@ class AccountCard extends StatelessWidget {
   final Currency currency;
   final int balanceMinor;
   final bool countUp;
+
+  /// Hides the balance (for example when "hide balances" is on).
+  final bool obscured;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +36,7 @@ class AccountCard extends StatelessWidget {
     return Semantics(
       label:
           '$name, ${type.label} account, '
-          'balance ${Money.format(balanceMinor, currency)}',
+          'balance ${obscured ? 'hidden' : Money.format(balanceMinor, currency)}',
       excludeSemantics: true,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 380),
@@ -130,7 +134,9 @@ class AccountCard extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        Money.format(value.round(), currency),
+                        obscured
+                            ? '${currency.symbol} ••••••'
+                            : Money.format(value.round(), currency),
                         style: text.displaySmall?.copyWith(fontSize: 32),
                       ),
                     ),

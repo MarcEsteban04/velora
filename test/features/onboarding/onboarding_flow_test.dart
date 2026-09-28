@@ -284,4 +284,62 @@ void main() {
     expect(pins.pin, '2580');
     expect(find.text('Protect your space'), findsNothing);
   });
+
+  testWidgets('shell: tabs switch, + opens quick actions, back goes Home', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await backend.complete(
+      displayName: 'Marc',
+      currencyCode: 'PHP',
+      coachTone: CoachTone.balanced,
+      accountName: 'Cash',
+      accountType: AccountType.cash,
+      openingBalanceMinor: 1200000,
+    );
+    pins.pin = '2580';
+    usePhoneSize(tester);
+    await tester.pumpWidget(
+      ProviderScope(overrides: overrides(), child: const VeloraApp()),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await typePin(tester, '2580');
+    await tester.pump(const Duration(seconds: 2));
+
+    // Dashboard content.
+    expect(find.text('NET WORTH'), findsOneWidget);
+    expect(find.text('Your accounts'), findsOneWidget);
+    expect(find.text('₱12,000.00'), findsWidgets);
+
+    // Hide balances masks every amount.
+    await tester.tap(find.byIcon(Icons.visibility_rounded));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('₱12,000.00'), findsNothing);
+
+    // Switch tabs.
+    await tester.tap(find.bySemanticsLabel(RegExp('Plan tab')));
+    await tester.pump(const Duration(milliseconds: 500));
+    // Hidden tabs stay alive but untouchable, so check what's hit-testable.
+    expect(
+      find.text('Budgets and goals that keep you on track.').hitTestable(),
+      findsOneWidget,
+    );
+    expect(find.text('NET WORTH').hitTestable(), findsNothing);
+
+    // Android back returns to Home instead of leaving the app.
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('NET WORTH').hitTestable(), findsOneWidget);
+
+    // + opens quick actions; picking one closes the panel with a note.
+    await tester.tap(find.bySemanticsLabel(RegExp('Add: open quick actions')));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text('What would you like to log?'), findsOneWidget);
+    await tester.tap(find.text('Income'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text('What would you like to log?'), findsNothing);
+    expect(find.textContaining('Income is coming next'), findsOneWidget);
+    semantics.dispose();
+  });
 }

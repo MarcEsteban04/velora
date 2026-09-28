@@ -36,6 +36,16 @@ extension CoachToneStyle on CoachTone {
     CoachTone.direct => 'On budget. Keep it that way.',
   };
 
+  /// What Velora says before there's any activity to react to.
+  String firstStepsMessage(String name) => switch (this) {
+    CoachTone.gentle =>
+      "Whenever you're ready, $name, log a little something and I'll keep "
+          'it cozy.',
+    CoachTone.balanced =>
+      "Log your first expense and I'll start spotting patterns for you.",
+    CoachTone.direct => 'No data, no insights. Log your first expense.',
+  };
+
   String get headsUpExample => switch (this) {
     CoachTone.gentle =>
       "Spending's picking up a little. Maybe a slower day tomorrow?",

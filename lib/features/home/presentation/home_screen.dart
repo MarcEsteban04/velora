@@ -1,127 +1,146 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/money/currency.dart';
-import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/dusk_backdrop.dart';
 import '../../../core/widgets/reveal.dart';
-import '../../../core/widgets/speech_bubble.dart';
-import '../../../core/widgets/velora_mascot.dart';
 import '../../accounts/data/account_repository.dart';
-import '../../accounts/presentation/widgets/account_card.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/presentation/coach_tone_style.dart';
+import '../../shell/presentation/widgets/floating_nav_bar.dart';
+import '../../shell/presentation/widgets/quick_actions.dart';
+import '../application/balance_privacy.dart';
+import 'widgets/accounts_carousel.dart';
+import 'widgets/balance_hero.dart';
+import 'widgets/coach_card.dart';
+import 'widgets/home_header.dart';
+import 'widgets/recent_activity.dart';
+import 'widgets/setup_checklist.dart';
 
-/// Home: a greeting, the net worth across accounts, and the accounts
-/// themselves. This is the foundation that transactions and budgets build on.
+/// The dashboard tab. From top to bottom:
+/// 1. Greeting, with a "hide balances" toggle.
+/// 2. Net worth, plus this month's money in and out.
+/// 3. Velora's coaching note, with one next step.
+/// 4. Account cards.
+/// 5. "Get set up" checklist.
+/// 6. Recent activity.
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.onQuickAction});
 
-  static String _greeting(DateTime now) => switch (now.hour) {
-    < 12 => 'Good morning',
-    < 18 => 'Good afternoon',
-    _ => 'Good evening',
-  };
+  final ValueChanged<QuickAction> onQuickAction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider).value;
     final accounts = ref.watch(accountsProvider).value ?? const [];
+    final hidden = ref.watch(balancesHiddenProvider);
     final text = Theme.of(context).textTheme;
-    final currency = Currencies.byCode(profile?.currencyCode ?? 'USD');
-    final total = accounts
-        .where((a) => a.currencyCode == currency.code)
-        .fold<int>(0, (sum, a) => sum + a.openingBalanceMinor);
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: Colors.transparent,
-        systemNavigationBarColor: AppColors.night,
+    final name = profile?.name ?? 'friend';
+    final currency = Currencies.byCode(profile?.currencyCode ?? 'USD');
+    final inMain = accounts.where((a) => a.currencyCode == currency.code);
+    final netWorth = inMain.fold<int>(0, (s, a) => s + a.openingBalanceMinor);
+
+    var i = 0;
+    Widget stagger(Widget child) => FadeSlideIn(
+      delay: Duration(milliseconds: 70 * i++),
+      child: child,
+    );
+
+    Widget section(String title, {String? trailing}) => Padding(
+      padding: const EdgeInsets.fromLTRB(4, 28, 4, 12),
+      child: Row(
+        children: [
+          Expanded(child: Text(title, style: text.titleMedium)),
+          if (trailing != null) Text(trailing, style: text.labelMedium),
+        ],
       ),
-      child: Scaffold(
-        body: Stack(
-          children: [
-            const Positioned.fill(child: DuskBackdrop()),
-            Positioned.fill(
-              child: ColoredBox(color: AppColors.night.withValues(alpha: 0.6)),
+    );
+
+    return RefreshIndicator(
+      color: AppColors.leafBright,
+      backgroundColor: AppColors.surfaceRaised,
+      onRefresh: () async {
+        ref
+          ..invalidate(accountsProvider)
+          ..invalidate(profileProvider);
+        await ref.read(accountsProvider.future);
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.paddingOf(context).top + 20,
+          20,
+          FloatingNavBar.reservedHeight(context),
+        ),
+        children: [
+          stagger(
+            HomeHeader(
+              name: name,
+              now: DateTime.now(),
+              balancesHidden: hidden,
+              onToggleBalances: ref
+                  .read(balancesHiddenProvider.notifier)
+                  .toggle,
             ),
-            SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-                children: [
-                  FadeSlideIn(
-                    child: Text(
-                      '${_greeting(DateTime.now())},',
-                      style: text.bodyLarge,
-                    ),
-                  ),
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 80),
-                    child: Text(
-                      '${profile?.name ?? 'friend'}!',
-                      style: text.displaySmall,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 160),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const VeloraMascot(pose: MascotPose.wave, size: 110),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 40),
-                            child: SpeechBubble(
-                              speaker: 'Velora',
-                              message: profile == null
-                                  ? 'Welcome!'
-                                  : profile.coachTone.onTrackExample(
-                                      profile.name,
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 240),
-                    child: Text(
-                      'NET WORTH',
-                      style: text.labelMedium?.copyWith(letterSpacing: 1.6),
-                    ),
-                  ),
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 280),
-                    child: Text(
-                      Money.format(total, currency),
-                      style: text.displaySmall?.copyWith(fontSize: 38),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  for (final (i, a) in accounts.indexed)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: FadeSlideIn(
-                        delay: Duration(milliseconds: 340 + i * 80),
-                        child: AccountCard(
-                          name: a.name,
-                          type: a.type,
-                          currency: Currencies.byCode(a.currencyCode),
-                          balanceMinor: a.openingBalanceMinor,
-                        ),
-                      ),
-                    ),
-                ],
+          ),
+          const SizedBox(height: 22),
+          stagger(
+            BalanceHero(
+              netWorthMinor: netWorth,
+              currency: currency,
+              accountCount: accounts.length,
+              incomeMinor: 0,
+              spentMinor: 0,
+              hidden: hidden,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (profile != null)
+            stagger(
+              CoachCard(
+                toneLabel: profile.coachTone.label,
+                message: profile.coachTone.firstStepsMessage(name),
+                actionLabel: 'Log an expense',
+                onAction: () => onQuickAction(QuickAction.expense),
               ),
             ),
+          if (accounts.isNotEmpty) ...[
+            section('Your accounts', trailing: '${accounts.length} total'),
+            stagger(AccountsCarousel(accounts: accounts, hidden: hidden)),
           ],
-        ),
+          const SizedBox(height: 12),
+          stagger(
+            SetupChecklist(
+              tasks: [
+                SetupTask(
+                  title: 'Create your first account',
+                  subtitle: 'Where your money lives',
+                  done: accounts.isNotEmpty,
+                ),
+                SetupTask(
+                  title: 'Log your first expense',
+                  subtitle: 'Takes about three seconds',
+                  done: false,
+                  onTap: () => onQuickAction(QuickAction.expense),
+                ),
+                const SetupTask(
+                  title: 'Set a monthly budget',
+                  subtitle: 'Food or shopping is a great start',
+                  done: false,
+                ),
+                const SetupTask(
+                  title: 'Add a savings goal',
+                  subtitle: 'Something worth saving for',
+                  done: false,
+                ),
+              ],
+            ),
+          ),
+          section('Recent activity'),
+          stagger(const RecentActivity()),
+        ],
       ),
     );
   }
