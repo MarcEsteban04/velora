@@ -25,9 +25,13 @@ class AccountDeck extends StatefulWidget {
     required this.hidden,
     required this.onOpen,
     required this.onToggleHidden,
+    required this.holder,
   });
 
   final List<Account> accounts;
+
+  /// The user's name, printed as the cardholder.
+  final String holder;
   final bool hidden;
   final ValueChanged<Account> onOpen;
   final VoidCallback onToggleHidden;
@@ -160,6 +164,7 @@ class _AccountDeckState extends State<AccountDeck>
               ignoring: depth != 0,
               child: _DeckCard(
                 account: a,
+                holder: widget.holder,
                 hidden: widget.hidden,
                 dim: d / 2,
                 onDetails: () => widget.onOpen(a),
@@ -246,6 +251,7 @@ class _AccountDeckState extends State<AccountDeck>
                                 child: _DeckCard(
                                   key: ValueKey(front.id),
                                   account: front,
+                                  holder: widget.holder,
                                   hidden: widget.hidden,
                                   dim: 0,
                                   onDetails: () => widget.onOpen(front),
@@ -325,12 +331,15 @@ class _AccountDeckState extends State<AccountDeck>
   }
 }
 
-/// One card's face: brand colors and stripes, the logo, the balance with an
-/// eye to hide it, and chips for the type and net worth.
+/// One card's face, laid out like a debit card: logo and "Details", the
+/// chip and contactless mark, the balance on the number line (with an eye
+/// to hide it), the cardholder and member-since date, and the currency as
+/// the network mark. A fine wave pattern stands in for security print.
 class _DeckCard extends StatelessWidget {
   const _DeckCard({
     super.key,
     required this.account,
+    required this.holder,
     required this.hidden,
     required this.dim,
     required this.onDetails,
@@ -338,6 +347,9 @@ class _DeckCard extends StatelessWidget {
   });
 
   final Account account;
+
+  /// Printed as the cardholder.
+  final String holder;
   final bool hidden;
 
   /// 0 for the front card, more for cards further back.
@@ -354,80 +366,65 @@ class _DeckCard extends StatelessWidget {
     final currency = Currencies.byCode(a.currencyCode);
     const white = Colors.white;
 
-    Widget chip(String label, {IconData? icon}) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: white.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 13, color: white),
-            const SizedBox(width: 5),
-          ],
-          Text(
-            label,
-            style: text.labelMedium?.copyWith(
-              fontSize: 11.5,
-              color: white,
-              letterSpacing: 0.4,
-            ),
-          ),
-        ],
-      ),
+    TextStyle small(double opacity) => TextStyle(
+      fontFamily: AppTypography.body,
+      fontWeight: FontWeight.w700,
+      fontSize: 8.5,
+      letterSpacing: 1.4,
+      color: white.withValues(alpha: opacity),
     );
+    // Wide, heavy capitals, like the name pressed into a card.
+    const embossed = TextStyle(
+      fontFamily: AppTypography.body,
+      fontWeight: FontWeight.w800,
+      fontSize: 14,
+      letterSpacing: 2,
+      color: white,
+    );
+
+    final since =
+        '${a.createdAt.month.toString().padLeft(2, '0')}/'
+        '${(a.createdAt.year % 100).toString().padLeft(2, '0')}';
 
     return Semantics(
       label:
           '${a.name}, ${a.type.label}, balance '
-          '${hidden ? 'hidden' : Money.format(a.balanceMinor, currency)}',
+          '${hidden ? 'hidden' : Money.format(a.balanceMinor, currency)}'
+          '${a.includeInNetWorth ? '' : ', not in net worth'}',
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(22),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: colors,
           ),
-          border: Border.all(color: white.withValues(alpha: 0.14)),
+          border: Border.all(color: white.withValues(alpha: 0.16)),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(22),
           child: Stack(
             children: [
-              const Positioned.fill(child: CustomPaint(painter: _Stripes())),
+              const Positioned.fill(
+                child: CustomPaint(painter: _SecurityPrint()),
+              ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 16, 16),
+                padding: const EdgeInsets.fromLTRB(20, 16, 16, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         if (institution != null)
-                          InstitutionLogo(institution: institution, height: 34)
+                          InstitutionLogo(institution: institution, height: 30)
                         else
                           Row(
                             children: [
-                              Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(11),
-                                ),
-                                child: Icon(
-                                  a.type.icon,
-                                  color: white,
-                                  size: 19,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
+                              Icon(a.type.icon, color: white, size: 22),
+                              const SizedBox(width: 8),
                               Text(
                                 a.name,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontFamily: AppTypography.display,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 20,
@@ -447,14 +444,14 @@ class _DeckCard extends StatelessWidget {
                                 Text(
                                   'Details',
                                   style: text.titleMedium?.copyWith(
-                                    fontSize: 13.5,
+                                    fontSize: 13,
                                     color: white,
                                   ),
                                 ),
                                 const SizedBox(width: 4),
                                 const Icon(
                                   Icons.arrow_forward_rounded,
-                                  size: 17,
+                                  size: 16,
                                   color: white,
                                 ),
                               ],
@@ -463,17 +460,26 @@ class _DeckCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Spacer(),
-                    Text(
-                      institution == null ? 'Balance' : '${a.name} · balance',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.labelMedium?.copyWith(
-                        fontSize: 12,
-                        color: white.withValues(alpha: 0.85),
-                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const _EmvChip(),
+                        const SizedBox(width: 10),
+                        Transform.rotate(
+                          angle: math.pi / 2,
+                          child: Icon(
+                            Icons.wifi_rounded,
+                            size: 22,
+                            color: white.withValues(alpha: 0.85),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (!a.includeInNetWorth)
+                          Text('NOT IN NET WORTH', style: small(0.8)),
+                      ],
                     ),
-                    const SizedBox(height: 2),
+                    const Spacer(),
+                    Text('BALANCE', style: small(0.7)),
                     Row(
                       children: [
                         Flexible(
@@ -482,13 +488,14 @@ class _DeckCard extends StatelessWidget {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               hidden
-                                  ? '${currency.symbol} ••••••'
+                                  ? '${currency.symbol} ••••  ••••'
                                   : Money.format(a.balanceMinor, currency),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: AppTypography.display,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 30,
-                                height: 1.1,
+                                fontSize: 27,
+                                height: 1.15,
+                                letterSpacing: 0.6,
                                 color: white,
                               ),
                             ),
@@ -505,39 +512,61 @@ class _DeckCard extends StatelessWidget {
                               onToggleHidden();
                             },
                             child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: const BoxDecoration(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: white,
+                                color: white.withValues(alpha: 0.22),
+                                border: Border.all(
+                                  color: white.withValues(alpha: 0.35),
+                                ),
                               ),
                               child: Icon(
                                 hidden
                                     ? Icons.visibility_rounded
                                     : Icons.visibility_off_rounded,
-                                size: 18,
-                                color: const Color(0xFF1A1A22),
+                                size: 16,
+                                color: white,
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        chip(a.type.label, icon: a.type.icon),
-                        const SizedBox(width: 8),
-                        if (!a.includeInNetWorth)
-                          chip('Not in net worth', icon: Icons.block_rounded),
-                        const Spacer(),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('CARDHOLDER', style: small(0.65)),
+                              Text(
+                                holder.toUpperCase(),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: embossed,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('MEMBER\nSINCE', style: small(0.65)),
+                            Text(since, style: embossed),
+                          ],
+                        ),
+                        const SizedBox(width: 16),
                         Text(
                           currency.code,
                           style: const TextStyle(
                             fontFamily: AppTypography.display,
                             fontWeight: FontWeight.w700,
                             fontStyle: FontStyle.italic,
-                            fontSize: 26,
+                            fontSize: 24,
+                            height: 1,
                             letterSpacing: 1,
                             color: white,
                           ),
@@ -564,39 +593,106 @@ class _DeckCard extends StatelessWidget {
   }
 }
 
-/// Soft vertical bands across the right of the card, like a premium card.
-class _Stripes extends CustomPainter {
-  const _Stripes();
+/// A gold EMV chip with its contact pads.
+class _EmvChip extends StatelessWidget {
+  const _EmvChip();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    width: 40,
+    height: 30,
+    child: CustomPaint(painter: _ChipPainter()),
+  );
+}
+
+class _ChipPainter extends CustomPainter {
+  const _ChipPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final start = size.width * 0.44;
-    final band = size.width * 0.045;
-    for (var i = 0; i < 9; i++) {
-      final x = start + i * band * 1.2;
-      final alpha = 0.035 + (i.isEven ? 0.05 : 0.0) + i * 0.006;
-      canvas.drawRect(
-        Rect.fromLTWH(x, 0, band * (i.isEven ? 0.55 : 1), size.height),
-        Paint()..color = Colors.white.withValues(alpha: alpha),
-      );
+    final r = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(
+      r,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF3DC8E), Color(0xFFD4A94A), Color(0xFFF0D27F)],
+        ).createShader(Offset.zero & size),
+    );
+    final line = Paint()
+      ..color = const Color(0xFF9C7627).withValues(alpha: 0.7)
+      ..strokeWidth = 1.1
+      ..style = PaintingStyle.stroke;
+    final w = size.width;
+    final h = size.height;
+    // The pads: a middle column and three rows either side.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(w * 0.36, h * 0.18, w * 0.28, h * 0.64),
+        const Radius.circular(3),
+      ),
+      line,
+    );
+    for (final y in [h / 3, h * 2 / 3]) {
+      canvas.drawLine(Offset(0, y), Offset(w * 0.36, y), line);
+      canvas.drawLine(Offset(w * 0.64, y), Offset(w, y), line);
     }
-    // A gentle sheen fading toward the bottom right.
+    canvas.drawLine(Offset(w / 2, 0), Offset(w / 2, h * 0.18), line);
+    canvas.drawLine(Offset(w / 2, h * 0.82), Offset(w / 2, h), line);
+    canvas.drawRRect(
+      r,
+      line..color = const Color(0xFF9C7627).withValues(alpha: 0.5),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ChipPainter old) => false;
+}
+
+/// Fine flowing lines, like the security print on a real card, and a soft
+/// sheen toward the corner.
+class _SecurityPrint extends CustomPainter {
+  const _SecurityPrint();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    for (var i = 0; i < 14; i++) {
+      final path = Path();
+      final base = size.height * (0.15 + i * 0.07);
+      for (var x = 0.0; x <= size.width; x += 6) {
+        final y =
+            base +
+            math.sin((x / size.width) * math.pi * 2 + i * 0.45) *
+                size.height *
+                0.08;
+        x == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+      }
+      paint.color = Colors.white.withValues(alpha: 0.045 + (i % 3) * 0.01);
+      canvas.drawPath(path, paint);
+    }
     canvas.drawRect(
       Offset.zero & size,
       Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomRight,
+        ..shader = RadialGradient(
+          center: const Alignment(0.9, -0.9),
+          radius: 1.3,
           colors: [
+            Colors.white.withValues(alpha: 0.16),
             Colors.white.withValues(alpha: 0),
-            Colors.white.withValues(alpha: 0.10),
           ],
         ).createShader(Offset.zero & size),
     );
   }
 
   @override
-  bool shouldRepaint(_Stripes old) => false;
+  bool shouldRepaint(_SecurityPrint old) => false;
 }
 
 /// A vertical drag that only claims the gesture when it starts downward.

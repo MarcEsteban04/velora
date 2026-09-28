@@ -165,6 +165,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 onToggleHidden: ref
                     .read(balancesHiddenProvider.notifier)
                     .toggle,
+                holder: ref.watch(profileProvider).value?.name ?? 'Velora',
               ),
               _WalletView.list => GlassCard(
                 key: const ValueKey('list'),
