@@ -91,7 +91,7 @@ class _CategoryChip extends StatelessWidget {
                 ? color.withValues(alpha: 0.2)
                 : AppColors.surface.withValues(alpha: 0.85),
             border: Border.all(
-              color: selected ? color : Colors.white.withValues(alpha: 0.06),
+              color: selected ? color : AppColors.hairline(0.06),
               width: selected ? 1.6 : 1,
             ),
           ),
@@ -148,7 +148,7 @@ class _AddChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.add_rounded,
                   size: 18,
                   color: AppColors.textSecondary,

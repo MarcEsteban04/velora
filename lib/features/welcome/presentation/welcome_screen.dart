@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/pressable_button.dart';
 import '../../../core/widgets/reveal.dart';
@@ -65,7 +66,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     final text = Theme.of(context).textTheme;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
+      value: AppTheme.overlayStyle.copyWith(
         statusBarColor: Colors.transparent,
         systemNavigationBarColor: AppColors.night,
       ),
@@ -199,11 +200,21 @@ class _Wordmark extends StatelessWidget {
             style: AppTypography.wordmark.copyWith(
               color: Colors.transparent,
               shadows: [
+                // By day a tighter, darker edge keeps the cream letters
+                // crisp against the bright hills.
                 Shadow(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color:
+                      (AppColors.isDay ? const Color(0xFF1C3A26) : Colors.black)
+                          .withValues(alpha: AppColors.isDay ? 0.55 : 0.45),
                   offset: const Offset(0, 5),
-                  blurRadius: 16,
+                  blurRadius: AppColors.isDay ? 12 : 16,
                 ),
+                if (AppColors.isDay)
+                  Shadow(
+                    color: const Color(0xFF1C3A26).withValues(alpha: 0.45),
+                    offset: const Offset(0, 1.5),
+                    blurRadius: 2,
+                  ),
               ],
             ),
           ),
@@ -214,7 +225,7 @@ class _Wordmark extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: [Colors.white, AppColors.cream, Color(0xFFF6D9B8)],
             ).createShader(bounds),
-            child: const Text('Velora', style: AppTypography.wordmark),
+            child: Text('Velora', style: AppTypography.wordmark),
           ),
         ],
       ),
@@ -233,7 +244,7 @@ class _PrivacyNote extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.lock_rounded, size: 15, color: AppColors.leafBright),
+        Icon(Icons.lock_rounded, size: 15, color: AppColors.leafBright),
         const SizedBox(width: 6),
         Flexible(
           child: Text(

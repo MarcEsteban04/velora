@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/dusk_backdrop.dart';
 
 /// The shared frame for PIN screens: the dusk scene behind a dark scrim, with
@@ -14,7 +15,7 @@ class LockScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
+      value: AppTheme.overlayStyle.copyWith(
         statusBarColor: Colors.transparent,
         systemNavigationBarColor: AppColors.night,
       ),

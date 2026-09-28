@@ -35,11 +35,7 @@ class PinStep extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.shield_rounded,
-              size: 14,
-              color: AppColors.leafBright,
-            ),
+            Icon(Icons.shield_rounded, size: 14, color: AppColors.leafBright),
             const SizedBox(width: 6),
             Flexible(
               child: Text(

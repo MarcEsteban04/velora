@@ -64,11 +64,7 @@ class ReadyStep extends ConsumerWidget {
           child: Column(
             children: [
               for (final (i, r) in rows.indexed) ...[
-                if (i > 0)
-                  Divider(
-                    height: 1,
-                    color: Colors.white.withValues(alpha: 0.06),
-                  ),
+                if (i > 0) Divider(height: 1, color: AppColors.hairline(0.06)),
                 FadeSlideIn(
                   delay: Duration(milliseconds: 250 + i * 110),
                   child: _SummaryRow(

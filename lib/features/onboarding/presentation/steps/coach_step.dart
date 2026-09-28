@@ -136,7 +136,7 @@ class _Reaction extends StatelessWidget {
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
                 ),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                border: Border.all(color: AppColors.hairline(0.06)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

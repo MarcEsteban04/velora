@@ -13,7 +13,7 @@ import '../widgets/step_layout.dart';
 class PromiseStep extends ConsumerWidget {
   const PromiseStep({super.key});
 
-  static const _promises = [
+  static List<(IconData, Color, String, String)> get _promises => [
     (
       Icons.insights_rounded,
       AppColors.sky,

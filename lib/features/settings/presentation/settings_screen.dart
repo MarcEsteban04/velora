@@ -90,6 +90,7 @@ class SettingsScreen extends ConsumerWidget {
     final profile = ref.watch(profileProvider).value;
     final hideOnOpen = ref.watch(hideBalancesOnOpenProvider);
     final autoLock = ref.watch(autoLockProvider);
+    final appearance = ref.watch(appearanceProvider);
     final name = profile?.name ?? 'friend';
     final currency = Currencies.byCode(profile?.currencyCode ?? 'USD');
     final tone = profile?.coachTone ?? CoachTone.balanced;
@@ -144,6 +145,27 @@ class SettingsScreen extends ConsumerWidget {
                   SettingsSection(
                     title: 'Preferences',
                     children: [
+                      SettingsTile(
+                        icon: SettingsSheets.appearanceIcon(appearance),
+                        color: AppColors.isDay
+                            ? AppColors.ember
+                            : AppColors.lilac,
+                        title: 'Appearance',
+                        subtitle: appearance.description,
+                        value: appearance.label,
+                        onTap: () async {
+                          final picked = await SettingsSheets.appearance(
+                            context,
+                            appearance,
+                          );
+                          if (picked != null) {
+                            HapticFeedback.selectionClick();
+                            await ref
+                                .read(appearanceProvider.notifier)
+                                .set(picked);
+                          }
+                        },
+                      ),
                       SettingsTile(
                         icon: Icons.currency_exchange_rounded,
                         title: 'Main currency',
@@ -251,7 +273,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
                 stagger(
-                  const SettingsSection(
+                  SettingsSection(
                     title: 'Backup',
                     children: [
                       SettingsTile(
@@ -363,11 +385,9 @@ class _ProfileCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.surfaceRaised,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
-                  ),
+                  border: Border.all(color: AppColors.hairline(0.08)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.edit_rounded,
                   size: 18,
                   color: AppColors.leafBright,

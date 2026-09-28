@@ -51,7 +51,7 @@ class SelectableTile extends StatelessWidget {
               border: Border.all(
                 color: selected
                     ? AppColors.leafBright
-                    : Colors.white.withValues(alpha: 0.07),
+                    : AppColors.hairline(0.07),
                 width: selected ? 1.8 : 1,
               ),
             ),
@@ -84,7 +84,7 @@ class SelectionDot extends StatelessWidget {
         ),
       ),
       child: selected
-          ? const Icon(Icons.check_rounded, size: 16, color: AppColors.night)
+          ? Icon(Icons.check_rounded, size: 16, color: AppColors.night)
           : null,
     );
   }

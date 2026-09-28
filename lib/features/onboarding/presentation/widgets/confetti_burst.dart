@@ -54,9 +54,10 @@ class _Piece {
       speed = 0.55 + r.nextDouble() * 0.65,
       spin = (r.nextDouble() - 0.5) * 18,
       width = 6 + r.nextDouble() * 6,
-      color = _colors[r.nextInt(_colors.length)];
+      colorIndex = r.nextInt(6);
 
-  static const _colors = [
+  /// Read live, so confetti matches the current scene.
+  static List<Color> get colors => [
     AppColors.leafBright,
     AppColors.ember,
     AppColors.cream,
@@ -66,7 +67,7 @@ class _Piece {
   ];
 
   final double angle, speed, spin, width;
-  final Color color;
+  final int colorIndex;
 }
 
 class _ConfettiPainter extends CustomPainter {
@@ -88,7 +89,8 @@ class _ConfettiPainter extends CustomPainter {
       final v = p.speed * scale;
       final dx = math.cos(p.angle) * v * t;
       final dy = math.sin(p.angle) * v * t + 0.9 * scale * t * t;
-      final paint = Paint()..color = p.color.withValues(alpha: fade);
+      final paint = Paint()
+        ..color = _Piece.colors[p.colorIndex].withValues(alpha: fade);
       canvas
         ..save()
         ..translate(origin.dx + dx, origin.dy + dy)

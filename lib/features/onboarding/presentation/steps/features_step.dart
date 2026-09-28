@@ -9,7 +9,7 @@ import '../widgets/step_layout.dart';
 class FeaturesStep extends StatelessWidget {
   const FeaturesStep({super.key});
 
-  static const _features = [
+  static List<(IconData, Color, String, String)> get _features => [
     (
       Icons.add_circle_rounded,
       AppColors.leafBright,
@@ -53,10 +53,7 @@ class FeaturesStep extends StatelessWidget {
                 if (i > 0)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Divider(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.06),
-                    ),
+                    child: Divider(height: 1, color: AppColors.hairline(0.06)),
                   ),
                 FadeSlideIn(
                   delay: Duration(milliseconds: 180 + i * 110),

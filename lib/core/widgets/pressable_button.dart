@@ -158,12 +158,12 @@ class _Palette {
   });
 
   factory _Palette.of(PressableButtonVariant variant) => switch (variant) {
-    PressableButtonVariant.primary => const _Palette(
+    PressableButtonVariant.primary => _Palette(
       faceTop: AppColors.leafBright,
       faceBottom: AppColors.leaf,
       lip: AppColors.leafShadow,
       highlight: Color(0x33FFFFFF),
-      foreground: AppColors.textPrimary,
+      foreground: AppColors.onBrand,
     ),
     PressableButtonVariant.light => const _Palette(
       faceTop: Colors.white,

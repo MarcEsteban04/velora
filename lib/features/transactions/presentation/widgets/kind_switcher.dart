@@ -33,7 +33,7 @@ class KindSwitcher extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: AppColors.surface.withValues(alpha: 0.8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.hairline(0.08)),
       ),
       child: LayoutBuilder(
         builder: (context, c) {
@@ -78,7 +78,7 @@ class KindSwitcher extends StatelessWidget {
                               style: text.titleMedium!.copyWith(
                                 fontSize: 15,
                                 color: k == value
-                                    ? AppColors.textPrimary
+                                    ? AppColors.onBrand
                                     : AppColors.textSecondary,
                               ),
                               child: Text(k.label),

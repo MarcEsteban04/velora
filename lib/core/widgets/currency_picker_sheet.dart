@@ -85,7 +85,7 @@ class _CurrencyPickerSheetState extends State<CurrencyPickerSheet> {
                           title: Text(c.code, style: text.titleMedium),
                           subtitle: Text(c.name, style: text.bodyMedium),
                           trailing: selected
-                              ? const Icon(
+                              ? Icon(
                                   Icons.check_circle_rounded,
                                   color: AppColors.leafBright,
                                 )

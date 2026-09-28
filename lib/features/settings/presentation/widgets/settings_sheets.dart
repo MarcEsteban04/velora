@@ -29,6 +29,70 @@ abstract final class SettingsSheets {
     builder: (_) => _CoachSheet(current: current, name: name),
   );
 
+  static IconData appearanceIcon(Appearance a) => switch (a) {
+    Appearance.night => Icons.dark_mode_rounded,
+    Appearance.day => Icons.light_mode_rounded,
+    Appearance.automatic => Icons.brightness_auto_rounded,
+  };
+
+  static Future<Appearance?> appearance(
+    BuildContext context,
+    Appearance current,
+  ) => showModalBottomSheet<Appearance>(
+    context: context,
+    builder: (context) {
+      final text = Theme.of(context).textTheme;
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Appearance', style: text.headlineSmall),
+              const SizedBox(height: 4),
+              Text(
+                'Visit the valley by day or by night.',
+                style: text.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              for (final option in Appearance.values)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: SelectableTile(
+                    selected: option == current,
+                    semanticLabel: '${option.label}: ${option.description}',
+                    onTap: () => Navigator.pop(context, option),
+                    child: Row(
+                      children: [
+                        Icon(
+                          appearanceIcon(option),
+                          color: option == Appearance.day
+                              ? AppColors.ember
+                              : AppColors.lilac,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(option.label, style: text.titleMedium),
+                              Text(option.description, style: text.labelMedium),
+                            ],
+                          ),
+                        ),
+                        SelectionDot(selected: option == current),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
   static Future<AutoLock?> autoLock(BuildContext context, AutoLock current) =>
       showModalBottomSheet<AutoLock>(
         context: context,

@@ -99,7 +99,7 @@ class _TaskRow extends StatelessWidget {
                   ),
                 ),
                 child: task.done
-                    ? const Icon(
+                    ? Icon(
                         Icons.check_rounded,
                         size: 16,
                         color: AppColors.night,
@@ -129,10 +129,7 @@ class _TaskRow extends StatelessWidget {
                 ),
               ),
               if (!task.done && task.onTap != null)
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textMuted,
-                ),
+                Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
             ],
           ),
         ),
@@ -181,12 +178,12 @@ class _RingPainter extends CustomPainter {
     final track = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
-      ..color = Colors.white.withValues(alpha: 0.1);
+      ..color = AppColors.hairline(0.1);
     final arc = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round
-      ..shader = const SweepGradient(
+      ..shader = SweepGradient(
         colors: [AppColors.leafBright, AppColors.ember, AppColors.leafBright],
       ).createShader(rect);
     canvas.drawArc(rect, 0, math.pi * 2, false, track);

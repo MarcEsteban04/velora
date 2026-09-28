@@ -86,14 +86,17 @@ class CoachCard extends StatelessWidget {
                           Flexible(
                             child: Text(
                               actionLabel,
-                              style: text.titleMedium?.copyWith(fontSize: 14),
+                              style: text.titleMedium?.copyWith(
+                                fontSize: 14,
+                                color: AppColors.onBrand,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(
+                          Icon(
                             Icons.arrow_forward_rounded,
                             size: 16,
-                            color: AppColors.textPrimary,
+                            color: AppColors.onBrand,
                           ),
                         ],
                       ),

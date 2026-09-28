@@ -38,7 +38,8 @@ class CalcKeypad extends StatelessWidget {
   final VoidCallback onHide;
   final bool allowDecimal;
 
-  static const _danger = Color(0xFFF0766E);
+  static Color get _danger =>
+      AppColors.isDay ? const Color(0xFFD2463B) : const Color(0xFFF0766E);
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +64,7 @@ class CalcKeypad extends StatelessWidget {
           tone: _Tone.danger,
           onTap: onBackspace,
           onLongPress: onClear,
-          child: const Icon(Icons.backspace_rounded, color: _danger),
+          child: Icon(Icons.backspace_rounded, color: _danger),
         ),
         _Key(
           label: 'clear',
@@ -102,7 +103,7 @@ class CalcKeypad extends StatelessWidget {
           label: 'equals',
           tone: _Tone.solid,
           onTap: onEquals,
-          child: Text('=', style: style.copyWith(color: AppColors.textPrimary)),
+          child: Text('=', style: style.copyWith(color: AppColors.onBrand)),
         ),
       ],
     ];
@@ -112,7 +113,7 @@ class CalcKeypad extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.hairline(0.08)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -136,7 +137,7 @@ class CalcKeypad extends StatelessWidget {
             child: InkResponse(
               onTap: onHide,
               radius: 28,
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.all(4),
                 child: Icon(
                   Icons.keyboard_hide_rounded,
@@ -180,7 +181,8 @@ class _KeyState extends State<_Key> {
   Color get _fill => switch (widget.tone) {
     _Tone.plain => AppColors.night.withValues(alpha: 0.85),
     _Tone.accent => AppColors.leaf.withValues(alpha: 0.18),
-    _Tone.danger => const Color(0xFF4A1F24),
+    _Tone.danger =>
+      AppColors.isDay ? const Color(0xFFFBE1DD) : const Color(0xFF4A1F24),
     _Tone.solid => AppColors.leaf,
   };
 
@@ -220,10 +222,7 @@ class _KeyState extends State<_Key> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
                 color: _down
-                    ? Color.alphaBlend(
-                        Colors.white.withValues(alpha: 0.08),
-                        _fill,
-                      )
+                    ? Color.alphaBlend(AppColors.hairline(0.08), _fill)
                     : _fill,
               ),
               child: widget.child,

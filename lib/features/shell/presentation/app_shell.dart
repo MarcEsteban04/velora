@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
 import '../../../core/widgets/velora_mascot.dart';
 import '../../accounts/presentation/wallet_screen.dart';
@@ -156,7 +157,7 @@ class _AppShellState extends State<AppShell>
         }
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.light.copyWith(
+        value: AppTheme.overlayStyle.copyWith(
           statusBarColor: Colors.transparent,
           systemNavigationBarColor: Colors.transparent,
         ),

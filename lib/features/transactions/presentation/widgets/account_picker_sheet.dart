@@ -83,7 +83,7 @@ class AccountPickerSheet extends StatelessWidget {
                             style: text.labelMedium,
                           ),
                           trailing: a.id == selectedId
-                              ? const Icon(
+                              ? Icon(
                                   Icons.check_circle_rounded,
                                   color: AppColors.leafBright,
                                 )

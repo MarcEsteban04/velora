@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/friendly_error.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
 import '../../../core/widgets/pressable_button.dart';
 import '../application/onboarding_controller.dart';
@@ -148,7 +149,7 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
         if (!didPop) _back();
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.light.copyWith(
+        value: AppTheme.overlayStyle.copyWith(
           statusBarColor: Colors.transparent,
           systemNavigationBarColor: AppColors.night,
         ),

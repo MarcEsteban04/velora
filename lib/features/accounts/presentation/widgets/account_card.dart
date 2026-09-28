@@ -45,7 +45,9 @@ class AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    // Cards sit on a brand gradient: text stays white in both scenes.
+    final text = Theme.of(context).textTheme
+        .apply(bodyColor: AppColors.onBrand, displayColor: AppColors.onBrand);
     final colors = institution?.gradient ?? type.gradient;
     if (compact) return _buildCompact(context, text, colors);
 

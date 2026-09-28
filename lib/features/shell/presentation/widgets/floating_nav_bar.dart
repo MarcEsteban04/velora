@@ -115,7 +115,7 @@ class _Bar extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: radius,
               color: AppColors.surface.withValues(alpha: 0.72),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
+              border: Border.all(color: AppColors.hairline(0.09)),
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -247,8 +247,8 @@ class _AddButton extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: open
-                  ? const [AppColors.surfaceRaised, AppColors.surface]
-                  : const [AppColors.leafBright, AppColors.leafShadow],
+                  ? [AppColors.surfaceRaised, AppColors.surface]
+                  : [AppColors.leafBright, AppColors.leafShadow],
             ),
             border: Border.all(
               color: Colors.white.withValues(alpha: open ? 0.14 : 0.22),
@@ -259,9 +259,9 @@ class _AddButton extends StatelessWidget {
             turns: open ? 0.125 : 0,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutBack,
-            child: const Icon(
+            child: Icon(
               Icons.add_rounded,
-              color: AppColors.textPrimary,
+              color: open ? AppColors.textPrimary : AppColors.onBrand,
               size: 32,
             ),
           ),

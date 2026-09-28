@@ -46,7 +46,7 @@ class CurrencyStep extends ConsumerWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [AppColors.leafBright, AppColors.leafShadow],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -89,7 +89,7 @@ class CurrencyStep extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.my_location_rounded,
                           size: 13,
                           color: AppColors.leafBright,
@@ -171,7 +171,7 @@ class CurrencyStep extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.search_rounded,
                   size: 20,
                   color: AppColors.textSecondary,

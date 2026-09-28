@@ -38,7 +38,7 @@ class RoundIconButton extends StatelessWidget {
             color: active
                 ? AppColors.leaf.withValues(alpha: 0.25)
                 : AppColors.surface.withValues(alpha: 0.6),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(color: AppColors.hairline(0.08)),
           ),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),

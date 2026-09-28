@@ -63,7 +63,7 @@ class NumberPad extends StatelessWidget {
                 enabled: enabled,
                 filled: false,
                 onTap: onBackspace,
-                child: const Icon(
+                child: Icon(
                   Icons.backspace_rounded,
                   color: AppColors.textSecondary,
                   size: 26,
@@ -141,7 +141,7 @@ class _KeyState extends State<_Key> {
                   ? AppColors.leaf.withValues(alpha: 0.35)
                   : AppColors.surface.withValues(alpha: 0.6),
               border: widget.filled
-                  ? Border.all(color: Colors.white.withValues(alpha: 0.08))
+                  ? Border.all(color: AppColors.hairline(0.08))
                   : null,
             ),
             child: widget.child,

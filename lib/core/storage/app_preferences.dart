@@ -13,6 +13,17 @@ enum AutoLock {
   final String label;
 }
 
+/// Day or Night scene, or follow the phone's light/dark setting.
+enum Appearance {
+  night('Night', 'The valley at dusk, moon and stars'),
+  day('Day', 'Sunshine, clouds and blue sky'),
+  automatic('Automatic', 'Follows your phone’s light or dark mode');
+
+  const Appearance(this.label, this.description);
+  final String label;
+  final String description;
+}
+
 /// Preferences for this phone only. They aren't secret and aren't synced:
 /// how the app behaves here, not who you are. Profile settings live in
 /// Supabase.
@@ -23,6 +34,14 @@ class AppPreferences {
 
   static const _kHideBalances = 'prefs.hideBalancesOnOpen';
   static const _kAutoLock = 'prefs.autoLock';
+  static const _kAppearance = 'prefs.appearance';
+
+  /// Night by default: Velora's signature look.
+  Appearance get appearance =>
+      Appearance.values.asNameMap()[_prefs.getString(_kAppearance)] ??
+      Appearance.night;
+  Future<void> setAppearance(Appearance value) =>
+      _prefs.setString(_kAppearance, value.name);
 
   bool get hideBalancesOnOpen => _prefs.getBool(_kHideBalances) ?? false;
   Future<void> setHideBalancesOnOpen(bool value) =>
@@ -72,5 +91,19 @@ class AutoLockSetting extends Notifier<AutoLock> {
   Future<void> set(AutoLock value) async {
     state = value;
     await ref.read(appPreferencesProvider).setAutoLock(value);
+  }
+}
+
+final appearanceProvider = NotifierProvider<AppearanceSetting, Appearance>(
+  AppearanceSetting.new,
+);
+
+class AppearanceSetting extends Notifier<Appearance> {
+  @override
+  Appearance build() => ref.watch(appPreferencesProvider).appearance;
+
+  Future<void> set(Appearance value) async {
+    state = value;
+    await ref.read(appPreferencesProvider).setAppearance(value);
   }
 }

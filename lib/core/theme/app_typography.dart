@@ -11,7 +11,7 @@ abstract final class AppTypography {
   static const display = 'Fredoka';
   static const body = 'Nunito';
 
-  static const wordmark = TextStyle(
+  static TextStyle get wordmark => TextStyle(
     fontFamily: display,
     fontWeight: FontWeight.w700,
     fontSize: 64,
@@ -20,7 +20,7 @@ abstract final class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  static const textTheme = TextTheme(
+  static TextTheme get textTheme => TextTheme(
     displaySmall: TextStyle(
       fontFamily: display,
       fontWeight: FontWeight.w700,

@@ -37,7 +37,7 @@ class SettingsSection extends StatelessWidget {
                   Divider(
                     height: 1,
                     indent: 66,
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: AppColors.hairline(0.06),
                   ),
                 child,
               ],
@@ -60,7 +60,7 @@ class SettingsTile extends StatelessWidget {
     this.value,
     this.trailing,
     this.onTap,
-    this.color = AppColors.leafBright,
+    this.color,
     this.destructive = false,
     this.badge,
   });
@@ -73,7 +73,9 @@ class SettingsTile extends StatelessWidget {
   final String? value;
   final Widget? trailing;
   final VoidCallback? onTap;
-  final Color color;
+
+  /// Defaults to the brand green.
+  final Color? color;
   final bool destructive;
 
   /// A small pill after the title, for example "SOON".
@@ -82,7 +84,7 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final tint = destructive ? AppColors.rust : color;
+    final tint = destructive ? AppColors.rust : (color ?? AppColors.leafBright);
 
     return Material(
       type: MaterialType.transparency,
@@ -160,10 +162,7 @@ class SettingsTile extends StatelessWidget {
               if (trailing != null)
                 trailing!
               else if (onTap != null)
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textMuted,
-                ),
+                Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
             ],
           ),
         ),

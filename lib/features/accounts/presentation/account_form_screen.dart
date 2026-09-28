@@ -337,7 +337,7 @@ class _TappableField extends StatelessWidget {
       color: AppColors.night.withValues(alpha: 0.55),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        side: BorderSide(color: AppColors.hairline(0.08)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -356,7 +356,7 @@ class _TappableField extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              const Icon(Icons.expand_more_rounded, color: AppColors.textMuted),
+              Icon(Icons.expand_more_rounded, color: AppColors.textMuted),
             ],
           ),
         ),

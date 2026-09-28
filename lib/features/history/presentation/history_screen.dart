@@ -257,9 +257,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       ),
                       selectedColor: kind?.color ?? AppColors.leafBright,
                       backgroundColor: AppColors.surface.withValues(alpha: 0.6),
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.08),
-                      ),
+                      side: BorderSide(color: AppColors.hairline(0.08)),
                       shape: const StadiumBorder(),
                     ),
                   ),
@@ -268,7 +266,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ),
           const SizedBox(height: 8),
           if (async.isLoading && !async.hasValue)
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(40),
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.leafBright),
@@ -346,7 +344,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         Divider(
                           height: 1,
                           indent: 68,
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: AppColors.hairline(0.06),
                         ),
                       Dismissible(
                         key: ValueKey(t.id),
@@ -355,7 +353,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.only(right: 22),
                           color: AppColors.rust.withValues(alpha: 0.25),
-                          child: const Icon(
+                          child: Icon(
                             Icons.delete_outline_rounded,
                             color: AppColors.rust,
                           ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/errors/friendly_error.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_theme.dart';
 import '../core/widgets/dusk_backdrop.dart';
 import '../core/widgets/pressable_button.dart';
 import '../core/widgets/reveal.dart';
@@ -58,7 +59,7 @@ class _StatusScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
+      value: AppTheme.overlayStyle.copyWith(
         statusBarColor: Colors.transparent,
         systemNavigationBarColor: AppColors.night,
       ),
@@ -89,7 +90,7 @@ class _SplashView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _StatusScaffold(
+    return _StatusScaffold(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -65,7 +65,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
     Widget body;
     if (accountsAsync.isLoading && !accountsAsync.hasValue) {
-      body = const Padding(
+      body = Padding(
         padding: EdgeInsets.all(40),
         child: Center(
           child: CircularProgressIndicator(color: AppColors.leafBright),
@@ -136,7 +136,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                             Divider(
                               height: 1,
                               indent: 74,
-                              color: Colors.white.withValues(alpha: 0.06),
+                              color: AppColors.hairline(0.06),
                             ),
                           _ListRow(
                             account: a,
@@ -398,7 +398,7 @@ class _ViewToggle extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(17),
         color: AppColors.surface.withValues(alpha: 0.6),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.hairline(0.08)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -7,43 +7,26 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
 
 enum QuickAction {
-  expense(
-    'Expense',
-    'Money going out',
-    Icons.north_east_rounded,
-    AppColors.rust,
-  ),
-  income(
-    'Income',
-    'Money coming in',
-    Icons.south_west_rounded,
-    AppColors.leafBright,
-  ),
-  transfer(
-    'Transfer',
-    'Between accounts',
-    Icons.swap_horiz_rounded,
-    AppColors.sky,
-  ),
-  scan(
-    'Scan receipt',
-    'Snap it, done',
-    Icons.document_scanner_rounded,
-    AppColors.lilac,
-  ),
-  ask(
-    'Ask Velora',
-    'Log by chatting',
-    Icons.chat_bubble_rounded,
-    AppColors.ember,
-  );
+  expense('Expense', 'Money going out', Icons.north_east_rounded),
+  income('Income', 'Money coming in', Icons.south_west_rounded),
+  transfer('Transfer', 'Between accounts', Icons.swap_horiz_rounded),
+  scan('Scan receipt', 'Snap it, done', Icons.document_scanner_rounded),
+  ask('Ask Velora', 'Log by chatting', Icons.chat_bubble_rounded);
 
-  const QuickAction(this.label, this.hint, this.icon, this.color);
+  const QuickAction(this.label, this.hint, this.icon);
 
   final String label;
   final String hint;
   final IconData icon;
-  final Color color;
+
+  /// A getter rather than a field, so it follows the current scene.
+  Color get color => switch (this) {
+    QuickAction.expense => AppColors.rust,
+    QuickAction.income => AppColors.leafBright,
+    QuickAction.transfer => AppColors.sky,
+    QuickAction.scan => AppColors.lilac,
+    QuickAction.ask => AppColors.ember,
+  };
 }
 
 /// A blurred scrim with a panel of actions rising from the "+" button. The
@@ -196,7 +179,7 @@ class _QuickActionsOverlayState extends State<QuickActionsOverlay>
                       Divider(
                         height: 1,
                         indent: 68,
-                        color: Colors.white.withValues(alpha: 0.06),
+                        color: AppColors.hairline(0.06),
                       ),
                     _RowTile(action: a, onTap: () => widget.onAction(a)),
                   ],
@@ -303,10 +286,7 @@ class _RowTile extends StatelessWidget {
           style: text.titleMedium?.copyWith(fontSize: 16),
         ),
         subtitle: Text(action.hint, style: text.labelMedium),
-        trailing: const Icon(
-          Icons.chevron_right_rounded,
-          color: AppColors.textMuted,
-        ),
+        trailing: Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
       ),
     );
   }

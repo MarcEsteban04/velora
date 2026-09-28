@@ -95,7 +95,7 @@ class AmountDisplay extends StatelessWidget {
                           currency.symbol,
                           style: text.titleMedium?.copyWith(color: color),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.arrow_drop_down_rounded,
                           color: AppColors.textMuted,
                         ),

@@ -194,7 +194,7 @@ class _Swatch extends StatelessWidget {
                 ? ring.withValues(alpha: 0.18)
                 : AppColors.surfaceRaised.withValues(alpha: 0.8),
             border: Border.all(
-              color: selected ? ring : Colors.white.withValues(alpha: 0.06),
+              color: selected ? ring : AppColors.hairline(0.06),
               width: selected ? 1.6 : 1,
             ),
           ),

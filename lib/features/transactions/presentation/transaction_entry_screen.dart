@@ -339,7 +339,7 @@ class _TransactionEntryScreenState
               ? 'PAID FROM'
               : 'RECEIVED IN',
           account: account,
-          accent: _kind.color,
+          accentColor: _kind.color,
           onTap: () => _pickAccount(accounts),
           afterMinor: account == null || amount == 0
               ? null
@@ -435,7 +435,7 @@ class _TransactionEntryScreenState
               if (created != null) setState(() => _categoryId = created.id);
             },
           ),
-          loading: () => const Padding(
+          loading: () => Padding(
             padding: EdgeInsets.all(16),
             child: Center(
               child: CircularProgressIndicator(color: AppColors.leafBright),
@@ -632,13 +632,13 @@ class _CircleButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onTap,
-    this.color = AppColors.textSecondary,
+    this.color,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -652,7 +652,7 @@ class _CircleButton extends StatelessWidget {
           onTap: onTap,
           child: SizedBox.square(
             dimension: 48,
-            child: Icon(icon, color: color),
+            child: Icon(icon, color: color ?? AppColors.textSecondary),
           ),
         ),
       ),
@@ -721,7 +721,7 @@ class _LoggedAtCard extends StatelessWidget {
         ),
         selectedColor: AppColors.leafBright,
         backgroundColor: AppColors.night.withValues(alpha: 0.6),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        side: BorderSide(color: AppColors.hairline(0.08)),
         shape: const StadiumBorder(),
         visualDensity: VisualDensity.compact,
       ),
@@ -732,7 +732,7 @@ class _LoggedAtCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: AppColors.hairline(0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -806,7 +806,7 @@ class _TransferAccounts extends StatelessWidget {
               account: from,
               onTap: onPickFrom,
               afterMinor: fromAfter,
-              accent: AppColors.sky,
+              accentColor: AppColors.sky,
               reserveTrailing: true,
             ),
             const SizedBox(height: 8),
@@ -815,7 +815,7 @@ class _TransferAccounts extends StatelessWidget {
               account: to,
               onTap: onPickTo,
               afterMinor: toAfter,
-              accent: AppColors.sky,
+              accentColor: AppColors.sky,
               reserveTrailing: true,
             ),
           ],
@@ -843,7 +843,7 @@ class _TransferAccounts extends StatelessWidget {
                     color: AppColors.sky.withValues(alpha: 0.5),
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.swap_vert_rounded,
                   color: AppColors.sky,
                   size: 22,
@@ -866,7 +866,7 @@ class _AccountTile extends StatelessWidget {
     required this.account,
     required this.onTap,
     this.afterMinor,
-    this.accent = AppColors.leafBright,
+    this.accentColor,
     this.reserveTrailing = false,
   });
 
@@ -876,7 +876,9 @@ class _AccountTile extends StatelessWidget {
 
   /// The balance once this transaction is saved; null hides the preview.
   final int? afterMinor;
-  final Color accent;
+
+  /// Defaults to the brand green.
+  final Color? accentColor;
 
   /// Leaves room on the right for the transfer swap button.
   final bool reserveTrailing;
@@ -884,6 +886,7 @@ class _AccountTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final accent = accentColor ?? AppColors.leafBright;
     final a = account;
     final currency = Currencies.byCode(a?.currencyCode ?? 'USD');
     final balance = a == null ? '' : Money.format(a.balanceMinor, currency);
@@ -940,7 +943,7 @@ class _AccountTile extends StatelessWidget {
                             children: [
                               TextSpan(text: balance),
                               if (after != null) ...[
-                                const WidgetSpan(
+                                WidgetSpan(
                                   alignment: PlaceholderAlignment.middle,
                                   child: Padding(
                                     padding: EdgeInsets.symmetric(
@@ -975,10 +978,7 @@ class _AccountTile extends StatelessWidget {
                 if (reserveTrailing)
                   const SizedBox(width: 48)
                 else
-                  const Icon(
-                    Icons.unfold_more_rounded,
-                    color: AppColors.textMuted,
-                  ),
+                  Icon(Icons.unfold_more_rounded, color: AppColors.textMuted),
               ],
             ),
           ),

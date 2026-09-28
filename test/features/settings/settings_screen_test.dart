@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:velora/app/velora_app.dart';
 import 'package:velora/core/storage/app_preferences.dart';
+import 'package:velora/core/theme/app_colors.dart';
 import 'package:velora/features/accounts/domain/account.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
 
@@ -135,5 +136,25 @@ void main() {
     await typePin(tester, '3691');
     await frames(tester, 20);
     expect(pins.pin, '3691');
+  });
+
+  testWidgets('switching to Day repaints in place and is remembered', (
+    tester,
+  ) async {
+    await openSettings(tester);
+    expect(AppColors.isDay, isFalse);
+
+    await tester.tap(find.text('Appearance'));
+    await tester.pump();
+    await frames(tester);
+    await tester.tap(find.text('Day'));
+    await tester.pump();
+    await frames(tester, 20);
+
+    expect(AppColors.isDay, isTrue);
+    expect(AppPreferences(prefs).appearance, Appearance.day);
+    // Still on Settings: the switch doesn't reset navigation.
+    expect(find.text('Settings'), findsOneWidget);
+    addTearDown(() => AppColors.palette = Palette.nightPalette);
   });
 }

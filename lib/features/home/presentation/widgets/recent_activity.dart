@@ -65,11 +65,7 @@ class RecentActivity extends StatelessWidget {
         children: [
           for (final (i, t) in transactions.indexed) ...[
             if (i > 0)
-              Divider(
-                height: 1,
-                indent: 68,
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
+              Divider(height: 1, indent: 68, color: AppColors.hairline(0.06)),
             TransactionTile(
               transaction: t,
               accounts: accounts,

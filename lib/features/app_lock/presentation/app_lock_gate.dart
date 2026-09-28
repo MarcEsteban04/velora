@@ -27,10 +27,7 @@ class AppLockGate extends ConsumerWidget {
       if (state == null) {
         // Still reading the keystore: cover with an opaque screen so
         // balances never flash before the lock appears.
-        cover = const ColoredBox(
-          key: ValueKey('pending'),
-          color: AppColors.night,
-        );
+        cover = ColoredBox(key: ValueKey('pending'), color: AppColors.night);
       } else if (!state.hasPin) {
         cover = const PinSetupScreen(key: ValueKey('setup'));
       } else if (state.locked) {

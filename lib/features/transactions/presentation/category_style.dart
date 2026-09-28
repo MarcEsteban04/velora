@@ -35,7 +35,7 @@ abstract final class CategoryStyle {
     'other': Icons.category_rounded,
   };
 
-  static const colors = <String, Color>{
+  static Map<String, Color> get colors => {
     'ember': AppColors.ember,
     'sky': AppColors.sky,
     'leaf': AppColors.leafBright,

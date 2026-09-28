@@ -32,7 +32,7 @@ class InstitutionPicker extends StatelessWidget {
       required String label,
       required VoidCallback onTap,
       required Widget child,
-      Color ring = AppColors.leafBright,
+      required Color ring,
     }) => Semantics(
       button: true,
       selected: isSelected,
@@ -52,7 +52,7 @@ class InstitutionPicker extends StatelessWidget {
                 ? ring.withValues(alpha: 0.18)
                 : AppColors.surface.withValues(alpha: 0.6),
             border: Border.all(
-              color: isSelected ? ring : Colors.white.withValues(alpha: 0.07),
+              color: isSelected ? ring : AppColors.hairline(0.07),
               width: isSelected ? 1.8 : 1,
             ),
           ),
@@ -76,6 +76,7 @@ class InstitutionPicker extends StatelessWidget {
         tile(
           isSelected: selected == null,
           label: 'Other',
+          ring: AppColors.leafBright,
           onTap: () => onChanged(null),
           child: SizedBox(
             width: 92,
