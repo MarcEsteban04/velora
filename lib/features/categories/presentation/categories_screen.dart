@@ -11,6 +11,7 @@ import '../../../core/widgets/pressable_button.dart';
 import '../../../core/widgets/reveal.dart';
 import '../../../core/widgets/round_icon_button.dart';
 import '../../../core/widgets/scene_scaffold.dart';
+import '../../../core/widgets/velora_mascot.dart';
 import '../../budgets/application/budget_providers.dart';
 import '../../budgets/domain/budget.dart';
 import '../../budgets/presentation/budget_editor_sheet.dart';
@@ -194,15 +195,15 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
           FadeSlideIn(
             child: GlassCard(
               radius: 22,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(8, 12, 16, 12),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.pie_chart_rounded,
-                    color: AppColors.leafBright,
-                    size: 30,
+                  const VeloraMascot(
+                    pose: MascotPose.budget,
+                    size: 76,
+                    halo: false,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -75,8 +75,8 @@ class GoalsScreen extends ConsumerWidget {
             child: Column(
               children: [
                 const VeloraMascot(
-                  pose: MascotPose.thumbsUp,
-                  size: 120,
+                  pose: MascotPose.goals,
+                  size: 130,
                   halo: false,
                 ),
                 const SizedBox(height: 8),
@@ -129,22 +129,38 @@ class GoalsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'SAVED FOR GOALS',
-                  style: text.labelMedium?.copyWith(
-                    fontSize: 11,
-                    letterSpacing: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  Money.format(saved, currency),
-                  style: text.displaySmall?.copyWith(fontSize: 26),
-                ),
-                Text(
-                  'of ${Money.format(target, currency)} · '
-                  '${active.length} active, ${list.length - active.length} reached',
-                  style: text.labelMedium,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SAVED FOR GOALS',
+                            style: text.labelMedium?.copyWith(
+                              fontSize: 11,
+                              letterSpacing: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            Money.format(saved, currency),
+                            style: text.displaySmall?.copyWith(fontSize: 26),
+                          ),
+                          Text(
+                            'of ${Money.format(target, currency)} · '
+                            '${active.length} active, ${list.length - active.length} reached',
+                            style: text.labelMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const VeloraMascot(
+                      pose: MascotPose.goals,
+                      size: 84,
+                      halo: false,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 ProgressBar(

@@ -38,8 +38,8 @@ class InsightCard extends StatelessWidget {
                   child: Transform.scale(
                     scale: 1.6,
                     alignment: const Alignment(0, -0.75),
-                    child: Image.asset(
-                      MascotPose.wave.asset,
+                    child: Image(
+                      image: MascotPose.wave.image(context, 42),
                       fit: BoxFit.cover,
                     ),
                   ),

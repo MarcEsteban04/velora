@@ -100,8 +100,8 @@ class _StreakSheet extends ConsumerWidget {
                   ),
                 ),
                 VeloraMascot(
-                  pose: streak.today == TodayState.secured
-                      ? MascotPose.thumbsUp
+                  pose: streak.current > 0
+                      ? MascotPose.streak
                       : MascotPose.wave,
                   size: 88,
                   halo: false,

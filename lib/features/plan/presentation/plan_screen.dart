@@ -206,7 +206,7 @@ class _BudgetsCard extends StatelessWidget {
       content = const SizedBox(height: 90);
     } else if (v.isEmpty) {
       content = _Invite(
-        pose: MascotPose.coin,
+        pose: MascotPose.budget,
         title: 'Set your first budget',
         body:
             'Food or shopping is a great start. Velora keeps an eye on the '
@@ -247,15 +247,21 @@ class _BudgetsCard extends StatelessWidget {
                         style: text.headlineSmall,
                       ),
                     ),
+                    const SizedBox(height: 2),
+                    Text('Safe to spend today', style: text.labelMedium),
                     Text(
-                      'Safe to spend today: '
-                      '${Money.format(totals.dailyAllowanceMinor, currency)}',
-                      style: text.labelMedium?.copyWith(
+                      Money.format(totals.dailyAllowanceMinor, currency),
+                      style: text.titleMedium?.copyWith(
                         color: AppColors.leafBright,
                       ),
                     ),
                   ],
                 ),
+              ),
+              const VeloraMascot(
+                pose: MascotPose.budget,
+                size: 70,
+                halo: false,
               ),
             ],
           ),
@@ -357,7 +363,7 @@ class _GoalsCard extends StatelessWidget {
       content = const SizedBox(height: 60);
     } else if (g.isEmpty) {
       content = _Invite(
-        pose: MascotPose.thumbsUp,
+        pose: MascotPose.goals,
         title: 'Add a savings goal',
         body:
             'A trip, a phone, a safety net. See how much to set aside each '

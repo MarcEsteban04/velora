@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/constants/app_assets.dart';
+import '../../../../core/widgets/velora_mascot.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/speech_bubble.dart';
 
@@ -53,7 +53,7 @@ class _MascotHeroState extends State<MascotHero> with TickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Decode the second pose now so the swap doesn't flash.
-    precacheImage(const AssetImage(AppAssets.mascotCoin), context);
+    precacheImage(MascotPose.coin.image(context, widget.size), context);
     if (MediaQuery.disableAnimationsOf(context)) {
       _float.stop();
     } else if (!_float.isAnimating) {
@@ -175,10 +175,12 @@ class _MascotHeroState extends State<MascotHero> with TickerProviderStateMixin {
                                   child: child,
                                 ),
                               ),
-                          child: Image.asset(
-                            widget.celebrating
-                                ? AppAssets.mascotCoin
-                                : AppAssets.mascotWave,
+                          child: Image(
+                            image:
+                                (widget.celebrating
+                                        ? MascotPose.coin
+                                        : MascotPose.wave)
+                                    .image(context, size),
                             key: ValueKey(widget.celebrating),
                             width: size,
                             height: size,

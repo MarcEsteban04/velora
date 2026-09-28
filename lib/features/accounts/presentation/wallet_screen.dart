@@ -262,23 +262,39 @@ class _NetWorthCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'NET WORTH',
-            style: text.labelMedium?.copyWith(letterSpacing: 1.6),
-          ),
-          const SizedBox(height: 6),
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: worth.totalMinor.toDouble()),
-            duration: const Duration(milliseconds: 1100),
-            curve: Curves.easeOutCubic,
-            builder: (context, v, _) => FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                fmt(v.round(), currency),
-                style: text.displaySmall?.copyWith(fontSize: 32),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'NET WORTH',
+                      style: text.labelMedium?.copyWith(letterSpacing: 1.6),
+                    ),
+                    const SizedBox(height: 6),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: worth.totalMinor.toDouble()),
+                      duration: const Duration(milliseconds: 1100),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, v, _) => FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          fmt(v.round(), currency),
+                          style: text.displaySmall?.copyWith(fontSize: 32),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const VeloraMascot(
+                pose: MascotPose.accounts,
+                size: 92,
+                halo: false,
+              ),
+            ],
           ),
           if (worth.otherCurrencies.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -455,7 +471,11 @@ class _EmptyState extends StatelessWidget {
       child: GlassCard(
         child: Column(
           children: [
-            const VeloraMascot(pose: MascotPose.wallet, size: 130, halo: false),
+            const VeloraMascot(
+              pose: MascotPose.accounts,
+              size: 140,
+              halo: false,
+            ),
             const SizedBox(height: 10),
             Text('No accounts yet', style: text.titleMedium),
             const SizedBox(height: 4),
