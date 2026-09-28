@@ -23,16 +23,16 @@ import 'institutions.dart';
 import 'widgets/account_avatar.dart';
 import 'widgets/account_card.dart';
 import 'widgets/account_details_sheet.dart';
-import 'widgets/account_drawer.dart';
+import 'widgets/account_deck.dart';
 import 'widgets/allocation_bar.dart';
 import 'widgets/wallet_insight_cards.dart';
 
-enum _WalletView { cards, drawer, list }
+enum _WalletView { cards, deck, list }
 
 /// The Wallet tab: net worth, where the money lives, Velora's insight, the
 /// last week's balance and every account.
-/// It's shown as a grid of cards (the default), a drawer of stacked
-/// cards, or a compact list.
+/// It's shown as a grid of cards (the default), a deck to swipe through,
+/// or a compact list.
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
 
@@ -157,11 +157,14 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     ),
                 ],
               ),
-              _WalletView.drawer => AccountDrawer(
-                key: const ValueKey('drawer'),
+              _WalletView.deck => AccountDeck(
+                key: const ValueKey('deck'),
                 accounts: accounts,
                 hidden: hidden,
                 onOpen: (a) => _open(a, hidden),
+                onToggleHidden: ref
+                    .read(balancesHiddenProvider.notifier)
+                    .toggle,
               ),
               _WalletView.list => GlassCard(
                 key: const ValueKey('list'),
@@ -458,7 +461,7 @@ class _ViewToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           option(_WalletView.cards, Icons.grid_view_rounded, 'Grid'),
-          option(_WalletView.drawer, Icons.style_rounded, 'Drawer'),
+          option(_WalletView.deck, Icons.style_rounded, 'Cards'),
           option(_WalletView.list, Icons.view_list_rounded, 'List'),
         ],
       ),
