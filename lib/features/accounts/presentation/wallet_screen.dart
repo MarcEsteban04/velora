@@ -122,7 +122,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                             onTap: () => _open(a, hidden),
                           ),
                         ),
-                      _AddTile(onTap: _add, compact: true),
                     ],
                   )
                 : GlassCard(
@@ -147,10 +146,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     ),
                   ),
           ),
-          if (_view == _WalletView.list) ...[
-            const SizedBox(height: 12),
-            _AddTile(onTap: _add),
-          ],
         ],
       );
     }
@@ -419,79 +414,6 @@ class _ViewToggle extends StatelessWidget {
       ),
     );
   }
-}
-
-class _AddTile extends StatelessWidget {
-  const _AddTile({required this.onTap, this.compact = false});
-
-  final VoidCallback onTap;
-
-  /// Grid cell: an icon above the label, filling the cell.
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-
-    return Semantics(
-      button: true,
-      label: 'Add another account',
-      excludeSemantics: true,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onTap,
-          child: CustomPaint(
-            painter: const _DashedBorderPainter(),
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: compact ? 0 : 22),
-              child: Flex(
-                direction: compact ? Axis.vertical : Axis.horizontal,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.add_rounded, color: AppColors.leafBright),
-                  SizedBox(width: compact ? 0 : 8, height: compact ? 6 : 0),
-                  Text(
-                    compact ? 'Add account' : 'Add another account',
-                    style: text.titleMedium?.copyWith(
-                      color: AppColors.leafBright,
-                      fontSize: 15,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rrect = RRect.fromRectAndRadius(
-      (Offset.zero & size).deflate(1),
-      const Radius.circular(24),
-    );
-    final paint = Paint()
-      ..color = AppColors.leafBright.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final path = Path()..addRRect(rrect);
-    for (final metric in path.computeMetrics()) {
-      for (var d = 0.0; d < metric.length; d += 12) {
-        canvas.drawPath(metric.extractPath(d, d + 6), paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) => false;
 }
 
 class _EmptyState extends StatelessWidget {
