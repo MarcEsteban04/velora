@@ -54,7 +54,7 @@ class AmountDisplay extends StatelessWidget {
     final empty = expression.isEmpty;
 
     return SizedBox(
-      height: 132,
+      height: 112,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -123,7 +123,7 @@ class AmountDisplay extends StatelessWidget {
                         child: Text(
                           hasOp ? '= $big' : big,
                           style: text.displaySmall?.copyWith(
-                            fontSize: 64,
+                            fontSize: 58,
                             color: empty
                                 ? AppColors.textMuted.withValues(alpha: 0.45)
                                 : color,

@@ -83,7 +83,11 @@ void main() {
     // The hint clears once everything needed is there.
     expect(find.text('Pick a category'), findsNothing);
 
-    await tester.tap(find.text('Save Expense'));
+    // It's obvious where the money comes from, and what's left after.
+    expect(find.text('PAID FROM'), findsOneWidget);
+    expect(find.textContaining('₱11,805.00'), findsOneWidget);
+
+    await tester.tap(find.text('Pay ₱195.00 from Cash'));
     await tester.pump();
     await frames(tester, 20);
 
@@ -148,7 +152,10 @@ void main() {
 
     await tapKeys(tester, '2500');
     expect(find.text('2,500'), findsOneWidget);
-    await tester.tap(find.text('Save Transfer'));
+    // Both sides preview their balance after the move.
+    expect(find.textContaining('₱9,500.00'), findsOneWidget);
+    expect(find.textContaining('₱2,500.00'), findsWidgets);
+    await tester.tap(find.text('Transfer ₱2,500.00'));
     await tester.pump();
     await frames(tester, 20);
 

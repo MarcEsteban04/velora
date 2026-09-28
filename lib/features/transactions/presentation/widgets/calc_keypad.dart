@@ -108,7 +108,7 @@ class CalcKeypad extends StatelessWidget {
     ];
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(30),
@@ -119,7 +119,7 @@ class CalcKeypad extends StatelessWidget {
         children: [
           for (final row in rows)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 7),
               child: Row(
                 children: [
                   for (final (i, key) in row.indexed) ...[
@@ -137,7 +137,7 @@ class CalcKeypad extends StatelessWidget {
               onTap: onHide,
               radius: 28,
               child: const Padding(
-                padding: EdgeInsets.all(6),
+                padding: EdgeInsets.all(4),
                 child: Icon(
                   Icons.keyboard_hide_rounded,
                   color: AppColors.textMuted,
@@ -215,7 +215,7 @@ class _KeyState extends State<_Key> {
             scale: _down ? 0.94 : 1,
             duration: const Duration(milliseconds: 80),
             child: Container(
-              height: 56,
+              height: 48,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),

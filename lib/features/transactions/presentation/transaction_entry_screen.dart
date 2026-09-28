@@ -333,23 +333,33 @@ class _TransactionEntryScreenState
         categories.value?.where((c) => c.kind == _kind).toList() ?? const [];
 
     final form = <Widget>[
-      TextField(
-        controller: _note,
-        focusNode: _noteFocus,
-        textCapitalization: TextCapitalization.sentences,
-        inputFormatters: [LengthLimitingTextInputFormatter(140)],
-        textInputAction: TextInputAction.done,
-        style: text.bodyLarge?.copyWith(color: AppColors.textPrimary),
-        decoration: const InputDecoration(
-          hintText: 'Add a note...',
-          prefixIcon: Icon(Icons.sticky_note_2_rounded, size: 20),
+      if (!_isTransfer) ...[
+        _AccountTile(
+          caption: _kind == TransactionKind.expense
+              ? 'PAID FROM'
+              : 'RECEIVED IN',
+          account: account,
+          accent: _kind.color,
+          onTap: () => _pickAccount(accounts),
+          afterMinor: account == null || amount == 0
+              ? null
+              : _kind == TransactionKind.expense
+              ? account.balanceMinor - amount
+              : account.balanceMinor + amount,
         ),
-      ),
+        const SizedBox(height: 12),
+      ],
       if (_isTransfer) ...[
         const FieldLabel('Accounts'),
         _TransferAccounts(
           from: account,
           to: toAccount,
+          fromAfter: account == null || amount == 0
+              ? null
+              : account.balanceMinor - amount,
+          toAfter: toAccount == null || amount == 0
+              ? null
+              : toAccount.balanceMinor + (toAmount ?? amount),
           onPickFrom: () => _pickAccount(accounts),
           onPickTo: () => _pickAccount(accounts, to: true),
           onSwap: toAccount == null
@@ -438,6 +448,19 @@ class _TransactionEntryScreenState
           ),
         ),
       ],
+      const SizedBox(height: 16),
+      TextField(
+        controller: _note,
+        focusNode: _noteFocus,
+        textCapitalization: TextCapitalization.sentences,
+        inputFormatters: [LengthLimitingTextInputFormatter(140)],
+        textInputAction: TextInputAction.done,
+        style: text.bodyLarge?.copyWith(color: AppColors.textPrimary),
+        decoration: const InputDecoration(
+          hintText: 'Add a note...',
+          prefixIcon: Icon(Icons.sticky_note_2_rounded, size: 20),
+        ),
+      ),
       const SizedBox(height: 18),
       _LoggedAtCard(
         when: _when,
@@ -518,7 +541,7 @@ class _TransactionEntryScreenState
                           20,
                           0,
                           20,
-                          showPad ? 372 : 20,
+                          showPad ? 318 : 20,
                         ),
                         keyboardDismissBehavior:
                             ScrollViewKeyboardDismissBehavior.onDrag,
@@ -574,35 +597,26 @@ class _TransactionEntryScreenState
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (!_isTransfer) ...[
-                      Expanded(
-                        child: _AccountButton(
-                          account: account,
-                          onTap: () => _pickAccount(accounts),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Expanded(
-                      child: PressableButton(
-                        label: _saving
-                            ? 'Saving…'
-                            : _isEdit
-                            ? 'Save changes'
-                            : 'Save ${_kind.label}',
-                        onPressed: blocker == null && !_saving
-                            ? () => _save(
-                                amountMinor: amount,
-                                currency: currency,
-                                toAmountMinor: toAmount,
-                              )
-                            : null,
-                      ),
-                    ),
-                  ],
+                child: PressableButton(
+                  label: _saving
+                      ? 'Saving…'
+                      : _isEdit
+                      ? 'Save changes'
+                      : blocker != null
+                      ? 'Save ${_kind.label}'
+                      : _isTransfer
+                      ? 'Transfer ${Money.format(amount, currency)}'
+                      : '${_kind == TransactionKind.expense ? 'Pay' : 'Add'} '
+                            '${Money.format(amount, currency)} '
+                            '${_kind == TransactionKind.expense ? 'from' : 'to'} '
+                            '${account?.name ?? 'account'}',
+                  onPressed: blocker == null && !_saving
+                      ? () => _save(
+                          amountMinor: amount,
+                          currency: currency,
+                          toAmountMinor: toAmount,
+                        )
+                      : null,
                 ),
               ),
             ],
@@ -639,89 +653,6 @@ class _CircleButton extends StatelessWidget {
           child: SizedBox.square(
             dimension: 48,
             child: Icon(icon, color: color),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The account card beside Save: icon, "ACCOUNT", the name and a ▾.
-class _AccountButton extends StatelessWidget {
-  const _AccountButton({required this.account, required this.onTap});
-
-  final Account? account;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final a = account;
-
-    return Semantics(
-      button: true,
-      label: 'Account ${a?.name ?? 'none'}. Change',
-      excludeSemantics: true,
-      child: Material(
-        color: AppColors.surface.withValues(alpha: 0.85),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: onTap,
-          child: SizedBox(
-            height: 66,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(13),
-                      gradient: a == null
-                          ? null
-                          : LinearGradient(colors: a.type.gradient),
-                      color: a == null ? AppColors.surfaceRaised : null,
-                    ),
-                    child: Icon(
-                      a?.type.icon ?? Icons.account_balance_wallet_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ACCOUNT',
-                          style: text.labelMedium?.copyWith(
-                            fontSize: 10,
-                            letterSpacing: 1.4,
-                          ),
-                        ),
-                        Text(
-                          a?.name ?? 'Choose',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: text.titleMedium?.copyWith(fontSize: 15),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_drop_down_rounded,
-                    color: AppColors.textMuted,
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
@@ -851,10 +782,14 @@ class _TransferAccounts extends StatelessWidget {
     required this.onPickFrom,
     required this.onPickTo,
     required this.onSwap,
+    this.fromAfter,
+    this.toAfter,
   });
 
   final Account? from;
   final Account? to;
+  final int? fromAfter;
+  final int? toAfter;
   final VoidCallback onPickFrom;
   final VoidCallback onPickTo;
   final VoidCallback? onSwap;
@@ -866,9 +801,23 @@ class _TransferAccounts extends StatelessWidget {
       children: [
         Column(
           children: [
-            _AccountTile(caption: 'FROM', account: from, onTap: onPickFrom),
+            _AccountTile(
+              caption: 'FROM',
+              account: from,
+              onTap: onPickFrom,
+              afterMinor: fromAfter,
+              accent: AppColors.sky,
+              reserveTrailing: true,
+            ),
             const SizedBox(height: 8),
-            _AccountTile(caption: 'TO', account: to, onTap: onPickTo),
+            _AccountTile(
+              caption: 'TO',
+              account: to,
+              onTap: onPickTo,
+              afterMinor: toAfter,
+              accent: AppColors.sky,
+              reserveTrailing: true,
+            ),
           ],
         ),
         Positioned(
@@ -908,82 +857,145 @@ class _TransferAccounts extends StatelessWidget {
   }
 }
 
+/// One account, clearly labelled with where the money goes: "PAID FROM",
+/// "RECEIVED IN", "FROM" or "TO". It shows the current balance and, once
+/// there's an amount, the balance after this transaction.
 class _AccountTile extends StatelessWidget {
   const _AccountTile({
     required this.caption,
     required this.account,
     required this.onTap,
+    this.afterMinor,
+    this.accent = AppColors.leafBright,
+    this.reserveTrailing = false,
   });
 
   final String caption;
   final Account? account;
   final VoidCallback onTap;
 
+  /// The balance once this transaction is saved; null hides the preview.
+  final int? afterMinor;
+  final Color accent;
+
+  /// Leaves room on the right for the transfer swap button.
+  final bool reserveTrailing;
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final a = account;
+    final currency = Currencies.byCode(a?.currencyCode ?? 'USD');
+    final balance = a == null ? '' : Money.format(a.balanceMinor, currency);
+    final after = afterMinor == null
+        ? null
+        : Money.format(afterMinor!, currency);
 
-    return Material(
-      color: AppColors.surface.withValues(alpha: 0.7),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(13),
-                  gradient: a == null
-                      ? null
-                      : LinearGradient(colors: a.type.gradient),
-                  color: a == null ? AppColors.surfaceRaised : null,
+    return Semantics(
+      button: true,
+      label: [
+        caption,
+        a?.name ?? 'no account',
+        if (a != null) 'balance $balance',
+        if (after != null) 'after $after',
+        'change',
+      ].join(', '),
+      excludeSemantics: true,
+      child: Material(
+        color: AppColors.surface.withValues(alpha: 0.85),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: accent.withValues(alpha: 0.45), width: 1.4),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: a == null
+                        ? null
+                        : LinearGradient(colors: a.type.gradient),
+                    color: a == null ? AppColors.surfaceRaised : null,
+                  ),
+                  child: Icon(
+                    a?.type.icon ?? Icons.add_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                 ),
-                child: Icon(
-                  a?.type.icon ?? Icons.add_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      caption,
-                      style: text.labelMedium?.copyWith(
-                        fontSize: 11,
-                        letterSpacing: 1.4,
-                      ),
-                    ),
-                    Text(
-                      a?.name ?? 'Choose an account',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.titleMedium?.copyWith(fontSize: 15),
-                    ),
-                    if (a != null)
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        Money.format(
-                          a.balanceMinor,
-                          Currencies.byCode(a.currencyCode),
+                        caption,
+                        style: text.labelMedium?.copyWith(
+                          fontSize: 11,
+                          letterSpacing: 1.4,
+                          color: accent,
                         ),
-                        style: text.labelMedium,
                       ),
-                  ],
+                      Text(
+                        a?.name ?? 'Choose an account',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.titleMedium?.copyWith(fontSize: 16),
+                      ),
+                      if (a != null)
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(text: balance),
+                              if (after != null) ...[
+                                const WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                    ),
+                                    child: Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 14,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: after,
+                                  style: TextStyle(
+                                    color: afterMinor! < 0
+                                        ? AppColors.rust
+                                        : accent,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.labelMedium?.copyWith(fontSize: 13),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 48),
-            ],
+                if (reserveTrailing)
+                  const SizedBox(width: 48)
+                else
+                  const Icon(
+                    Icons.unfold_more_rounded,
+                    color: AppColors.textMuted,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
