@@ -109,7 +109,8 @@ class HomeScreen extends ConsumerWidget {
           ..invalidate(accountsProvider)
           ..invalidate(profileProvider)
           ..invalidate(monthTransactionsProvider)
-          ..invalidate(recentTransactionsProvider);
+          ..invalidate(recentTransactionsProvider)
+          ..invalidate(categoriesProvider);
         await ref.read(accountsProvider.future);
       },
       child: ListView(

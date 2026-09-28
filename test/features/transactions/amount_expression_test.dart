@@ -45,6 +45,19 @@ void main() {
       expect(type('007').text, '7');
     });
 
+    test('% turns the current number into a percentage', () {
+      expect(
+        type('200').percent(decimalDigits: 2).evaluate(decimalDigits: 2),
+        200,
+      );
+      expect(type('50+10').percent(decimalDigits: 2).text, '50+0.1');
+    });
+
+    test('= collapses the expression to its result', () {
+      expect(type('150+45').resolve(decimalDigits: 2).text, '195');
+      expect(type('10÷4').resolve(decimalDigits: 2).text, '2.5');
+    });
+
     test('negative results and division by zero are safe', () {
       expect(type('5−10').evaluate(decimalDigits: 2), 0);
       expect(type('5÷0').evaluate(decimalDigits: 2), 0);

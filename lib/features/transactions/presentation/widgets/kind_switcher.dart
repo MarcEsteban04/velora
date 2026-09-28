@@ -5,8 +5,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/transaction.dart';
 import '../category_style.dart';
 
-/// Expense | Income | Transfer. A tinted pill slides to the active kind, and
-/// its color matches the rest of the entry screen.
+/// Expense | Income. A tinted pill slides to the active kind and matches the
+/// screen's accent. Transfers have their own titled screen, so they aren't
+/// an option here.
 class KindSwitcher extends StatelessWidget {
   const KindSwitcher({
     super.key,
@@ -19,17 +20,19 @@ class KindSwitcher extends StatelessWidget {
   final ValueChanged<TransactionKind> onChanged;
   final bool enabled;
 
+  static const kinds = [TransactionKind.expense, TransactionKind.income];
+
   @override
   Widget build(BuildContext context) {
-    const kinds = TransactionKind.values;
     final text = Theme.of(context).textTheme;
 
     return Container(
-      height: 46,
+      height: 48,
+      constraints: const BoxConstraints(maxWidth: 280),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(23),
-        color: AppColors.surface.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(24),
+        color: AppColors.surface.withValues(alpha: 0.8),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: LayoutBuilder(
@@ -47,8 +50,8 @@ class KindSwitcher extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(19),
-                    color: value.color.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    color: value.color,
                   ),
                 ),
               ),
@@ -73,9 +76,9 @@ class KindSwitcher extends StatelessWidget {
                             child: AnimatedDefaultTextStyle(
                               duration: const Duration(milliseconds: 200),
                               style: text.titleMedium!.copyWith(
-                                fontSize: 14,
+                                fontSize: 15,
                                 color: k == value
-                                    ? AppColors.night
+                                    ? AppColors.textPrimary
                                     : AppColors.textSecondary,
                               ),
                               child: Text(k.label),

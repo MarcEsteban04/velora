@@ -4,8 +4,16 @@ import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 
-/// Digits, a decimal point, delete (long-press clears) and the four
-/// operators, in one compact grid within easy thumb reach.
+/// The calculator panel that floats over the bottom of the entry screen:
+///
+///   ⌫  AC  %  ÷
+///   7  8   9  ×
+///   4  5   6  −
+///   1  2   3  +
+///   00 0   .  =
+///
+/// Delete and clear are red, operators green, and "=" is solid green. The
+/// handle at the bottom hides the panel to reveal the rest of the form.
 class CalcKeypad extends StatelessWidget {
   const CalcKeypad({
     super.key,
@@ -14,7 +22,9 @@ class CalcKeypad extends StatelessWidget {
     required this.onOperator,
     required this.onBackspace,
     required this.onClear,
-    required this.accent,
+    required this.onPercent,
+    required this.onEquals,
+    required this.onHide,
     this.allowDecimal = true,
   });
 
@@ -23,71 +33,125 @@ class CalcKeypad extends StatelessWidget {
   final ValueChanged<String> onOperator;
   final VoidCallback onBackspace;
   final VoidCallback onClear;
-  final Color accent;
+  final VoidCallback onPercent;
+  final VoidCallback onEquals;
+  final VoidCallback onHide;
   final bool allowDecimal;
+
+  static const _danger = Color(0xFFF0766E);
 
   @override
   Widget build(BuildContext context) {
-    Widget digit(String d) => _Key(
-      label: d,
+    final style = AppTypography.textTheme.headlineSmall!.copyWith(fontSize: 26);
+
+    Widget digit(String d, {String? spoken}) => _Key(
+      label: spoken ?? d,
       onTap: () => onDigit(d),
-      child: Text(d, style: _digitStyle),
+      child: Text(d, style: style),
     );
     Widget op(String o, String spoken) => _Key(
       label: spoken,
-      tint: accent,
+      tone: _Tone.accent,
       onTap: () => onOperator(o),
-      child: Text(o, style: _digitStyle.copyWith(color: accent)),
+      child: Text(o, style: style.copyWith(color: AppColors.leafBright)),
     );
 
     final rows = <List<Widget>>[
-      [digit('7'), digit('8'), digit('9'), op('÷', 'divide')],
-      [digit('4'), digit('5'), digit('6'), op('×', 'times')],
-      [digit('1'), digit('2'), digit('3'), op('−', 'minus')],
       [
+        _Key(
+          label: 'delete, hold to clear',
+          tone: _Tone.danger,
+          onTap: onBackspace,
+          onLongPress: onClear,
+          child: const Icon(Icons.backspace_rounded, color: _danger),
+        ),
+        _Key(
+          label: 'clear',
+          tone: _Tone.danger,
+          onTap: onClear,
+          child: Text('AC', style: style.copyWith(color: _danger)),
+        ),
+        _Key(
+          label: 'percent',
+          tone: _Tone.accent,
+          onTap: onPercent,
+          child: Text('%', style: style.copyWith(color: AppColors.leafBright)),
+        ),
+        op('÷', 'divide'),
+      ],
+      [digit('7'), digit('8'), digit('9'), op('×', 'times')],
+      [digit('4'), digit('5'), digit('6'), op('−', 'minus')],
+      [digit('1'), digit('2'), digit('3'), op('+', 'plus')],
+      [
+        _Key(
+          label: 'double zero',
+          onTap: () {
+            onDigit('0');
+            onDigit('0');
+          },
+          child: Text('00', style: style),
+        ),
+        digit('0'),
         _Key(
           label: 'decimal point',
           enabled: allowDecimal,
           onTap: onDecimal,
-          child: Text('.', style: _digitStyle),
+          child: Text('.', style: style),
         ),
-        digit('0'),
         _Key(
-          label: 'delete, hold to clear',
-          onTap: onBackspace,
-          onLongPress: onClear,
-          child: const Icon(
-            Icons.backspace_rounded,
-            color: AppColors.textSecondary,
-          ),
+          label: 'equals',
+          tone: _Tone.solid,
+          onTap: onEquals,
+          child: Text('=', style: style.copyWith(color: AppColors.textPrimary)),
         ),
-        op('+', 'plus'),
       ],
     ];
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final row in rows)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                for (final (i, key) in row.indexed) ...[
-                  if (i > 0) const SizedBox(width: 8),
-                  Expanded(child: key),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  for (final (i, key) in row.indexed) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    Expanded(child: key),
+                  ],
                 ],
-              ],
+              ),
+            ),
+          Semantics(
+            button: true,
+            label: 'Hide calculator',
+            excludeSemantics: true,
+            child: InkResponse(
+              onTap: onHide,
+              radius: 28,
+              child: const Padding(
+                padding: EdgeInsets.all(6),
+                child: Icon(
+                  Icons.keyboard_hide_rounded,
+                  color: AppColors.textMuted,
+                ),
+              ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
-
-  static final _digitStyle = AppTypography.textTheme.headlineSmall!.copyWith(
-    fontSize: 24,
-  );
 }
+
+enum _Tone { plain, accent, danger, solid }
 
 class _Key extends StatefulWidget {
   const _Key({
@@ -95,7 +159,7 @@ class _Key extends StatefulWidget {
     required this.onTap,
     required this.child,
     this.onLongPress,
-    this.tint,
+    this.tone = _Tone.plain,
     this.enabled = true,
   });
 
@@ -103,7 +167,7 @@ class _Key extends StatefulWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final Widget child;
-  final Color? tint;
+  final _Tone tone;
   final bool enabled;
 
   @override
@@ -113,9 +177,15 @@ class _Key extends StatefulWidget {
 class _KeyState extends State<_Key> {
   bool _down = false;
 
+  Color get _fill => switch (widget.tone) {
+    _Tone.plain => AppColors.night.withValues(alpha: 0.85),
+    _Tone.accent => AppColors.leaf.withValues(alpha: 0.18),
+    _Tone.danger => const Color(0xFF4A1F24),
+    _Tone.solid => AppColors.leaf,
+  };
+
   @override
   Widget build(BuildContext context) {
-    final base = widget.tint;
     return Semantics(
       button: true,
       enabled: widget.enabled,
@@ -141,20 +211,23 @@ class _KeyState extends State<_Key> {
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 150),
           opacity: widget.enabled ? 1 : 0.35,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 90),
-            height: 54,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: _down
-                  ? (base ?? AppColors.leaf).withValues(alpha: 0.3)
-                  : base != null
-                  ? base.withValues(alpha: 0.12)
-                  : AppColors.surface.withValues(alpha: 0.75),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          child: AnimatedScale(
+            scale: _down ? 0.94 : 1,
+            duration: const Duration(milliseconds: 80),
+            child: Container(
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: _down
+                    ? Color.alphaBlend(
+                        Colors.white.withValues(alpha: 0.08),
+                        _fill,
+                      )
+                    : _fill,
+              ),
+              child: widget.child,
             ),
-            child: widget.child,
           ),
         ),
       ),

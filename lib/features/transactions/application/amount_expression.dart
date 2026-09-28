@@ -45,6 +45,34 @@ class AmountExpression {
     return AmountExpression(text + op);
   }
 
+  /// Turns the number being typed into a percentage (200 → 2).
+  AmountExpression percent({required int decimalDigits}) {
+    final number = _lastNumber;
+    if (number.isEmpty) return this;
+    final minor = _toMinor(number, decimalDigits);
+    final head = text.substring(0, text.length - number.length);
+    return AmountExpression(head + plain((minor / 100).round(), decimalDigits));
+  }
+
+  /// "=": collapses the expression into its result, ready to keep typing.
+  AmountExpression resolve({required int decimalDigits}) {
+    if (!hasOperator) return this;
+    final result = evaluate(decimalDigits: decimalDigits);
+    return AmountExpression(result == 0 ? '' : plain(result, decimalDigits));
+  }
+
+  /// Minor units as plain calculator text: "150" or "150.5", never grouped.
+  static String plain(int minor, int decimalDigits) {
+    final unit = math.pow(10, decimalDigits).toInt();
+    final fraction = minor % unit;
+    if (fraction == 0) return '${minor ~/ unit}';
+    final f = fraction
+        .toString()
+        .padLeft(decimalDigits, '0')
+        .replaceFirst(RegExp(r'0+$'), '');
+    return '${minor ~/ unit}.$f';
+  }
+
   AmountExpression backspace() => text.isEmpty
       ? this
       : AmountExpression(text.substring(0, text.length - 1));

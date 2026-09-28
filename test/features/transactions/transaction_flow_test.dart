@@ -75,14 +75,15 @@ void main() {
     expect(find.text('Enter an amount'), findsOneWidget);
 
     await tapKeys(tester, '150+45');
-    expect(find.text('= ₱195.00'), findsOneWidget);
+    expect(find.text('= 195.00'), findsOneWidget);
     expect(find.text('Pick a category'), findsOneWidget);
 
     await tester.tap(find.text('Food'));
     await tester.pump();
-    expect(find.text('Save expense · ₱195.00'), findsOneWidget);
+    // The hint clears once everything needed is there.
+    expect(find.text('Pick a category'), findsNothing);
 
-    await tester.tap(find.text('Save expense · ₱195.00'));
+    await tester.tap(find.text('Save Expense'));
     await tester.pump();
     await frames(tester, 20);
 
@@ -146,8 +147,8 @@ void main() {
     await frames(tester);
 
     await tapKeys(tester, '2500');
-    expect(find.text('Save transfer · ₱2,500.00'), findsOneWidget);
-    await tester.tap(find.text('Save transfer · ₱2,500.00'));
+    expect(find.text('2,500'), findsOneWidget);
+    await tester.tap(find.text('Save Transfer'));
     await tester.pump();
     await frames(tester, 20);
 
