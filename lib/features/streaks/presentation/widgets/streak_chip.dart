@@ -47,7 +47,8 @@ class _StreakChipState extends State<StreakChip> with TickerProviderStateMixin {
 
   void _syncBreath() {
     if (widget.streak.atRisk) {
-      if (!_breath.isAnimating) _breath.repeat(reverse: true);
+      // A few breaths to catch the eye, not all evening.
+      if (!_breath.isAnimating) _breath.repeat(reverse: true, count: 6);
     } else {
       _breath
         ..stop()

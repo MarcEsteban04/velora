@@ -10,7 +10,7 @@ import 'package:velora/features/profile/domain/user_profile.dart';
 import '../../support/fakes.dart';
 
 void main() {
-  testWidgets('grid by default; the deck swipes down to the next card', (
+  testWidgets('grid by default; the deck swipes sideways between cards', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -69,25 +69,36 @@ void main() {
     await frames(10);
     expect(find.byType(AccountDeck), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('^Cash card')), findsOneWidget);
-    expect(find.text('Swipe down for the next card'), findsOneWidget);
+    expect(find.text('Swipe sideways for your other cards'), findsOneWidget);
 
-    // Swipe down: the next card comes to the front.
+    // Swipe left: the next card comes to the front.
     final front = find.bySemanticsLabel(RegExp('^Cash card'));
     await tester.ensureVisible(front);
     await frames(4);
-    await tester.drag(front, const Offset(0, 160));
+    await tester.drag(front, const Offset(-200, 0));
     await frames(16);
     expect(find.bySemanticsLabel(RegExp('^GCash card')), findsOneWidget);
 
-    // Swiping up belongs to the page, not the deck.
+    // Swipe right: back to the one before.
     await tester.drag(
       find.bySemanticsLabel(RegExp('^GCash card')),
-      const Offset(0, -120),
+      const Offset(200, 0),
+    );
+    await frames(16);
+    expect(find.bySemanticsLabel(RegExp('^Cash card')), findsOneWidget);
+
+    // Up and down belong to the page: the deck stays put.
+    await tester.drag(
+      find.bySemanticsLabel(RegExp('^Cash card')),
+      const Offset(0, 160),
     );
     await frames(12);
-    expect(find.bySemanticsLabel(RegExp('^GCash card')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('^Cash card')), findsOneWidget);
 
-    // A dot jumps straight to a card.
+    // A dot jumps straight to a card. (The drag scrolled the page, so
+    // bring the dots back into view.)
+    await tester.ensureVisible(find.bySemanticsLabel('Show Maya'));
+    await frames(6);
     await tester.tap(find.bySemanticsLabel('Show Maya'));
     await frames(16);
     expect(find.bySemanticsLabel(RegExp('^Maya card')), findsOneWidget);

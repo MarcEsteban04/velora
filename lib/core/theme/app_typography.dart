@@ -2,18 +2,52 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
+/// The typefaces the user can pick in Settings. All are bundled (and
+/// open-licensed), so text renders the same offline.
+enum AppFont {
+  /// Velora's own: Fredoka (rounded, playful) for headings, Nunito (rounded,
+  /// very legible) for text.
+  velora('Velora', 'Rounded and playful', display: 'Fredoka', body: 'Nunito'),
+
+  /// Plus Jakarta Sans, the face Tarsi uses.
+  jakarta(
+    'Jakarta',
+    'Clean and modern, the Tarsi look',
+    display: 'PlusJakartaSans',
+    body: 'PlusJakartaSans',
+  ),
+  figtree('Figtree', 'Friendly and warm', display: 'Figtree', body: 'Figtree'),
+  outfit('Outfit', 'Geometric and crisp', display: 'Outfit', body: 'Outfit'),
+  lexend('Lexend', 'Made for easy reading', display: 'Lexend', body: 'Lexend');
+
+  const AppFont(
+    this.label,
+    this.description, {
+    required this.display,
+    required this.body,
+  });
+
+  final String label;
+  final String description;
+  final String display;
+  final String body;
+}
+
 /// Type scale. Compact on purpose: phone screens favor density, so
 /// headings stay on one line and cards show more at a glance.
 ///
-/// Fredoka (rounded and playful) is for display text and the wordmark.
-/// Nunito (rounded and very legible) is for everything else. Both are bundled
-/// with the app, so text renders correctly offline.
+/// The families come from [font], which the app root sets from Settings.
+/// The wordmark is always Fredoka: it's the logo.
 abstract final class AppTypography {
-  static const display = 'Fredoka';
-  static const body = 'Nunito';
+  static AppFont font = AppFont.velora;
+
+  static String get display => font.display;
+  static String get body => font.body;
+
+  static const _brand = 'Fredoka';
 
   static TextStyle get wordmark => TextStyle(
-    fontFamily: display,
+    fontFamily: _brand,
     fontWeight: FontWeight.w700,
     fontSize: 64,
     height: 1,

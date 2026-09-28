@@ -9,6 +9,7 @@ import '../core/navigation/app_navigator.dart';
 import '../core/storage/app_preferences.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
+import '../core/theme/app_typography.dart';
 import '../core/theme/scene_schedule.dart';
 import '../core/time/app_clock.dart';
 import '../features/app_lock/presentation/app_lock_gate.dart';
@@ -26,6 +27,7 @@ class VeloraApp extends ConsumerStatefulWidget {
 class _VeloraAppState extends ConsumerState<VeloraApp>
     with WidgetsBindingObserver {
   Scene? _shown;
+  AppFont? _shownFont;
 
   /// Fires at the next Day, Afternoon or Night boundary under Automatic.
   Timer? _sceneTimer;
@@ -92,9 +94,16 @@ class _VeloraAppState extends ConsumerState<VeloraApp>
     ref.watch(timeZoneProvider);
     final scene = _resolve(appearance);
     _scheduleNextScene(appearance);
+    // Fonts are read from AppTypography while building, like colours.
+    final font = ref.watch(fontProvider);
+    AppTypography.font = font;
     final theme = AppTheme.forPalette(Palette.of(scene));
-    if (_shown != null && _shown != scene) _repaintEverything();
+    if ((_shown != null && _shown != scene) ||
+        (_shownFont != null && _shownFont != font)) {
+      _repaintEverything();
+    }
     _shown = scene;
+    _shownFont = font;
 
     return MaterialApp(
       title: 'Velora',

@@ -109,7 +109,8 @@ void main() {
         findsOneWidget,
       );
 
-      // Start over now only signs out, and says so.
+      // Backed up, Start over becomes Sign out, and says so.
+      expect(find.text('Start over'), findsNothing);
       await tester.scrollUntilVisible(find.text('Sign out of this phone'), 200);
       await tester.tap(find.text('Sign out of this phone'));
       await tester.pump();
@@ -118,7 +119,7 @@ void main() {
         find.textContaining('sign back in with marc@example.com'),
         findsOneWidget,
       );
-      await tester.tap(find.widgetWithText(TextButton, 'Start over'));
+      await tester.tap(find.widgetWithText(TextButton, 'Sign out'));
       await tester.pump();
       await frames(tester, 30);
       expect(pins.pin, isNull);

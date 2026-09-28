@@ -28,6 +28,7 @@ import '../../streaks/application/streak_providers.dart';
 import '../../streaks/presentation/streak_sheet.dart';
 import '../../streaks/presentation/streak_style.dart';
 import 'widgets/settings_section.dart';
+import 'widgets/font_sheet.dart';
 import 'widgets/nav_bar_style_sheet.dart';
 import 'widgets/settings_sheets.dart';
 import 'widgets/time_zone_sheet.dart';
@@ -103,7 +104,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceRaised,
-        title: const Text('Start over?'),
+        title: Text(backup is LinkedBackup ? 'Sign out?' : 'Start over?'),
         content: Text(
           backup is LinkedBackup
               ? 'This signs you out of this phone. Your space is backed up, '
@@ -115,12 +116,14 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep my data'),
+            child: Text(
+              backup is LinkedBackup ? 'Stay signed in' : 'Keep my data',
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.rust),
-            child: const Text('Start over'),
+            child: Text(backup is LinkedBackup ? 'Sign out' : 'Start over'),
           ),
         ],
       ),
@@ -138,6 +141,7 @@ class SettingsScreen extends ConsumerWidget {
     final autoLock = ref.watch(autoLockProvider);
     final appearance = ref.watch(appearanceProvider);
     final navBar = ref.watch(navBarStyleProvider);
+    final font = ref.watch(fontProvider);
     final zone = ref.watch(timeZoneProvider);
     final backup = ref.watch(backupStatusProvider);
     final installed = ref.watch(installedVersionProvider).value;
@@ -217,6 +221,20 @@ class SettingsScreen extends ConsumerWidget {
                             await ref
                                 .read(appearanceProvider.notifier)
                                 .set(picked);
+                          }
+                        },
+                      ),
+                      SettingsTile(
+                        icon: Icons.text_fields_rounded,
+                        color: AppColors.lilac,
+                        title: 'Font',
+                        subtitle: font.description,
+                        value: font.label,
+                        onTap: () async {
+                          final picked = await FontSheet.show(context, font);
+                          if (picked != null) {
+                            HapticFeedback.selectionClick();
+                            await ref.read(fontProvider.notifier).set(picked);
                           }
                         },
                       ),
@@ -481,11 +499,16 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 stagger(
                   SettingsSection(
-                    title: 'Danger zone',
+                    // Backed up, leaving is just signing out: nothing's lost.
+                    title: backup is LinkedBackup ? 'Account' : 'Danger zone',
                     children: [
                       SettingsTile(
-                        icon: Icons.restart_alt_rounded,
-                        title: 'Start over',
+                        icon: backup is LinkedBackup
+                            ? Icons.logout_rounded
+                            : Icons.restart_alt_rounded,
+                        title: backup is LinkedBackup
+                            ? 'Sign out'
+                            : 'Start over',
                         subtitle: backup is LinkedBackup
                             ? 'Sign out of this phone'
                             : 'Sign out and set up a fresh space',

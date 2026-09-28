@@ -14,10 +14,11 @@ import '../institutions.dart';
 import 'institution_logo.dart';
 
 /// Accounts as a deck of cards: one in front, the next two peeking out
-/// behind it. Swipe down to send the front card to the back and bring the
-/// next one forward; swipe up to bring the last one back. The card follows
-/// the finger, the one behind rises to meet it, and it settles with a
-/// click. Tap the card (or "Details") to open the account.
+/// behind it. Swipe left to send the front card away and bring the next
+/// one forward; swipe right to bring the last one back. Sideways, so the
+/// page still scrolls up and down over the deck. The card follows the
+/// finger, the one behind rises to meet it, and it settles with a click.
+/// Tap the card (or "Details") to open the account.
 class AccountDeck extends StatefulWidget {
   const AccountDeck({
     super.key,
@@ -45,7 +46,7 @@ class _AccountDeckState extends State<AccountDeck>
   /// Account ids, front first.
   late List<String> _order = [for (final a in widget.accounts) a.id];
 
-  /// How far the front card has been pulled (down is positive).
+  /// How far the front card has been pulled (right is positive).
   double _drag = 0;
   bool _dragging = false;
 
@@ -56,7 +57,7 @@ class _AccountDeckState extends State<AccountDeck>
     vsync: this,
     duration: const Duration(milliseconds: 320),
   )..addListener(() => setState(() {}));
-  Tween<double> _dyTween = Tween(begin: 0, end: 0);
+  Tween<double> _dxTween = Tween(begin: 0, end: 0);
   Tween<double> _fadeTween = Tween(begin: 1, end: 1);
 
   static const _peek = 16.0;
@@ -80,9 +81,9 @@ class _AccountDeckState extends State<AccountDeck>
     super.dispose();
   }
 
-  double get _dy => _dragging
+  double get _dx => _dragging
       ? _drag
-      : _dyTween.evaluate(
+      : _dxTween.evaluate(
           CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic),
         );
   double get _fade => _dragging
@@ -92,39 +93,39 @@ class _AccountDeckState extends State<AccountDeck>
         );
 
   Future<void> _run(
-    double toDy,
+    double toDx,
     double toFade, {
-    double? fromDy,
+    double? fromDx,
     double? fromFade,
   }) async {
-    _dyTween = Tween(begin: fromDy ?? _dy, end: toDy);
+    _dxTween = Tween(begin: fromDx ?? _dx, end: toDx);
     _fadeTween = Tween(begin: fromFade ?? _fade, end: toFade);
     _dragging = false;
     await _anim.forward(from: 0);
   }
 
-  /// Sends the front card to the back.
-  Future<void> _next(double cardHeight) async {
+  /// Sends the front card off to the left and to the back of the deck.
+  Future<void> _next(double width) async {
     if (_order.length < 2) return _run(0, 1);
     HapticFeedback.lightImpact();
-    await _run(cardHeight * 0.75, 0);
+    await _run(-width * 0.9, 0);
     if (!mounted) return;
     setState(() {
       _order = [..._order.skip(1), _order.first];
       _swiped = true;
     });
-    await _run(0, 1, fromDy: 0, fromFade: 1);
+    await _run(0, 1, fromDx: 0, fromFade: 1);
   }
 
-  /// Brings the back card to the front, rising in from below.
-  Future<void> _previous(double cardHeight) async {
+  /// Brings the back card to the front, sliding in from the left.
+  Future<void> _previous(double width) async {
     if (_order.length < 2) return _run(0, 1);
     HapticFeedback.lightImpact();
     setState(() {
       _order = [_order.last, ..._order.take(_order.length - 1)];
       _swiped = true;
     });
-    await _run(0, 1, fromDy: cardHeight * 0.5, fromFade: 0);
+    await _run(0, 1, fromDx: -width * 0.6, fromFade: 0);
   }
 
   Future<void> _jumpTo(String id) async {
@@ -134,7 +135,7 @@ class _AccountDeckState extends State<AccountDeck>
     await _run(0, 0.2);
     if (!mounted) return;
     setState(() => _order = [..._order.skip(i), ..._order.take(i)]);
-    await _run(0, 1, fromDy: 24, fromFade: 0.2);
+    await _run(0, 1, fromDx: 24, fromFade: 0.2);
   }
 
   @override
@@ -151,7 +152,7 @@ class _AccountDeckState extends State<AccountDeck>
         final behind = math.min(cards.length - 1, 2);
         final top = behind * _peek;
         // Dragging the front card lets the one behind rise toward it.
-        final rise = (_dy.abs() / _threshold).clamp(0.0, 1.0);
+        final rise = (_dx.abs() / _threshold).clamp(0.0, 1.0);
 
         Widget layer(int depth, Account a) {
           final d = depth == 0 ? 0.0 : depth - rise;
@@ -186,8 +187,8 @@ class _AccountDeckState extends State<AccountDeck>
                   'of ${cards.length}',
               increasedValue: cards.length > 1 ? 'next card' : null,
               decreasedValue: cards.length > 1 ? 'previous card' : null,
-              onIncrease: cards.length > 1 ? () => _next(cardHeight) : null,
-              onDecrease: cards.length > 1 ? () => _previous(cardHeight) : null,
+              onIncrease: cards.length > 1 ? () => _next(width) : null,
+              onDecrease: cards.length > 1 ? () => _previous(width) : null,
               child: SizedBox(
                 height: top + cardHeight,
                 child: Stack(
@@ -200,8 +201,8 @@ class _AccountDeckState extends State<AccountDeck>
                       left: 0,
                       right: 0,
                       height: cardHeight,
-                      // Only a downward swipe belongs to the deck, so
-                      // swiping up still scrolls the page.
+                      // Sideways swipes belong to the deck; up and down
+                      // still scroll the page.
                       child: RawGestureDetector(
                         gestures: {
                           TapGestureRecognizer:
@@ -213,27 +214,27 @@ class _AccountDeckState extends State<AccountDeck>
                                   widget.onOpen(front);
                                 };
                               }),
-                          _DownwardDragRecognizer:
+                          HorizontalDragGestureRecognizer:
                               GestureRecognizerFactoryWithHandlers<
-                                _DownwardDragRecognizer
-                              >(_DownwardDragRecognizer.new, (r) {
+                                HorizontalDragGestureRecognizer
+                              >(HorizontalDragGestureRecognizer.new, (r) {
                                 r
                                   ..onStart = (_) {
                                     _anim.stop();
                                     setState(() {
-                                      _drag = _dy;
+                                      _drag = _dx;
                                       _dragging = true;
                                     });
                                   }
                                   ..onUpdate = (d) {
-                                    setState(() {
-                                      _drag = math.max(0, _drag + d.delta.dy);
-                                    });
+                                    setState(() => _drag += d.delta.dx);
                                   }
                                   ..onEnd = (d) {
                                     final v = d.primaryVelocity ?? 0;
-                                    if (_drag > _threshold || v > 700) {
-                                      _next(cardHeight);
+                                    if (_drag < -_threshold || v < -700) {
+                                      _next(width);
+                                    } else if (_drag > _threshold || v > 700) {
+                                      _previous(width);
                                     } else {
                                       _run(0, 1);
                                     }
@@ -243,9 +244,9 @@ class _AccountDeckState extends State<AccountDeck>
                         child: Opacity(
                           opacity: _fade.clamp(0.0, 1.0),
                           child: Transform.translate(
-                            offset: Offset(0, _dy),
+                            offset: Offset(_dx, 0),
                             child: Transform.rotate(
-                              angle: _dy * 0.0007,
+                              angle: _dx * 0.0006,
                               child: Transform.scale(
                                 scale: 1 - rise * 0.03,
                                 child: _DeckCard(
@@ -310,14 +311,18 @@ class _AccountDeckState extends State<AccountDeck>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.swipe_down_rounded,
+                        Icons.swipe_rounded,
                         size: 15,
                         color: AppColors.textMuted,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        'Swipe down for the next card',
-                        style: text.labelMedium?.copyWith(fontSize: 11),
+                      Flexible(
+                        child: Text(
+                          'Swipe sideways for your other cards',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.labelMedium?.copyWith(fontSize: 11),
+                        ),
                       ),
                     ],
                   ),
@@ -374,7 +379,7 @@ class _DeckCard extends StatelessWidget {
       color: white.withValues(alpha: opacity),
     );
     // Wide, heavy capitals, like the name pressed into a card.
-    const embossed = TextStyle(
+    final embossed = TextStyle(
       fontFamily: AppTypography.body,
       fontWeight: FontWeight.w800,
       fontSize: 14,
@@ -424,7 +429,7 @@ class _DeckCard extends StatelessWidget {
                               const SizedBox(width: 8),
                               Text(
                                 a.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: AppTypography.display,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 20,
@@ -490,7 +495,7 @@ class _DeckCard extends StatelessWidget {
                               hidden
                                   ? '${currency.symbol} ••••  ••••'
                                   : Money.format(a.balanceMinor, currency),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: AppTypography.display,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 27,
@@ -561,7 +566,7 @@ class _DeckCard extends StatelessWidget {
                         const SizedBox(width: 16),
                         Text(
                           currency.code,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: AppTypography.display,
                             fontWeight: FontWeight.w700,
                             fontStyle: FontStyle.italic,
@@ -693,28 +698,4 @@ class _SecurityPrint extends CustomPainter {
 
   @override
   bool shouldRepaint(_SecurityPrint old) => false;
-}
-
-/// A vertical drag that only claims the gesture when it starts downward.
-/// Upward movement is left to the page's scroll view.
-class _DownwardDragRecognizer extends VerticalDragGestureRecognizer {
-  double _moved = 0;
-
-  @override
-  void addAllowedPointer(PointerDownEvent event) {
-    _moved = 0;
-    super.addAllowedPointer(event);
-  }
-
-  @override
-  void handleEvent(PointerEvent event) {
-    if (event is PointerMoveEvent) _moved += event.delta.dy;
-    super.handleEvent(event);
-  }
-
-  @override
-  bool hasSufficientGlobalDistanceToAccept(
-    PointerDeviceKind pointerDeviceKind,
-    double? deviceTouchSlop,
-  ) => _moved > (deviceTouchSlop ?? kTouchSlop);
 }

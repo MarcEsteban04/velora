@@ -111,6 +111,8 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).last,
     );
+    await tester.ensureVisible(find.text('Home streak'));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Home streak'));
     await tester.pump();
     expect(prefs.getBool('streak.enabled'), isFalse);

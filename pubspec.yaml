@@ -1,7 +1,7 @@
 name: velora
 description: "Velora: a friendly companion for tracking your money."
 publish_to: 'none'
-version: 0.1.6+7
+version: 0.1.7+8
 
 environment:
   sdk: ^3.13.0
@@ -50,4 +50,44 @@ flutter:
         - asset: assets/fonts/Nunito-Bold.ttf
           weight: 700
         - asset: assets/fonts/Nunito-ExtraBold.ttf
+          weight: 800
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+          weight: 800
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Figtree-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Figtree-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Figtree-ExtraBold.ttf
+          weight: 800
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/Outfit-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Outfit-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Outfit-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Outfit-ExtraBold.ttf
+          weight: 800
+    - family: Lexend
+      fonts:
+        - asset: assets/fonts/Lexend-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Lexend-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Lexend-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Lexend-ExtraBold.ttf
           weight: 800

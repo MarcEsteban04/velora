@@ -6,6 +6,7 @@ import 'package:velora/app/velora_app.dart';
 import 'package:velora/core/storage/app_preferences.dart';
 import 'package:velora/core/time/app_clock.dart';
 import 'package:velora/core/theme/app_colors.dart';
+import 'package:velora/core/theme/app_typography.dart';
 import 'package:velora/features/accounts/domain/account.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
 
@@ -218,5 +219,28 @@ void main() {
     };
     expect(find.text('Follows the time of day · $now now'), findsOneWidget);
     addTearDown(() => AppColors.palette = Palette.nightPalette);
+  });
+
+  testWidgets("the font can be changed; Velora's own is the default", (
+    tester,
+  ) async {
+    await openSettings(tester);
+    expect(AppTypography.font, AppFont.velora);
+    await tester.scrollUntilVisible(find.text('Font'), 200);
+    await tester.ensureVisible(find.text('Font'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Font'));
+    await tester.pump();
+    await frames(tester);
+    await tester.tap(find.text('Jakarta'));
+    await tester.pump();
+    await frames(tester, 20);
+
+    expect(AppTypography.font, AppFont.jakarta);
+    expect(AppPreferences(prefs).font, AppFont.jakarta);
+    // Settings repainted in the new face.
+    final row = tester.widget<Text>(find.text('Font'));
+    expect(row.style?.fontFamily, 'PlusJakartaSans');
+    addTearDown(() => AppTypography.font = AppFont.velora);
   });
 }

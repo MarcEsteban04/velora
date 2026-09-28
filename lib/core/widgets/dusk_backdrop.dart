@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../theme/app_colors.dart';
 
@@ -16,14 +18,24 @@ import '../theme/app_colors.dart';
 /// Colours come from the active palette, so it follows the appearance
 /// setting.
 ///
-/// It uses a single looping controller, and every motion completes a whole
-/// number of cycles per loop, so the loop is seamless. It holds still when
-/// the OS "reduce motion" setting is on.
+/// Every motion completes a whole number of cycles per 40-second loop, so
+/// the loop is seamless.
+///
+/// It's drawn a lot, so it's careful with the battery: it only moves where
+/// the scene is the point ([animated], on by default where the moon shows:
+/// Welcome, the lock screen, onboarding), and then at 30 frames a second,
+/// which is plenty for drifting mist. Behind content it's painted once and
+/// holds still. It also holds still with the OS "reduce motion" setting.
 class DuskBackdrop extends StatefulWidget {
-  const DuskBackdrop({super.key, this.showMoon = true});
+  const DuskBackdrop({super.key, this.showMoon = true, bool? animated})
+    : animated = animated ?? showMoon;
 
   /// Content-heavy screens hide the moon so it never sits behind text.
   final bool showMoon;
+
+  /// Whether the scene moves. Behind cards and lists, where it's dimmed
+  /// and covered, it doesn't.
+  final bool animated;
 
   @override
   State<DuskBackdrop> createState() => _DuskBackdropState();
@@ -31,26 +43,53 @@ class DuskBackdrop extends StatefulWidget {
 
 class _DuskBackdropState extends State<DuskBackdrop>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 40),
-  );
+  static const _loop = Duration(seconds: 40);
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _controller
-        ..stop()
-        ..value = 0.25;
-    } else if (!_controller.isAnimating) {
-      _controller.repeat();
+  /// 30 fps: phones refresh at 60 to 120, and the scene doesn't need it.
+  static const _frame = Duration(microseconds: 33333);
+
+  /// The still frame: the moon and embers sit nicely here.
+  static const _still = 0.25;
+
+  /// Where in the loop the scene is, 0 to 1. Repaints only when it changes.
+  final _t = ValueNotifier<double>(_still);
+  late final Ticker _ticker = createTicker(_tick);
+  Duration _painted = Duration.zero;
+
+  void _tick(Duration elapsed) {
+    if (elapsed - _painted < _frame) return;
+    _painted = elapsed;
+    _t.value =
+        (elapsed.inMicroseconds % _loop.inMicroseconds) / _loop.inMicroseconds;
+  }
+
+  void _sync() {
+    final move = widget.animated && !MediaQuery.disableAnimationsOf(context);
+    if (move && !_ticker.isActive) {
+      _painted = Duration.zero;
+      _ticker.start();
+    } else if (!move && _ticker.isActive) {
+      _ticker.stop();
+      _t.value = _still;
     }
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(DuskBackdrop old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  @override
   void dispose() {
-    _controller.dispose();
+    _ticker.dispose();
+    _t.dispose();
     super.dispose();
   }
 
@@ -59,7 +98,7 @@ class _DuskBackdropState extends State<DuskBackdrop>
     return RepaintBoundary(
       child: CustomPaint(
         painter: _DuskPainter(
-          _controller,
+          _t,
           showMoon: widget.showMoon,
           scene: AppColors.scene,
         ),
@@ -134,7 +173,7 @@ class _DuskPainter extends CustomPainter {
   _DuskPainter(this.animation, {required this.showMoon, required this.scene})
     : super(repaint: animation);
 
-  final Animation<double> animation;
+  final ValueListenable<double> animation;
   final bool showMoon;
 
   /// Picks the sky's cast (sun, moon, stars, clouds, birds). Colours come

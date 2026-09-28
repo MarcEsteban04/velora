@@ -35,7 +35,11 @@ class MascotSays extends StatelessWidget {
               child: FadeSlideIn(
                 scaleFrom: 0.8,
                 curve: Curves.easeOutBack,
-                child: VeloraMascot(pose: pose, size: size),
+                child: VeloraMascot(
+                  pose: pose,
+                  size: size,
+                  precacheAllPoses: true,
+                ),
               ),
             ),
             Positioned(

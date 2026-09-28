@@ -51,11 +51,16 @@ class VeloraMascot extends StatefulWidget {
     required this.pose,
     required this.size,
     this.halo = true,
+    this.precacheAllPoses = false,
   });
 
   final MascotPose pose;
   final double size;
   final bool halo;
+
+  /// Decode every pose now, for a mascot that changes pose (onboarding),
+  /// so the swap never flashes. Others decode just their own.
+  final bool precacheAllPoses;
 
   @override
   State<VeloraMascot> createState() => _VeloraMascotState();
@@ -67,19 +72,23 @@ class _VeloraMascotState extends State<VeloraMascot>
     vsync: this,
     duration: const Duration(milliseconds: 3400),
   );
+  bool _floated = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Every pose, but at this widget's size, so a pose change (as in
-    // onboarding) never flashes and memory stays small.
-    for (final pose in MascotPose.values) {
+    // At this widget's size, so memory stays small.
+    for (final pose
+        in widget.precacheAllPoses ? MascotPose.values : [widget.pose]) {
       precacheImage(pose.image(context, widget.size), context);
     }
     if (MediaQuery.disableAnimationsOf(context)) {
       _float.stop();
-    } else if (!_float.isAnimating) {
-      _float.repeat();
+    } else if (!_floated) {
+      // A hello, then rest: floating forever keeps the screen redrawing
+      // and the phone warm.
+      _floated = true;
+      _float.repeat(count: 2);
     }
   }
 

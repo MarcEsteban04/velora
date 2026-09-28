@@ -1,3 +1,4 @@
+import '../theme/app_typography.dart';
 import '../theme/scene_schedule.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,6 +62,7 @@ class AppPreferences {
   static const _kAppearance = 'prefs.appearance';
   static const _kTimeZone = 'prefs.timeZone';
   static const _kNavBar = 'prefs.navBarStyle';
+  static const _kFont = 'prefs.font';
   // v2: insights now know how many days were tracked.
   static const _kInsight = 'cache.walletInsight.v3';
   static const _kHomeInsight = 'cache.homeInsight.v2';
@@ -81,6 +83,10 @@ class AppPreferences {
       Appearance.night;
   Future<void> setAppearance(Appearance value) =>
       _prefs.setString(_kAppearance, value.name);
+
+  AppFont get font =>
+      AppFont.values.asNameMap()[_prefs.getString(_kFont)] ?? AppFont.velora;
+  Future<void> setFont(AppFont value) => _prefs.setString(_kFont, value.name);
 
   NavBarStyle get navBarStyle =>
       NavBarStyle.values.asNameMap()[_prefs.getString(_kNavBar)] ??
@@ -140,6 +146,18 @@ class AutoLockSetting extends Notifier<AutoLock> {
   Future<void> set(AutoLock value) async {
     state = value;
     await ref.read(appPreferencesProvider).setAutoLock(value);
+  }
+}
+
+final fontProvider = NotifierProvider<FontSetting, AppFont>(FontSetting.new);
+
+class FontSetting extends Notifier<AppFont> {
+  @override
+  AppFont build() => ref.watch(appPreferencesProvider).font;
+
+  Future<void> set(AppFont value) async {
+    state = value;
+    await ref.read(appPreferencesProvider).setFont(value);
   }
 }
 
