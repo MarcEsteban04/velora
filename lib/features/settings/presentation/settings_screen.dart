@@ -517,7 +517,7 @@ class _ProfileCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(8, 10, 18, 10),
         child: Row(
           children: [
-            const VeloraMascot(pose: MascotPose.wave, size: 84, halo: false),
+            const VeloraMascot(pose: MascotPose.profile, size: 84, halo: false),
             const SizedBox(width: 8),
             Expanded(
               child: Column(

@@ -12,6 +12,7 @@ import '../../../core/widgets/reveal.dart';
 import '../../../core/widgets/round_icon_button.dart';
 import '../../../core/widgets/velora_mascot.dart';
 import '../../home/application/balance_privacy.dart';
+import '../../payoneer/presentation/payoneer_screen.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../shell/presentation/widgets/floating_nav_bar.dart';
 import '../application/wallet_insight_providers.dart';
@@ -50,12 +51,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       Navigator.of(context)
           .push(AccountFormScreen.route(defaultCurrency: _mainCurrency));
 
-  void _open(Account a, bool hidden) => AccountDetailsSheet.show(
-    context,
-    account: a,
-    defaultCurrency: _mainCurrency,
-    hidden: hidden,
-  );
+  /// Payoneer has its own screen for salary; other accounts show details.
+  void _open(Account a, bool hidden) {
+    if (Institutions.forAccount(a)?.isPayoneer ?? false) {
+      Navigator.of(context).push(PayoneerScreen.route(a.id));
+      return;
+    }
+    AccountDetailsSheet.show(
+      context,
+      account: a,
+      defaultCurrency: _mainCurrency,
+      hidden: hidden,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

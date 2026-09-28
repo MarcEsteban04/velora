@@ -11,4 +11,5 @@ abstract final class AppAssets {
   static const mascotAccounts = '$_mascot/velora_accounts_mascot.webp';
   static const mascotStreak = '$_mascot/velora_streak_mascot.webp';
   static const mascotCategories = '$_mascot/velora_categories_mascot.webp';
+  static const mascotProfile = '$_mascot/velora_profile_mascot.webp';
 }

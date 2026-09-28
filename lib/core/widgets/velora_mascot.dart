@@ -26,7 +26,10 @@ enum MascotPose {
   streak(AppAssets.mascotStreak),
 
   /// Sorting category tiles into a folder, for categories.
-  categories(AppAssets.mascotCategories);
+  categories(AppAssets.mascotCategories),
+
+  /// Holding up a profile card, for the profile.
+  profile(AppAssets.mascotProfile);
 
   const MascotPose(this.asset);
   final String asset;

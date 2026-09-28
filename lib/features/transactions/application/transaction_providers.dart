@@ -45,6 +45,13 @@ final recentTransactionsProvider = FutureProvider<List<Transaction>>(
   (ref) => ref.watch(transactionRepositoryProvider).fetchRecent(),
 );
 
+/// Everything into or out of one account, newest first.
+final accountTransactionsProvider =
+    FutureProvider.family<List<Transaction>, String>(
+      (ref, accountId) =>
+          ref.watch(transactionRepositoryProvider).fetchForAccount(accountId),
+    );
+
 /// Month keys are normalised to the 1st, so every screen shares one cache
 /// entry per month.
 DateTime monthKey(DateTime d) => DateTime(d.year, d.month);
@@ -77,6 +84,7 @@ class TransactionActions {
     for (final p in <ProviderOrFamily>[
       monthTransactionsProvider,
       recentTransactionsProvider,
+      accountTransactionsProvider,
       weekTransactionsProvider,
       last30DaysTransactionsProvider,
       streakHistoryProvider,
@@ -86,6 +94,10 @@ class TransactionActions {
       _invalidate(p);
     }
   }
+
+  /// Something else wrote transactions (for example paying an invoice in
+  /// the database), so refresh as if they'd gone through here.
+  void changedElsewhere() => _refresh();
 
   Future<Transaction> create(TransactionDraft draft) async {
     final t = await _repo.create(draft);

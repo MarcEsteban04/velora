@@ -28,6 +28,9 @@ import 'package:velora/features/transactions/data/transaction_repository.dart';
 import 'package:velora/features/transactions/domain/category.dart';
 import 'package:velora/features/transactions/domain/transaction.dart';
 import 'package:velora/features/updates/data/update_repository.dart';
+import 'package:velora/core/money/exchange_rates.dart';
+import 'package:velora/features/payoneer/data/invoice_repository.dart';
+import 'package:velora/features/payoneer/domain/invoice.dart';
 import 'package:velora/features/updates/domain/app_release.dart';
 
 /// An in-memory stand-in for Supabase. One store sits behind every fake
@@ -39,6 +42,7 @@ class FakeBackend implements OnboardingRepository, ProfileRepository {
   final budgets = <Budget>[];
   final goals = <Goal>[];
   final goalEntries = <GoalEntry>[];
+  final invoices = <Invoice>[];
   final categories = <Category>[
     const Category(
       id: 'food',
@@ -193,6 +197,21 @@ class FakeTransactions implements TransactionRepository {
   List<Transaction> get _newestFirst =>
       List.of(db.transactions)
         ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+
+  @override
+  Future<List<Transaction>> fetchForAccount(
+    String accountId, {
+    int limit = 300,
+  }) async {
+    final list =
+        db.transactions
+            .where(
+              (t) => t.accountId == accountId || t.toAccountId == accountId,
+            )
+            .toList()
+          ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+    return list.take(limit).toList();
+  }
 
   @override
   Future<List<Transaction>> fetchRange(DateTime start, DateTime end) async =>
@@ -596,6 +615,114 @@ class FakeInstaller implements UpdateInstaller {
   }
 }
 
+/// Invoices in memory. Paying one logs income, as the database function
+/// does, and deleting that income puts the invoice back to sent.
+class FakeInvoices implements InvoiceRepository {
+  FakeInvoices(this.db);
+  final FakeBackend db;
+
+  Invoice _from(String id, InvoiceDraft d, {InvoiceStatus? status}) => Invoice(
+    id: id,
+    accountId: d.accountId,
+    client: d.client.trim(),
+    reference: d.toRow()['reference'] as String?,
+    amountMinor: d.amountMinor,
+    issuedOn: d.issuedOn,
+    status: status ?? InvoiceStatus.sent,
+    createdAt: DateTime.now(),
+  );
+
+  @override
+  Future<List<Invoice>> fetchAll() async {
+    // Like ON DELETE SET NULL plus the trigger.
+    for (var k = 0; k < db.invoices.length; k++) {
+      final i = db.invoices[k];
+      final tx = i.paidTransactionId;
+      if (i.status == InvoiceStatus.paid &&
+          tx != null &&
+          !db.transactions.any((t) => t.id == tx)) {
+        db.invoices[k] = _copy(i, InvoiceStatus.sent, null);
+      }
+    }
+    return [...db.invoices]..sort((a, b) => b.issuedOn.compareTo(a.issuedOn));
+  }
+
+  Invoice _copy(Invoice i, InvoiceStatus status, String? tx) => Invoice(
+    id: i.id,
+    accountId: i.accountId,
+    client: i.client,
+    reference: i.reference,
+    amountMinor: i.amountMinor,
+    issuedOn: i.issuedOn,
+    status: status,
+    paidTransactionId: tx,
+    createdAt: i.createdAt,
+  );
+
+  @override
+  Future<Invoice> create(InvoiceDraft draft) async {
+    final i = _from(db.nextId('inv'), draft);
+    db.invoices.add(i);
+    return i;
+  }
+
+  @override
+  Future<Invoice> update(String id, InvoiceDraft draft) async {
+    final k = db.invoices.indexWhere((i) => i.id == id);
+    return db.invoices[k] = _from(id, draft, status: db.invoices[k].status);
+  }
+
+  @override
+  Future<void> setStatus(String id, InvoiceStatus status) async {
+    final k = db.invoices.indexWhere((i) => i.id == id);
+    db.invoices[k] = _copy(db.invoices[k], status, null);
+  }
+
+  @override
+  Future<void> delete(String id) async =>
+      db.invoices.removeWhere((i) => i.id == id);
+
+  @override
+  Future<String> markPaid(
+    Invoice invoice, {
+    required int amountMinor,
+    required DateTime paidAt,
+    String? categoryId,
+    String? note,
+  }) async {
+    final id = db.nextId('tx');
+    db.transactions.add(
+      Transaction(
+        id: id,
+        kind: TransactionKind.income,
+        amountMinor: amountMinor,
+        accountId: invoice.accountId,
+        categoryId: categoryId,
+        note: note,
+        occurredAt: paidAt,
+      ),
+    );
+    final k = db.invoices.indexWhere((i) => i.id == invoice.id);
+    db.invoices[k] = _copy(db.invoices[k], InvoiceStatus.paid, id);
+    return id;
+  }
+}
+
+/// A fixed market rate, no network.
+class FakeRates implements ExchangeRateSource {
+  FakeRates([this.rate = 62.5]);
+  double rate;
+
+  @override
+  Future<ExchangeRate> fetch(String from, String to) async => ExchangeRate(
+    from: from,
+    to: to,
+    rate: rate,
+    asOf: DateTime(2026, 9, 28),
+    source: 'European Central Bank',
+  );
+}
+
 /// Every override the full app needs to run on the fakes above. [prefs]
 /// comes from `SharedPreferences.getInstance()` after
 /// `SharedPreferences.setMockInitialValues`.
@@ -609,10 +736,13 @@ List<Override> fakeOverrides(
   FakeAuth? auth,
   FakeUpdates? updates,
   FakeInstaller? installer,
+  FakeRates? rates,
 }) => [
   sharedPreferencesProvider.overrideWithValue(prefs),
   authRepositoryProvider.overrideWithValue(auth ?? FakeAuth(db)),
   updateRepositoryProvider.overrideWithValue(updates ?? FakeUpdates()),
+  invoiceRepositoryProvider.overrideWithValue(FakeInvoices(db)),
+  exchangeRateSourceProvider.overrideWithValue(rates ?? FakeRates()),
   updateInstallerProvider.overrideWithValue(installer ?? FakeInstaller()),
   onboardingRepositoryProvider.overrideWithValue(db),
   profileRepositoryProvider.overrideWithValue(db),

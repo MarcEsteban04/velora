@@ -15,6 +15,13 @@ void main() {
       expect(Institutions.match('PayMaya')?.id, 'maya');
     });
 
+    test('knows Payoneer, which holds dollars', () {
+      final p = Institutions.match('Payoneer')!;
+      expect(p.isPayoneer, isTrue);
+      expect(p.currencyCode, 'USD');
+      expect(Institutions.match('BPI')!.currencyCode, isNull);
+    });
+
     test('matches whole words only', () {
       expect(Institutions.match('Mayari Farms'), isNull);
       expect(Institutions.match('Cash'), isNull);

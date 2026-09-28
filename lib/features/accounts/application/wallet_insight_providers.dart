@@ -63,8 +63,11 @@ final walletSnapshotProvider = Provider<WalletSnapshot?>((ref) {
   );
 
   final spend = <String, int>{};
+  // Main currency only: dollars and pesos don't add up.
   for (final t in month.value!) {
-    if (t.kind == TransactionKind.expense && t.categoryId != null) {
+    if (t.kind == TransactionKind.expense &&
+        t.categoryId != null &&
+        byId[t.accountId]?.currencyCode == main) {
       spend.update(
         t.categoryId!,
         (v) => v + t.amountMinor,

@@ -12,6 +12,9 @@ abstract interface class TransactionRepository {
 
   Future<List<Transaction>> fetchRecent({int limit = 5});
 
+  /// Everything into or out of one account, newest first.
+  Future<List<Transaction>> fetchForAccount(String accountId, {int limit = 300});
+
   Future<Transaction> create(TransactionDraft draft);
 
   Future<Transaction> update(String id, TransactionDraft draft);
@@ -58,6 +61,19 @@ class SupabaseTransactionRepository implements TransactionRepository {
         .gte('occurred_at', AppClock.toUtc(start).toIso8601String())
         .lt('occurred_at', AppClock.toUtc(end).toIso8601String())
         .order('occurred_at', ascending: false);
+    return rows.map(Transaction.fromRow).toList();
+  }
+
+  @override
+  Future<List<Transaction>> fetchForAccount(
+    String accountId, {
+    int limit = 300,
+  }) async {
+    final rows = await _table
+        .select()
+        .or('account_id.eq.$accountId,to_account_id.eq.$accountId')
+        .order('occurred_at', ascending: false)
+        .limit(limit);
     return rows.map(Transaction.fromRow).toList();
   }
 

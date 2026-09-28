@@ -59,6 +59,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       : Currencies.byCode(widget.account!.currencyCode);
   late bool _include = widget.account?.includeInNetWorth ?? true;
 
+  /// The user chose a currency themselves, so an institution won't change it.
+  bool _currencyPicked = false;
+
   /// Chosen bank or e-wallet. Existing accounts start with the one saved,
   /// or the one recognised from their name.
   late Institution? _institution = widget.account == null
@@ -75,6 +78,13 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       _institution = i;
       _institutionPicked = true;
       if (i != null) _type = i.type;
+      // A new Payoneer account holds dollars, unless told otherwise.
+      final code = i?.currencyCode;
+      if (code != null && !_isEdit && !_currencyPicked) {
+        final minor = Money.parseMinor(_balance.text, _currency);
+        _currency = Currencies.byCode(code);
+        _balance.text = minor == 0 ? '' : Money.toInputText(minor, _currency);
+      }
       // Fill in the name, unless the user typed their own.
       final current = _name.text.trim();
       final untouched =
@@ -119,6 +129,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     final minor = Money.parseMinor(_balance.text, picked);
     setState(() {
       _currency = picked;
+      _currencyPicked = true;
       _balance.text = Money.toInputText(minor, picked);
     });
   }

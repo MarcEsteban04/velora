@@ -13,6 +13,7 @@ class Institution {
     required this.gradient,
     required this.aliases,
     this.darkPlate = false,
+    this.currencyCode,
   });
 
   /// Stored in `accounts.institution`.
@@ -27,6 +28,12 @@ class Institution {
 
   /// Logos with white lettering sit on a dark plate instead of a light one.
   final bool darkPlate;
+
+  /// The currency a new account here usually holds, when it isn't the
+  /// user's main one (Payoneer balances are in US dollars).
+  final String? currencyCode;
+
+  bool get isPayoneer => id == 'payoneer';
 }
 
 abstract final class Institutions {
@@ -89,6 +96,15 @@ abstract final class Institutions {
       gradient: [Color(0xFFF03A3A), Color(0xFF9E1B1B)],
       aliases: ['billease', 'bill ease'],
       darkPlate: true,
+    ),
+    Institution(
+      id: 'payoneer',
+      name: 'Payoneer',
+      type: AccountType.eWallet,
+      asset: '$_dir/payoneer.png',
+      gradient: [Color(0xFF2E2F3A), Color(0xFF15161D)],
+      aliases: ['payoneer'],
+      currencyCode: 'USD',
     ),
   ];
 
