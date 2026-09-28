@@ -2,9 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
-/// A one-shot confetti burst from the top centre, pulled down by gravity.
+/// A one-shot confetti burst from the top center, pulled down by gravity.
 /// It draws nothing when "reduce motion" is on.
 class ConfettiBurst extends StatefulWidget {
   const ConfettiBurst({super.key});

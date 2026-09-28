@@ -7,7 +7,7 @@ import '../../../../core/widgets/velora_mascot.dart';
 import '../../../accounts/presentation/institutions.dart';
 import '../../../accounts/presentation/widgets/account_card.dart';
 import '../../application/onboarding_controller.dart';
-import '../widgets/confetti_burst.dart';
+import '../../../../core/widgets/confetti_burst.dart';
 import '../widgets/mascot_says.dart';
 import '../widgets/step_layout.dart';
 

@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../accounts/data/account_repository.dart';
+import '../../budgets/application/budget_providers.dart';
 import '../../streaks/application/streak_providers.dart';
 import '../data/transaction_repository.dart';
 import '../domain/category.dart';
@@ -56,6 +57,7 @@ class TransactionActions {
     ..invalidate(recentTransactionsProvider)
     ..invalidate(weekTransactionsProvider)
     ..invalidate(streakHistoryProvider)
+    ..invalidate(budgetTransactionsProvider)
     ..invalidate(accountsProvider);
 
   Future<Transaction> create(TransactionDraft draft) async {

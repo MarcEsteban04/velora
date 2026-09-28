@@ -156,7 +156,7 @@ class _GoalSheetState extends State<_GoalSheet> {
                                   child: Text(
                                     _capMinor == 0
                                         ? 'A zero cap makes it a no-spend streak.'
-                                        : 'Days you spend ${shortMoney(_capMinor, widget.currency)} or less count.',
+                                        : 'Days you spend ${Money.short(_capMinor, widget.currency)} or less count.',
                                     style: text.labelMedium,
                                   ),
                                 ),

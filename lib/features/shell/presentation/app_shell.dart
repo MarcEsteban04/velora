@@ -5,13 +5,12 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dusk_backdrop.dart';
-import '../../../core/widgets/velora_mascot.dart';
 import '../../accounts/presentation/wallet_screen.dart';
 import '../../history/presentation/history_screen.dart';
 import '../../home/presentation/home_screen.dart';
+import '../../plan/presentation/plan_screen.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
-import 'widgets/coming_soon_tab.dart';
 import 'widgets/floating_nav_bar.dart';
 import 'widgets/quick_actions.dart';
 
@@ -121,22 +120,7 @@ class _AppShellState extends State<AppShell>
   Widget _tab(int i) => switch (i) {
     0 => HomeScreen(onQuickAction: _onAction, onOpenHistory: () => _select(3)),
     1 => const WalletScreen(),
-    2 => const ComingSoonTab(
-      title: 'Plan',
-      subtitle: 'Budgets and goals that keep you on track.',
-      pose: MascotPose.thumbsUp,
-      previews: [
-        (
-          Icons.pie_chart_rounded,
-          'Category budgets with a heads-up before you overspend',
-        ),
-        (Icons.flag_rounded, 'Savings goals with progress you can feel'),
-        (
-          Icons.event_repeat_rounded,
-          'Bills and planned payments, never missed',
-        ),
-      ],
-    ),
+    2 => const PlanScreen(),
     _ => const HistoryScreen(),
   };
 

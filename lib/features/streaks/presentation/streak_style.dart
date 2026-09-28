@@ -5,11 +5,6 @@ import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
 import '../domain/streak.dart';
 
-/// An amount without decimals when they're zero: "₱500", "₱12.50".
-String shortMoney(int minor, Currency currency) => minor == 0
-    ? '${currency.symbol}0'
-    : '${currency.symbol}${Money.toInputText(minor, currency)}';
-
 /// How each streak goal looks and reads: a flame for logging, a leaf for
 /// spending under a cap.
 extension StreakGoalStyle on StreakSettings {
@@ -26,7 +21,7 @@ extension StreakGoalStyle on StreakSettings {
   String label(Currency currency) => switch (goal) {
     StreakGoal.logging => 'Daily logging',
     StreakGoal.underCap when capMinor == 0 => 'No-spend days',
-    StreakGoal.underCap => 'Under ${shortMoney(capMinor, currency)} a day',
+    StreakGoal.underCap => 'Under ${Money.short(capMinor, currency)} a day',
   };
 
   String get description => switch (goal) {

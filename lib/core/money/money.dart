@@ -31,6 +31,19 @@ abstract final class Money {
         (fraction.isEmpty ? 0 : int.parse(fraction));
   }
 
+  /// Rounds up to a whole unit of the currency, for friendly targets such
+  /// as "₱4,445 a month" instead of "₱4,444.45".
+  static int ceilWhole(int minor, Currency currency) {
+    final unit = math.pow(10, currency.decimalDigits).toInt();
+    return (minor / unit).ceil() * unit;
+  }
+
+  /// An amount without decimals when they're zero: "₱500", "₱12.50".
+  static String short(int minor, Currency currency) => minor == 0
+      ? '${currency.symbol}0'
+      : '${minor < 0 ? '-' : ''}${currency.symbol}'
+            '${toInputText(minor.abs(), currency)}';
+
   /// The inverse of [parseMinor], for pre-filling an amount field: grouped,
   /// without a symbol, and with decimals shown only when they're non-zero.
   static String toInputText(int minor, Currency currency) {

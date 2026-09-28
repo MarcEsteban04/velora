@@ -253,10 +253,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     // Only the active tab is on screen. This guards against tabs stacking
     // on top of each other.
-    expect(
-      find.text('Budgets and goals that keep you on track.'),
-      findsOneWidget,
-    );
+    expect(find.text('Budgets, goals and what’s coming up'), findsOneWidget);
     expect(find.text('THIS MONTH'), findsNothing);
     expect(find.text('Every peso, searchable and tidy.'), findsNothing);
 
@@ -264,10 +261,7 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('THIS MONTH'), findsOneWidget);
-    expect(
-      find.text('Budgets and goals that keep you on track.'),
-      findsNothing,
-    );
+    expect(find.text('Budgets, goals and what’s coming up'), findsNothing);
 
     // + opens quick actions; picking one closes the panel with a note.
     await tester.tap(find.bySemanticsLabel(RegExp('Add: open quick actions')));

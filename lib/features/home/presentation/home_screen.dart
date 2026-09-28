@@ -7,6 +7,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/reveal.dart';
 import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
+import '../../budgets/application/budget_providers.dart';
+import '../../budgets/presentation/budgets_screen.dart';
+import '../../goals/application/goal_providers.dart';
+import '../../goals/presentation/goals_screen.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/presentation/coach_tone_style.dart';
 import '../../settings/presentation/settings_screen.dart';
@@ -92,6 +96,8 @@ class HomeScreen extends ConsumerWidget {
         .where((t) => t.kind == TransactionKind.expense)
         .length;
     final hasExpense = recent.any((t) => t.kind == TransactionKind.expense);
+    final hasBudget = ref.watch(budgetsProvider).value?.isNotEmpty ?? false;
+    final hasGoal = ref.watch(goalsProvider).value?.isNotEmpty ?? false;
 
     var i = 0;
     Widget stagger(Widget child) => FadeSlideIn(
@@ -190,15 +196,18 @@ class HomeScreen extends ConsumerWidget {
                   done: hasExpense,
                   onTap: () => onQuickAction(QuickAction.expense),
                 ),
-                const SetupTask(
+                SetupTask(
                   title: 'Set a monthly budget',
                   subtitle: 'Food or shopping is a great start',
-                  done: false,
+                  done: hasBudget,
+                  onTap: () =>
+                      Navigator.of(context).push(BudgetsScreen.route()),
                 ),
-                const SetupTask(
+                SetupTask(
                   title: 'Add a savings goal',
                   subtitle: 'Something worth saving for',
-                  done: false,
+                  done: hasGoal,
+                  onTap: () => Navigator.of(context).push(GoalsScreen.route()),
                 ),
               ],
             ),

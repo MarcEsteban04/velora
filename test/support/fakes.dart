@@ -7,6 +7,10 @@ import 'package:velora/features/accounts/data/insight_repository.dart';
 import 'package:velora/features/accounts/domain/account.dart';
 import 'package:velora/features/accounts/domain/wallet_insight.dart';
 import 'package:velora/features/app_lock/data/pin_repository.dart';
+import 'package:velora/features/budgets/data/budget_repository.dart';
+import 'package:velora/features/budgets/domain/budget.dart';
+import 'package:velora/features/goals/data/goal_repository.dart';
+import 'package:velora/features/goals/domain/goal.dart';
 import 'package:velora/features/onboarding/application/onboarding_controller.dart';
 import 'package:velora/features/onboarding/data/onboarding_repository.dart';
 import 'package:velora/features/profile/data/profile_repository.dart';
@@ -21,6 +25,9 @@ class FakeBackend implements OnboardingRepository, ProfileRepository {
   UserProfile? profile;
   final accounts = <Account>[];
   final transactions = <Transaction>[];
+  final budgets = <Budget>[];
+  final goals = <Goal>[];
+  final goalEntries = <GoalEntry>[];
   final categories = <Category>[
     const Category(
       id: 'food',
@@ -225,6 +232,97 @@ class FakeCategories implements CategoryRepository {
   }
 }
 
+class FakeBudgets implements BudgetRepository {
+  FakeBudgets(this.db);
+  final FakeBackend db;
+
+  @override
+  Future<List<Budget>> fetchAll() async => List.of(db.budgets);
+
+  @override
+  Future<Budget> save(BudgetDraft d) async {
+    final i = db.budgets.indexWhere((b) => b.categoryId == d.categoryId);
+    final b = Budget(
+      id: i >= 0 ? db.budgets[i].id : db.nextId('bud'),
+      categoryId: d.categoryId,
+      amountMinor: d.amountMinor,
+      period: d.period,
+    );
+    if (i >= 0) {
+      db.budgets[i] = b;
+    } else {
+      db.budgets.add(b);
+    }
+    return b;
+  }
+
+  @override
+  Future<void> delete(String id) async =>
+      db.budgets.removeWhere((b) => b.id == id);
+}
+
+class FakeGoals implements GoalRepository {
+  FakeGoals(this.db);
+  final FakeBackend db;
+
+  Goal _from(String id, GoalDraft d, DateTime createdAt) => Goal(
+    id: id,
+    name: d.name.trim(),
+    targetMinor: d.targetMinor,
+    currencyCode: d.currencyCode,
+    icon: d.icon,
+    color: d.color,
+    targetDate: d.targetDate,
+    createdAt: createdAt,
+  );
+
+  @override
+  Future<List<Goal>> fetchGoals() async => List.of(db.goals);
+
+  @override
+  Future<List<GoalEntry>> fetchEntries() async => List.of(db.goalEntries);
+
+  @override
+  Future<Goal> create(GoalDraft d) async {
+    final g = _from(db.nextId('goal'), d, DateTime.now());
+    db.goals.add(g);
+    return g;
+  }
+
+  @override
+  Future<Goal> update(String id, GoalDraft d) async {
+    final i = db.goals.indexWhere((g) => g.id == id);
+    return db.goals[i] = _from(id, d, db.goals[i].createdAt);
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    db.goals.removeWhere((g) => g.id == id);
+    db.goalEntries.removeWhere((e) => e.goalId == id);
+  }
+
+  @override
+  Future<GoalEntry> addEntry(
+    String goalId,
+    int amountMinor, {
+    String? note,
+  }) async {
+    final e = GoalEntry(
+      id: db.nextId('entry'),
+      goalId: goalId,
+      amountMinor: amountMinor,
+      occurredAt: DateTime.now(),
+      note: note,
+    );
+    db.goalEntries.add(e);
+    return e;
+  }
+
+  @override
+  Future<void> deleteEntry(String id) async =>
+      db.goalEntries.removeWhere((e) => e.id == id);
+}
+
 /// Stands in for the `wallet-insight` Edge Function. By default the AI is
 /// unavailable, so the app falls back to its own insight.
 class FakeInsights implements InsightRepository {
@@ -277,5 +375,7 @@ List<Override> fakeOverrides(
   categoryRepositoryProvider.overrideWithValue(FakeCategories(db)),
   pinRepositoryProvider.overrideWithValue(pins),
   insightRepositoryProvider.overrideWithValue(insights ?? FakeInsights()),
+  budgetRepositoryProvider.overrideWithValue(FakeBudgets(db)),
+  goalRepositoryProvider.overrideWithValue(FakeGoals(db)),
   deviceCurrencyProvider.overrideWithValue(Currencies.byCode('PHP')),
 ];
