@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/category.dart';
 import '../domain/transaction.dart';
+import '../../../core/time/app_clock.dart';
 
 abstract interface class TransactionRepository {
   /// Transactions in [start, end), newest first.
@@ -51,8 +52,8 @@ class SupabaseTransactionRepository implements TransactionRepository {
   Future<List<Transaction>> fetchRange(DateTime start, DateTime end) async {
     final rows = await _table
         .select()
-        .gte('occurred_at', start.toUtc().toIso8601String())
-        .lt('occurred_at', end.toUtc().toIso8601String())
+        .gte('occurred_at', AppClock.toUtc(start).toIso8601String())
+        .lt('occurred_at', AppClock.toUtc(end).toIso8601String())
         .order('occurred_at', ascending: false);
     return rows.map(Transaction.fromRow).toList();
   }

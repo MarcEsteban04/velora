@@ -24,6 +24,7 @@ import 'widgets/calc_keypad.dart';
 import 'widgets/category_chips.dart';
 import 'widgets/kind_switcher.dart';
 import '../../../core/widgets/island_toast.dart';
+import '../../../core/time/app_clock.dart';
 
 /// Log (or edit) an expense, income or transfer.
 ///
@@ -82,10 +83,10 @@ class _TransactionEntryScreenState
       widget.existing?.occurredAt ??
       switch (widget.initialDay) {
         final d? => () {
-          final now = DateTime.now();
+          final now = AppClock.now();
           return DateTime(d.year, d.month, d.day, now.hour, now.minute);
         }(),
-        null => DateTime.now(),
+        null => AppClock.now(),
       };
   late final _note = TextEditingController(text: widget.existing?.note);
   final _toAmount = TextEditingController();
@@ -132,7 +133,7 @@ class _TransactionEntryScreenState
       setState(() => _expr = change(_expr));
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+    final now = AppClock.now();
     final picked = await showDatePicker(
       context: context,
       initialDate: _when,
@@ -693,7 +694,7 @@ class _LoggedAtCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final today = DateUtils.dateOnly(DateTime.now());
+    final today = DateUtils.dateOnly(AppClock.now());
     final yesterday = today.subtract(const Duration(days: 1));
     final day = DateUtils.dateOnly(when);
 

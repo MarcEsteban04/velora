@@ -154,7 +154,7 @@ class BudgetStatus {
     final (start, end) = budget.period.range(now);
     var spent = 0;
     for (final t in transactions) {
-      final at = t.occurredAt.toLocal();
+      final at = t.occurredAt;
       if (t.kind == TransactionKind.expense &&
           t.categoryId == budget.categoryId &&
           inMainCurrency(t.accountId) &&

@@ -4,6 +4,7 @@ import '../../accounts/data/account_repository.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../transactions/application/transaction_providers.dart';
 import 'spending_stats.dart';
+import '../../../core/time/app_clock.dart';
 
 /// Which accounts count: those in the main currency. Null while loading.
 final _inMainCurrencyProvider = Provider<bool Function(String)?>((ref) {
@@ -19,7 +20,7 @@ final weekSpendingProvider = Provider<List<(DateTime, int)>?>((ref) {
   final txns = ref.watch(last30DaysTransactionsProvider).value;
   final inMain = ref.watch(_inMainCurrencyProvider);
   if (txns == null || inMain == null) return null;
-  return dailySpending(txns, now: DateTime.now(), inMainCurrency: inMain);
+  return dailySpending(txns, now: AppClock.now(), inMainCurrency: inMain);
 });
 
 /// Spending so far in a period against the same stretch before it. Null
@@ -30,7 +31,7 @@ final periodSpendProvider = Provider.family<PeriodSpend?, SpendPeriod>((
 ) {
   final inMain = ref.watch(_inMainCurrencyProvider);
   if (inMain == null) return null;
-  final now = DateTime.now();
+  final now = AppClock.now();
 
   final txns = switch (period) {
     // The last 30 days cover today, this week and the stretch before each.

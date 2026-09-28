@@ -113,7 +113,7 @@ class _AccountDetailsSheetState extends ConsumerState<AccountDetailsSheet> {
             ? '${currency.symbol} ••••••'
             : Money.format(a.openingBalanceMinor, currency),
       ),
-      ('Added', DateFormat('MMM d, y').format(a.createdAt.toLocal())),
+      ('Added', DateFormat('MMM d, y').format(a.createdAt)),
       ('In net worth', a.includeInNetWorth ? 'Yes' : 'No'),
     ];
 

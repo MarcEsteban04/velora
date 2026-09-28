@@ -31,6 +31,7 @@ import 'widgets/coach_card.dart';
 import 'widgets/home_header.dart';
 import 'widgets/recent_activity.dart';
 import 'widgets/setup_checklist.dart';
+import '../../../core/time/app_clock.dart';
 
 /// The dashboard tab. From top to bottom:
 /// 1. Streak chip, "hide balances" and settings, then the greeting.
@@ -55,7 +56,7 @@ class HomeScreen extends ConsumerWidget {
     final profile = ref.watch(profileProvider).value;
     final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final month =
-        ref.watch(monthTransactionsProvider(monthKey(DateTime.now()))).value ??
+        ref.watch(monthTransactionsProvider(monthKey(AppClock.now()))).value ??
         const <Transaction>[];
     final recent =
         ref.watch(recentTransactionsProvider).value ?? const <Transaction>[];
@@ -144,7 +145,7 @@ class HomeScreen extends ConsumerWidget {
                       onTap: () => StreakSheet.show(context),
                     ),
               name: name,
-              now: DateTime.now(),
+              now: AppClock.now(),
               balancesHidden: hidden,
               onToggleBalances: ref
                   .read(balancesHiddenProvider.notifier)

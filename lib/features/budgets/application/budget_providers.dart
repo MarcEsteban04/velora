@@ -11,6 +11,7 @@ import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../data/budget_repository.dart';
 import '../domain/budget.dart';
+import '../../../core/time/app_clock.dart';
 
 final budgetsProvider = FutureProvider<List<Budget>>(
   (ref) => ref.watch(budgetRepositoryProvider).fetchAll(),
@@ -23,7 +24,7 @@ final budgetTransactionsProvider = FutureProvider<List<Transaction>>((
 ) async {
   final budgets = await ref.watch(budgetsProvider.future);
   if (budgets.isEmpty) return const [];
-  final now = DateTime.now();
+  final now = AppClock.now();
   final start = budgets
       .map((b) => b.period.range(now).$1)
       .reduce((a, b) => a.isBefore(b) ? a : b);
@@ -51,7 +52,7 @@ final budgetStatusesProvider = Provider<List<BudgetView>?>((ref) {
     return null;
   }
 
-  final now = DateTime.now();
+  final now = AppClock.now();
   final currencyOf = {for (final a in accounts) a.id: a.currencyCode};
   final byId = {for (final c in categories) c.id: c};
   final views = <BudgetView>[
@@ -118,7 +119,7 @@ class BudgetTotals {
 /// Last month's spending per expense category in the main currency, for
 /// suggesting limits.
 final lastMonthSpendProvider = Provider<Map<String, int>?>((ref) {
-  final now = DateTime.now();
+  final now = AppClock.now();
   final txns = ref
       .watch(monthTransactionsProvider(DateTime(now.year, now.month - 1)))
       .value;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/goal_repository.dart';
 import '../domain/goal.dart';
+import '../../../core/time/app_clock.dart';
 
 final goalsProvider = FutureProvider<List<Goal>>(
   (ref) => ref.watch(goalRepositoryProvider).fetchGoals(),
@@ -18,7 +19,7 @@ final goalProgressProvider = Provider<List<GoalProgress>?>((ref) {
   final goals = ref.watch(goalsProvider).value;
   final entries = ref.watch(goalEntriesProvider).value;
   if (goals == null || entries == null) return null;
-  final now = DateTime.now();
+  final now = AppClock.now();
   final list = [for (final g in goals) GoalProgress.of(g, entries, now: now)];
   list.sort((a, b) {
     if (a.isDone != b.isDone) return a.isDone ? 1 : -1;

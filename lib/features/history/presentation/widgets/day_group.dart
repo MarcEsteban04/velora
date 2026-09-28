@@ -10,6 +10,7 @@ import '../../../accounts/presentation/widgets/account_avatar.dart';
 import '../../../transactions/domain/category.dart';
 import '../../../transactions/domain/transaction.dart';
 import '../../../transactions/presentation/category_style.dart';
+import '../../../../core/time/app_clock.dart';
 
 /// "Today", "Yesterday", or the weekday for the rest of this week, then
 /// the date.
@@ -94,7 +95,7 @@ class DayGroup extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  dayTitle(day, DateTime.now()),
+                  dayTitle(day, AppClock.now()),
                   style: text.titleMedium?.copyWith(fontSize: 17),
                 ),
                 Text(

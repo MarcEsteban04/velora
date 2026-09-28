@@ -128,8 +128,7 @@ class Streak {
     required bool Function(String accountId) inMainCurrency,
   }) {
     DateTime dayOf(DateTime t) {
-      final l = t.toLocal();
-      return DateTime(l.year, l.month, l.day);
+      return DateTime(t.year, t.month, t.day);
     }
 
     final today = dayOf(now);

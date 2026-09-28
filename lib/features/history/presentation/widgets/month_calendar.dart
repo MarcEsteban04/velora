@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
+import '../../../../core/time/app_clock.dart';
 
 /// What happened on one day, for the calendar.
 class DayActivity {
@@ -61,7 +62,7 @@ class MonthCalendar extends StatelessWidget {
     final first = DateTime(month.year, month.month);
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final lead = first.weekday - 1; // Monday first.
-    final today = DateUtils.dateOnly(DateTime.now());
+    final today = DateUtils.dateOnly(AppClock.now());
     final peak = activity.values.fold(
       0,
       (m, a) => a.spentMinor > m ? a.spentMinor : m,

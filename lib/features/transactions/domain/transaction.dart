@@ -1,3 +1,5 @@
+import '../../../core/time/app_clock.dart';
+
 enum TransactionKind { expense, income, transfer }
 
 class Transaction {
@@ -38,7 +40,7 @@ class Transaction {
     toAmountMinor: (row['to_amount_minor'] as num?)?.toInt(),
     categoryId: row['category_id'] as String?,
     note: row['note'] as String?,
-    occurredAt: DateTime.parse(row['occurred_at'] as String).toLocal(),
+    occurredAt: AppClock.wall(DateTime.parse(row['occurred_at'] as String)),
   );
 
   TransactionDraft toDraft() => TransactionDraft(
@@ -88,7 +90,7 @@ class TransactionDraft {
           : null,
       'category_id': kind == TransactionKind.transfer ? null : categoryId,
       'note': (trimmed == null || trimmed.isEmpty) ? null : trimmed,
-      'occurred_at': occurredAt.toUtc().toIso8601String(),
+      'occurred_at': AppClock.toUtc(occurredAt).toIso8601String(),
     };
   }
 }

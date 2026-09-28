@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app/velora_app.dart';
 import 'core/storage/app_preferences.dart';
 import 'core/supabase/supabase_config.dart';
+import 'core/time/app_clock.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,9 @@ Future<void> main() async {
   );
 
   final prefs = await SharedPreferences.getInstance();
+  // Dates follow the chosen time zone (the Philippines unless changed), not
+  // the phone's.
+  AppClock.init(AppPreferences(prefs).timeZone);
 
   runApp(
     ProviderScope(

@@ -1,3 +1,5 @@
+import '../../../core/time/app_clock.dart';
+
 /// Something to save for. Progress comes from its [GoalEntry]s.
 class Goal {
   const Goal({
@@ -31,7 +33,7 @@ class Goal {
     currencyCode: row['currency_code'] as String,
     icon: row['icon'] as String,
     color: row['color'] as String,
-    createdAt: DateTime.parse(row['created_at'] as String).toLocal(),
+    createdAt: AppClock.wall(DateTime.parse(row['created_at'] as String)),
     targetDate: switch (row['target_date']) {
       final String d => DateTime.parse(d),
       _ => null,
@@ -92,7 +94,7 @@ class GoalEntry {
     id: row['id'] as String,
     goalId: row['goal_id'] as String,
     amountMinor: (row['amount_minor'] as num).toInt(),
-    occurredAt: DateTime.parse(row['occurred_at'] as String).toLocal(),
+    occurredAt: AppClock.wall(DateTime.parse(row['occurred_at'] as String)),
     note: row['note'] as String?,
   );
 }

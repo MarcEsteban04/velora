@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:velora/app/velora_app.dart';
 import 'package:velora/core/storage/app_preferences.dart';
+import 'package:velora/core/time/app_clock.dart';
 import 'package:velora/core/theme/app_colors.dart';
 import 'package:velora/features/accounts/domain/account.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
@@ -101,6 +102,30 @@ void main() {
     await tester.ensureVisible(find.text(label));
     await tester.pump();
   }
+
+  testWidgets('time zone: the Philippines by default, and changeable', (
+    tester,
+  ) async {
+    AppClock.init(AppClock.defaultZone);
+    addTearDown(() => AppClock.use(AppClock.defaultZone));
+    await openSettings(tester);
+    expect(find.text('Time zone'), findsOneWidget);
+    expect(find.text('GMT+8'), findsOneWidget);
+
+    await tester.tap(find.text('Time zone'));
+    await tester.pump();
+    await frames(tester);
+    expect(find.text('Philippines · GMT+8'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'tokyo');
+    await tester.pump();
+    await tester.tap(find.text('Tokyo'));
+    await tester.pump();
+    await frames(tester, 16);
+
+    expect(prefs.getString('prefs.timeZone'), 'Asia/Tokyo');
+    expect(AppClock.zone, 'Asia/Tokyo');
+    expect(find.text('GMT+9'), findsOneWidget);
+  });
 
   testWidgets('phone preferences persist on the device', (tester) async {
     await openSettings(tester);

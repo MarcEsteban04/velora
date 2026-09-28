@@ -26,6 +26,7 @@ import '../../transactions/presentation/transaction_entry_screen.dart';
 import 'widgets/day_group.dart';
 import 'widgets/history_filter.dart';
 import 'widgets/month_calendar.dart';
+import '../../../core/time/app_clock.dart';
 
 enum _View { list, calendar }
 
@@ -40,7 +41,7 @@ class HistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  DateTime _month = monthKey(DateTime.now());
+  DateTime _month = monthKey(AppClock.now());
   _View _view = _View.list;
   HistoryFilter _filter = const HistoryFilter();
   bool _searching = false;
@@ -56,11 +57,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// because a dismissed row must leave the tree immediately.
   final _removed = <String>{};
 
-  bool get _isCurrentMonth => _month == monthKey(DateTime.now());
+  bool get _isCurrentMonth => _month == monthKey(AppClock.now());
 
   void _shiftMonth(int delta) {
     final next = DateTime(_month.year, _month.month + delta);
-    if (next.isAfter(monthKey(DateTime.now()))) return;
+    if (next.isAfter(monthKey(AppClock.now()))) return;
     HapticFeedback.selectionClick();
     setState(() {
       _month = next;
@@ -114,7 +115,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           toAmountMinor: d.toAmountMinor,
           categoryId: d.categoryId,
           note: d.note,
-          occurredAt: DateTime.now(),
+          occurredAt: AppClock.now(),
         ),
       );
       HapticFeedback.mediumImpact();
@@ -268,7 +269,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             );
           }(),
       };
-      final today = DateUtils.dateOnly(DateTime.now());
+      final today = DateUtils.dateOnly(AppClock.now());
       final day =
           _day ??
           (_isCurrentMonth
@@ -516,7 +517,7 @@ class _EmptyDay extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(dayTitle(day, DateTime.now()), style: text.titleMedium),
+                  Text(dayTitle(day, AppClock.now()), style: text.titleMedium),
                   Text(
                     'Nothing logged on ${DateFormat('MMMM d').format(day)}',
                     style: text.labelMedium,
@@ -625,7 +626,7 @@ class _MonthPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final now = DateTime.now();
+    final now = AppClock.now();
     final months = [
       for (var i = 0; i < 24; i++) DateTime(now.year, now.month - i),
     ];

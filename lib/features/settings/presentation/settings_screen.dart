@@ -24,6 +24,9 @@ import '../../streaks/presentation/streak_sheet.dart';
 import '../../streaks/presentation/streak_style.dart';
 import 'widgets/settings_section.dart';
 import 'widgets/settings_sheets.dart';
+import 'widgets/time_zone_sheet.dart';
+import '../application/time_zone_actions.dart';
+import '../../../core/time/app_clock.dart';
 import '../../../core/widgets/island_toast.dart';
 
 /// Settings: profile, preferences, security, backup, about and a guarded
@@ -94,6 +97,7 @@ class SettingsScreen extends ConsumerWidget {
     final hideOnOpen = ref.watch(hideBalancesOnOpenProvider);
     final autoLock = ref.watch(autoLockProvider);
     final appearance = ref.watch(appearanceProvider);
+    final zone = ref.watch(timeZoneProvider);
     final streak = ref.watch(streakSettingsProvider);
     final streakCtl = ref.read(streakSettingsProvider.notifier);
     final name = profile?.name ?? 'friend';
@@ -169,6 +173,33 @@ class SettingsScreen extends ConsumerWidget {
                                 .read(appearanceProvider.notifier)
                                 .set(picked);
                           }
+                        },
+                      ),
+                      SettingsTile(
+                        icon: Icons.public_rounded,
+                        color: AppColors.sky,
+                        title: 'Time zone',
+                        subtitle:
+                            '${AppClock.cityOf(zone)} · '
+                            '${DateFormat('h:mm a').format(AppClock.now())} now',
+                        value: AppClock.gmtLabel(AppClock.offsetOf(zone)),
+                        onTap: () async {
+                          final container = ProviderScope.containerOf(
+                            context,
+                            listen: false,
+                          );
+                          final toast = Toast.of(context);
+                          final picked = await TimeZoneSheet.show(
+                            context,
+                            zone,
+                          );
+                          if (picked == null || picked == zone) return;
+                          HapticFeedback.selectionClick();
+                          await changeTimeZone(container, picked);
+                          toast.show(
+                            'Time zone set to ${AppClock.cityOf(picked)}',
+                            icon: Icons.public_rounded,
+                          );
                         },
                       ),
                       SettingsTile(
@@ -421,7 +452,7 @@ class _ProfileCard extends StatelessWidget {
                   ),
                   if (since != null)
                     Text(
-                      'With Velora since ${DateFormat('MMMM y').format(since!.toLocal())}',
+                      'With Velora since ${DateFormat('MMMM y').format(since!)}',
                       style: text.labelMedium,
                     ),
                 ],

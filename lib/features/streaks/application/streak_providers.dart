@@ -6,6 +6,7 @@ import '../../profile/data/profile_repository.dart';
 import '../../transactions/data/transaction_repository.dart';
 import '../../transactions/domain/transaction.dart';
 import '../domain/streak.dart';
+import '../../../core/time/app_clock.dart';
 
 /// How far back a streak is counted. Streaks longer than this show as the
 /// window's length, which is still a year of habit.
@@ -51,10 +52,10 @@ class StreakSettingsController extends Notifier<StreakSettings> {
 /// Transactions since the user started (at most [streakWindowDays] back).
 final streakHistoryProvider = FutureProvider<List<Transaction>>((ref) async {
   final profile = await ref.watch(profileProvider.future);
-  final now = DateTime.now();
+  final now = AppClock.now();
   final today = DateTime(now.year, now.month, now.day);
   final windowStart = DateTime(now.year, now.month, now.day - streakWindowDays);
-  final joined = profile?.onboardedAt.toLocal() ?? today;
+  final joined = profile?.onboardedAt ?? today;
   final start = joined.isAfter(windowStart)
       ? DateTime(joined.year, joined.month, joined.day)
       : windowStart;
@@ -71,9 +72,9 @@ final streakProvider = Provider<Streak?>((ref) {
   final accounts = ref.watch(accountsProvider).value;
   if (history == null || profile == null || accounts == null) return null;
 
-  final now = DateTime.now();
+  final now = AppClock.now();
   final windowStart = DateTime(now.year, now.month, now.day - streakWindowDays);
-  final joined = profile.onboardedAt.toLocal();
+  final joined = profile.onboardedAt;
   final currencyOf = {for (final a in accounts) a.id: a.currencyCode};
 
   return Streak.compute(

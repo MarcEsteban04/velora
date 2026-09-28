@@ -1,3 +1,5 @@
+import '../../../core/time/app_clock.dart';
+
 enum AccountType { cash, bank, eWallet, savings }
 
 class Account {
@@ -54,7 +56,7 @@ class Account {
         AccountType.cash,
     currencyCode: row['currency_code'] as String,
     openingBalanceMinor: (row['opening_balance_minor'] as num).toInt(),
-    createdAt: DateTime.parse(row['created_at'] as String),
+    createdAt: AppClock.wall(DateTime.parse(row['created_at'] as String)),
     // Reads tolerate a database that hasn't had the migration yet.
     includeInNetWorth: row['include_in_net_worth'] as bool? ?? true,
     institutionId: row['institution'] as String?,

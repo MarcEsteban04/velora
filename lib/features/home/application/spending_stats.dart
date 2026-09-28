@@ -14,7 +14,7 @@ List<(DateTime day, int spentMinor)> dailySpending(
     if (t.kind != TransactionKind.expense || !inMainCurrency(t.accountId)) {
       continue;
     }
-    final l = t.occurredAt.toLocal();
+    final l = t.occurredAt;
     final d = DateTime(l.year, l.month, l.day);
     totals.update(d, (v) => v + t.amountMinor, ifAbsent: () => t.amountMinor);
   }
@@ -108,7 +108,7 @@ class PeriodSpend {
         if (t.kind != TransactionKind.expense || !inMainCurrency(t.accountId)) {
           continue;
         }
-        final at = t.occurredAt.toLocal();
+        final at = t.occurredAt;
         if (!at.isBefore(from) && at.isBefore(to)) total += t.amountMinor;
       }
       return total;

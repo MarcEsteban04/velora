@@ -1,3 +1,5 @@
+import '../../../core/time/app_clock.dart';
+
 /// How Velora phrases feedback about the user's spending.
 enum CoachTone { gentle, balanced, direct }
 
@@ -22,6 +24,6 @@ class UserProfile {
     coachTone:
         CoachTone.values.asNameMap()[row['coach_tone'] as String] ??
         CoachTone.balanced,
-    onboardedAt: DateTime.parse(row['onboarded_at'] as String),
+    onboardedAt: AppClock.wall(DateTime.parse(row['onboarded_at'] as String)),
   );
 }

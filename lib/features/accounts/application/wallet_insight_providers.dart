@@ -12,6 +12,7 @@ import '../data/insight_repository.dart';
 import '../domain/account.dart';
 import '../domain/wallet_insight.dart';
 import 'local_insight.dart';
+import '../../../core/time/app_clock.dart';
 
 class WalletInsight {
   const WalletInsight(this.text, {required this.fromAi});
@@ -30,7 +31,7 @@ final dailyBalancesProvider = Provider<List<(DateTime, int)>?>((ref) {
     accounts: accounts.value!,
     transactions: week.value!,
     mainCurrency: profile.currencyCode,
-    now: DateTime.now(),
+    now: AppClock.now(),
   );
 });
 
@@ -38,7 +39,7 @@ final dailyBalancesProvider = Provider<List<(DateTime, int)>?>((ref) {
 /// so an insight is never based on half the data.
 final walletSnapshotProvider = Provider<WalletSnapshot?>((ref) {
   final accounts = ref.watch(accountsProvider);
-  final month = ref.watch(monthTransactionsProvider(monthKey(DateTime.now())));
+  final month = ref.watch(monthTransactionsProvider(monthKey(AppClock.now())));
   final categories = ref.watch(categoriesProvider);
   final profile = ref.watch(profileProvider).value;
   final daily = ref.watch(dailyBalancesProvider);
@@ -80,9 +81,9 @@ final walletSnapshotProvider = Provider<WalletSnapshot?>((ref) {
 
   // Only days actually tracked count toward the pace: someone who joined
   // today has one day of data, whatever the date.
-  final now = DateTime.now();
+  final now = AppClock.now();
   final today = DateTime(now.year, now.month, now.day);
-  final joined = profile.onboardedAt.toLocal();
+  final joined = profile.onboardedAt;
   final sinceJoin =
       today.difference(DateTime(joined.year, joined.month, joined.day)).inDays +
       1;
@@ -93,7 +94,7 @@ final walletSnapshotProvider = Provider<WalletSnapshot?>((ref) {
         (t) =>
             t.kind == TransactionKind.expense &&
             byId[t.accountId]?.currencyCode == main &&
-            !t.occurredAt.toLocal().isBefore(windowStart),
+            !t.occurredAt.isBefore(windowStart),
       )
       .fold(0, (s, t) => s + t.amountMinor);
 
@@ -126,7 +127,7 @@ final walletInsightProvider = FutureProvider<WalletInsight?>((ref) async {
   if (snapshot == null || tone == null) return null;
 
   final prefs = ref.read(appPreferencesProvider);
-  final now = DateTime.now();
+  final now = AppClock.now();
   final day = '${now.year}-${now.month}-${now.day}';
   final key = '${snapshot.cacheKey}|${tone.name}';
 

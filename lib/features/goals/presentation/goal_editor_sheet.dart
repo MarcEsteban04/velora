@@ -11,6 +11,7 @@ import '../application/goal_providers.dart';
 import '../domain/goal.dart';
 import 'goal_style.dart';
 import '../../../core/widgets/island_toast.dart';
+import '../../../core/time/app_clock.dart';
 
 /// Creates or edits a goal: name, target, optional date, icon and color.
 /// It saves on its own and closes when done.
@@ -74,7 +75,7 @@ class _EditorState extends State<_Editor> {
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+    final now = AppClock.now();
     final picked = await showDatePicker(
       context: context,
       initialDate: _date ?? DateTime(now.year, now.month + 6, now.day),

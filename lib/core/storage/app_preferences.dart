@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../time/app_clock.dart';
+
 /// How long Velora may sit in the background before it asks for the PIN.
 enum AutoLock {
   immediately(Duration.zero, 'Immediately'),
@@ -35,6 +37,7 @@ class AppPreferences {
   static const _kHideBalances = 'prefs.hideBalancesOnOpen';
   static const _kAutoLock = 'prefs.autoLock';
   static const _kAppearance = 'prefs.appearance';
+  static const _kTimeZone = 'prefs.timeZone';
   // v2: insights now know how many days were tracked.
   static const _kInsight = 'cache.walletInsight.v2';
 
@@ -49,6 +52,10 @@ class AppPreferences {
       Appearance.night;
   Future<void> setAppearance(Appearance value) =>
       _prefs.setString(_kAppearance, value.name);
+
+  /// An IANA zone name, like "Asia/Manila". The Philippines by default.
+  String get timeZone => _prefs.getString(_kTimeZone) ?? AppClock.defaultZone;
+  Future<void> setTimeZone(String zone) => _prefs.setString(_kTimeZone, zone);
 
   bool get hideBalancesOnOpen => _prefs.getBool(_kHideBalances) ?? false;
   Future<void> setHideBalancesOnOpen(bool value) =>
@@ -112,5 +119,22 @@ class AppearanceSetting extends Notifier<Appearance> {
   Future<void> set(Appearance value) async {
     state = value;
     await ref.read(appPreferencesProvider).setAppearance(value);
+  }
+}
+
+/// The chosen time zone. Setting it moves [AppClock] too; callers then
+/// refresh whatever shows dates (see `refreshForTimeZone`).
+final timeZoneProvider = NotifierProvider<TimeZoneSetting, String>(
+  TimeZoneSetting.new,
+);
+
+class TimeZoneSetting extends Notifier<String> {
+  @override
+  String build() => ref.watch(appPreferencesProvider).timeZone;
+
+  Future<void> set(String zone) async {
+    AppClock.use(zone);
+    state = zone;
+    await ref.read(appPreferencesProvider).setTimeZone(zone);
   }
 }

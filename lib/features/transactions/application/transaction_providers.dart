@@ -7,6 +7,7 @@ import '../../streaks/application/streak_providers.dart';
 import '../data/transaction_repository.dart';
 import '../domain/category.dart';
 import '../domain/transaction.dart';
+import '../../../core/time/app_clock.dart';
 
 final categoriesProvider = FutureProvider<List<Category>>(
   (ref) => ref.watch(categoryRepositoryProvider).fetchAll(),
@@ -22,7 +23,7 @@ final monthTransactionsProvider =
 
 /// The last seven days, today included, for the daily balance chart.
 final weekTransactionsProvider = FutureProvider<List<Transaction>>((ref) {
-  final now = DateTime.now();
+  final now = AppClock.now();
   final start = DateTime(now.year, now.month, now.day - 6);
   final end = DateTime(now.year, now.month, now.day + 1);
   return ref.watch(transactionRepositoryProvider).fetchRange(start, end);
@@ -30,7 +31,7 @@ final weekTransactionsProvider = FutureProvider<List<Transaction>>((ref) {
 
 /// The last 30 days, today included, for spending pace.
 final last30DaysTransactionsProvider = FutureProvider<List<Transaction>>((ref) {
-  final now = DateTime.now();
+  final now = AppClock.now();
   final start = DateTime(now.year, now.month, now.day - 29);
   final end = DateTime(now.year, now.month, now.day + 1);
   return ref.watch(transactionRepositoryProvider).fetchRange(start, end);
