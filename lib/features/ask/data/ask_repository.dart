@@ -3,8 +3,10 @@ import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/ai/ai_client.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/chat_message.dart';
+import 'direct_ask_repository.dart';
 
 abstract interface class AskRepository {
   /// Velora's AI reply, or null when it's unavailable (offline, not
@@ -57,6 +59,10 @@ class SupabaseAskRepository implements AskRepository {
   }
 }
 
+/// Straight to the AI when keys were built in (personal builds), otherwise
+/// through the Edge Function.
 final askRepositoryProvider = Provider<AskRepository>(
-  (ref) => SupabaseAskRepository(ref.watch(supabaseClientProvider)),
+  (ref) => AiClient.isConfigured
+      ? const DirectAskRepository()
+      : SupabaseAskRepository(ref.watch(supabaseClientProvider)),
 );

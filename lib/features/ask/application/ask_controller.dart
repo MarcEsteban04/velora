@@ -163,7 +163,11 @@ class AskController extends Notifier<AskState> {
         ChatMessage(
           id: _id(),
           role: ChatRole.velora,
-          text: ai.text,
+          // A reply that claims it's already saved isn't true yet: the
+          // user still taps Log it. Say so plainly instead.
+          text: action != null && claimsSaved(ai.text)
+              ? _confirmText(action)
+              : ai.text,
           proposal: action,
           fromAi: true,
         ),
@@ -184,6 +188,13 @@ class AskController extends Notifier<AskState> {
       ),
     );
   }
+
+  /// Whether [text] says something is already logged or saved, in English
+  /// or Filipino.
+  static bool claimsSaved(String text) => RegExp(
+    r"\b(logged|saved|recorded|added it|i've added|na-?log|nai-?log|naitala|na-?save|nai-?save|nilagay ko)\b",
+    caseSensitive: false,
+  ).hasMatch(text);
 
   /// A beat, so replies don't snap in faster than a person could read the
   /// question back.

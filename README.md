@@ -8,6 +8,7 @@ A friendly companion for tracking spending, budgets and goals, guided by Velora 
 2. **Create the schema:** run `supabase/migrations/*.sql` in the Supabase SQL Editor, or use `supabase db push`.
 3. **Enable anonymous sign-ins:** Dashboard → Authentication → Sign In / Providers → *Allow anonymous sign-ins*.
 4. **Deploy the AI functions (optional):** deploy `supabase/functions/wallet-insight` and `supabase/functions/ask-velora` (Dashboard → Edge Functions, or `supabase functions deploy <name>`), then add the secrets `GROQ_AI_API_KEY`, `GEMINI_AI_API_KEY` and `OPENAI_API_KEY` under Edge Functions → Secrets. The function tries Groq, then Gemini, then OpenAI (the backup). It only receives aggregated numbers, and the keys never ship in the app. Without them, the Wallet insight is worked out on the phone, and Ask Velora still logs transactions and answers common questions on the phone.
+   **Personal builds** can skip the functions: put `GROQ_AI_API_KEY`, `GEMINI_AI_API_KEY` and `OPENAI_API_KEY` in `.env.app` and the app calls the providers directly (same order, same prompts). The keys end up inside the APK, so never share a build made this way; without keys in `.env.app`, the app uses the functions.
 5. Run it:
 
 ```bash

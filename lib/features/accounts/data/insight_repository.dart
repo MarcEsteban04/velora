@@ -3,9 +3,11 @@ import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/ai/ai_client.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../profile/domain/user_profile.dart';
 import '../domain/wallet_insight.dart';
+import 'direct_insight_repository.dart';
 
 abstract interface class InsightRepository {
   /// An AI-written insight, or null when unavailable (offline, the function
@@ -43,6 +45,10 @@ class SupabaseInsightRepository implements InsightRepository {
   }
 }
 
+/// Straight to the AI when keys were built in (personal builds), otherwise
+/// through the Edge Function.
 final insightRepositoryProvider = Provider<InsightRepository>(
-  (ref) => SupabaseInsightRepository(ref.watch(supabaseClientProvider)),
+  (ref) => AiClient.isConfigured
+      ? const DirectInsightRepository()
+      : SupabaseInsightRepository(ref.watch(supabaseClientProvider)),
 );
