@@ -23,8 +23,25 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell>
+    with SingleTickerProviderStateMixin {
   int _index = 0;
+
+  /// Fades the incoming tab in. Outgoing tabs go offstage right away. They
+  /// must never rely on their own fade-out, because their tickers are paused
+  /// and the fade would freeze halfway.
+  late final AnimationController _fade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 240),
+    value: 1,
+  );
+
+  @override
+  void dispose() {
+    _fade.dispose();
+    super.dispose();
+  }
+
   bool _navVisible = true;
   bool _actionsOpen = false;
 
@@ -51,7 +68,14 @@ class _AppShellState extends State<AppShell> {
     ),
   ];
 
-  void _select(int index) => setState(() {
+  void _select(int index) {
+    if (index != _index && !MediaQuery.disableAnimationsOf(context)) {
+      _fade.forward(from: 0);
+    }
+    _setIndex(index);
+  }
+
+  void _setIndex(int index) => setState(() {
     _index = index;
     _navVisible = true;
     _actionsOpen = false;
@@ -147,7 +171,7 @@ class _AppShellState extends State<AppShell> {
           resizeToAvoidBottomInset: false,
           body: Stack(
             children: [
-              const Positioned.fill(child: DuskBackdrop()),
+              const Positioned.fill(child: DuskBackdrop(showMoon: false)),
               Positioned.fill(
                 child: ColoredBox(
                   color: AppColors.night.withValues(alpha: 0.62),
@@ -155,26 +179,28 @@ class _AppShellState extends State<AppShell> {
               ),
               NotificationListener<UserScrollNotification>(
                 onNotification: _onScroll,
-                child: Stack(
-                  children: [
-                    for (var i = 0; i < _destinations.length; i++)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          ignoring: i != _index,
-                          child: TickerMode(
-                            enabled: i == _index,
-                            child: AnimatedOpacity(
-                              duration: const Duration(milliseconds: 220),
-                              opacity: i == _index ? 1 : 0,
-                              child: ExcludeSemantics(
-                                excluding: i != _index,
-                                child: _tab(i),
-                              ),
+                child: FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: _fade,
+                    curve: Curves.easeOut,
+                  ),
+                  // Hidden tabs stay alive (scroll position and state are
+                  // kept) but are offstage: not painted, not tappable, and
+                  // hidden from screen readers.
+                  child: Stack(
+                    children: [
+                      for (var i = 0; i < _destinations.length; i++)
+                        Positioned.fill(
+                          child: Offstage(
+                            offstage: i != _index,
+                            child: TickerMode(
+                              enabled: i == _index,
+                              child: _tab(i),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Positioned.fill(

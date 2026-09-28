@@ -49,11 +49,12 @@ class AccountCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: colors,
           ),
+          // One tight, neutral shadow: it lifts the card without a halo.
           boxShadow: [
             BoxShadow(
-              color: colors.last.withValues(alpha: 0.45),
-              blurRadius: 28,
-              offset: const Offset(0, 14),
+              color: Colors.black.withValues(alpha: 0.28),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),

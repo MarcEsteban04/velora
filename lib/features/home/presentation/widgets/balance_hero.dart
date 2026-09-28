@@ -32,86 +32,71 @@ class BalanceHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
 
-    return Stack(
-      children: [
-        // A warm glow behind the card that ties it to the dusk scene.
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.skyRose.withValues(alpha: 0.25),
-                  blurRadius: 40,
-                  spreadRadius: -6,
-                  offset: const Offset(0, 16),
+    return GlassCard(
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'NET WORTH',
+            style: text.labelMedium?.copyWith(letterSpacing: 1.6),
+          ),
+          const SizedBox(height: 6),
+          Semantics(
+            label: hidden
+                ? 'Net worth hidden'
+                : 'Net worth ${Money.format(netWorthMinor, currency)}',
+            excludeSemantics: true,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: netWorthMinor.toDouble()),
+              duration: const Duration(milliseconds: 1200),
+              curve: Curves.easeOutCubic,
+              builder: (context, v, _) => FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _amount(v.round()),
+                  style: text.displaySmall?.copyWith(fontSize: 40),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-        GlassCard(
-          padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 4),
+          Text(
+            'Across $accountCount '
+            '${accountCount == 1 ? 'account' : 'accounts'} · '
+            '${currency.code}',
+            style: text.bodyMedium,
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'THIS MONTH',
+            style: text.labelMedium?.copyWith(fontSize: 11, letterSpacing: 1.4),
+          ),
+          const SizedBox(height: 8),
+          Row(
             children: [
-              Text(
-                'NET WORTH',
-                style: text.labelMedium?.copyWith(letterSpacing: 1.6),
-              ),
-              const SizedBox(height: 6),
-              Semantics(
-                label: hidden
-                    ? 'Net worth hidden'
-                    : 'Net worth ${Money.format(netWorthMinor, currency)}',
-                excludeSemantics: true,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: netWorthMinor.toDouble()),
-                  duration: const Duration(milliseconds: 1200),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, v, _) => FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      _amount(v.round()),
-                      style: text.displaySmall?.copyWith(fontSize: 40),
-                    ),
-                  ),
+              Expanded(
+                child: _Flow(
+                  label: 'Income',
+                  amount: _amount(incomeMinor),
+                  icon: Icons.south_west_rounded,
+                  color: AppColors.leafBright,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Across $accountCount '
-                '${accountCount == 1 ? 'account' : 'accounts'} · '
-                '${currency.code}',
-                style: text.bodyMedium,
-              ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: _Flow(
-                      label: 'In this month',
-                      amount: _amount(incomeMinor),
-                      icon: Icons.south_west_rounded,
-                      color: AppColors.leafBright,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _Flow(
-                      label: 'Out this month',
-                      amount: _amount(spentMinor),
-                      icon: Icons.north_east_rounded,
-                      color: AppColors.ember,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Flow(
+                  label: 'Spending',
+                  amount: _amount(spentMinor),
+                  icon: Icons.north_east_rounded,
+                  color: AppColors.ember,
+                ),
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -12,7 +12,10 @@ import '../theme/app_colors.dart';
 /// number of cycles per loop, so the loop is seamless. It holds still when
 /// the OS "reduce motion" setting is on.
 class DuskBackdrop extends StatefulWidget {
-  const DuskBackdrop({super.key});
+  const DuskBackdrop({super.key, this.showMoon = true});
+
+  /// Content-heavy screens hide the moon so it never sits behind text.
+  final bool showMoon;
 
   @override
   State<DuskBackdrop> createState() => _DuskBackdropState();
@@ -47,7 +50,7 @@ class _DuskBackdropState extends State<DuskBackdrop>
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: CustomPaint(
-        painter: _DuskPainter(_controller),
+        painter: _DuskPainter(_controller, showMoon: widget.showMoon),
         child: const SizedBox.expand(),
       ),
     );
@@ -116,9 +119,11 @@ class _FallingLeaf {
 }
 
 class _DuskPainter extends CustomPainter {
-  _DuskPainter(this.animation) : super(repaint: animation);
+  _DuskPainter(this.animation, {required this.showMoon})
+    : super(repaint: animation);
 
   final Animation<double> animation;
+  final bool showMoon;
 
   static const _tau = math.pi * 2;
 
@@ -152,7 +157,7 @@ class _DuskPainter extends CustomPainter {
     _paintSky(canvas, rect);
     _paintStars(canvas, size, t);
     _paintShootingStar(canvas, size, t);
-    _paintMoon(canvas, size, t);
+    if (showMoon) _paintMoon(canvas, size, t);
 
     _paintRidge(
       canvas,
@@ -429,5 +434,5 @@ class _DuskPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DuskPainter oldDelegate) =>
-      oldDelegate.animation != animation;
+      oldDelegate.animation != animation || oldDelegate.showMoon != showMoon;
 }

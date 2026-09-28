@@ -319,17 +319,23 @@ void main() {
     // Switch tabs.
     await tester.tap(find.bySemanticsLabel(RegExp('Plan tab')));
     await tester.pump(const Duration(milliseconds: 500));
-    // Hidden tabs stay alive but untouchable, so check what's hit-testable.
+    // Only the active tab is on screen. This guards against tabs stacking
+    // on top of each other.
     expect(
-      find.text('Budgets and goals that keep you on track.').hitTestable(),
+      find.text('Budgets and goals that keep you on track.'),
       findsOneWidget,
     );
-    expect(find.text('NET WORTH').hitTestable(), findsNothing);
+    expect(find.text('NET WORTH'), findsNothing);
+    expect(find.text('Every peso, searchable and tidy.'), findsNothing);
 
     // Android back returns to Home instead of leaving the app.
     await tester.binding.handlePopRoute();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('NET WORTH').hitTestable(), findsOneWidget);
+    expect(find.text('NET WORTH'), findsOneWidget);
+    expect(
+      find.text('Budgets and goals that keep you on track.'),
+      findsNothing,
+    );
 
     // + opens quick actions; picking one closes the panel with a note.
     await tester.tap(find.bySemanticsLabel(RegExp('Add: open quick actions')));

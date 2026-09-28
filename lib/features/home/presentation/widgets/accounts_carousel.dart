@@ -39,10 +39,10 @@ class _AccountsCarouselState extends State<AccountsCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 200,
+          height: 188,
           child: single
               ? Padding(
-                  padding: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: _card(accounts.first),
                 )
               : PageView.builder(
@@ -51,7 +51,7 @@ class _AccountsCarouselState extends State<AccountsCarousel> {
                   itemCount: accounts.length,
                   onPageChanged: (p) => setState(() => _page = p),
                   itemBuilder: (context, i) => Padding(
-                    padding: const EdgeInsets.only(right: 12, bottom: 24),
+                    padding: const EdgeInsets.only(right: 12, bottom: 12),
                     child: _card(accounts[i]),
                   ),
                 ),
