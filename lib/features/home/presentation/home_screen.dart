@@ -158,7 +158,6 @@ class HomeScreen extends ConsumerWidget {
           if (profile != null)
             stagger(
               CoachCard(
-                toneLabel: profile.coachTone.label,
                 message: expenseCount == 0
                     ? profile.coachTone.firstStepsMessage(name)
                     : profile.coachTone.monthInsight(
@@ -172,8 +171,6 @@ class HomeScreen extends ConsumerWidget {
                             flow.incomeMinor > 0 &&
                             flow.spentMinor > flow.incomeMinor,
                       ),
-                actionLabel: 'Log an expense',
-                onAction: () => onQuickAction(QuickAction.expense),
               ),
             ),
           const SizedBox(height: 12),

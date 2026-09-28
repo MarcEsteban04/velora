@@ -62,7 +62,13 @@ void main() {
     expect(find.bySemanticsLabel(RegExp(r'^0 day streak')), findsOneWidget);
 
     // Log a quick expense.
-    await tester.tap(find.text('Log an expense'));
+    final semanticsForPlus = tester.ensureSemantics();
+    await tester.tap(find.bySemanticsLabel(RegExp('Add: open quick actions')));
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+    await tester.tap(find.text('Money going out'));
+    semanticsForPlus.dispose();
     await tester.pump();
     await frames(tester);
     await tester.tap(find.bySemanticsLabel('5').last);

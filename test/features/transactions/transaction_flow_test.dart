@@ -72,8 +72,14 @@ void main() {
     final semantics = tester.ensureSemantics();
     await launchUnlocked(tester);
 
-    // "Log an expense" on the coach card opens the entry screen.
-    await tester.tap(find.text('Log an expense'));
+    // + then "Money going out" opens the entry screen.
+    final semanticsForPlus = tester.ensureSemantics();
+    await tester.tap(find.bySemanticsLabel(RegExp('Add: open quick actions')));
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+    await tester.tap(find.text('Money going out'));
+    semanticsForPlus.dispose();
     await tester.pump();
     await frames(tester);
     expect(find.text('Enter an amount'), findsOneWidget);
