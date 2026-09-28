@@ -1,8 +1,8 @@
 /// How Velora phrases feedback about the user's spending.
 enum CoachTone { gentle, balanced, direct }
 
-/// Who the user is and how they like Velora to behave. Saved once onboarding
-/// finishes, and its presence means onboarding is complete.
+/// Who the user is and how they like Velora to behave. The row is created
+/// when onboarding finishes, so its existence means onboarding is complete.
 class UserProfile {
   const UserProfile({
     required this.name,
@@ -16,18 +16,12 @@ class UserProfile {
   final CoachTone coachTone;
   final DateTime onboardedAt;
 
-  Map<String, Object> toJson() => {
-    'name': name,
-    'currencyCode': currencyCode,
-    'coachTone': coachTone.name,
-    'onboardedAt': onboardedAt.toIso8601String(),
-  };
-
-  factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-    name: json['name'] as String,
-    currencyCode: json['currencyCode'] as String,
+  factory UserProfile.fromRow(Map<String, dynamic> row) => UserProfile(
+    name: row['display_name'] as String,
+    currencyCode: row['currency_code'] as String,
     coachTone:
-        CoachTone.values.asNameMap()[json['coachTone']] ?? CoachTone.balanced,
-    onboardedAt: DateTime.parse(json['onboardedAt'] as String),
+        CoachTone.values.asNameMap()[row['coach_tone'] as String] ??
+        CoachTone.balanced,
+    onboardedAt: DateTime.parse(row['onboarded_at'] as String),
   );
 }

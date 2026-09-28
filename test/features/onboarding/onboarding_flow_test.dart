@@ -1,60 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:velora/core/money/currency.dart';
-import 'package:velora/core/storage/preferences.dart';
 import 'package:velora/core/theme/app_theme.dart';
 import 'package:velora/features/accounts/data/account_repository.dart';
 import 'package:velora/features/accounts/domain/account.dart';
 import 'package:velora/features/home/presentation/home_screen.dart';
 import 'package:velora/features/onboarding/application/onboarding_controller.dart';
+import 'package:velora/features/onboarding/data/onboarding_repository.dart';
 import 'package:velora/features/onboarding/presentation/onboarding_flow.dart';
 import 'package:velora/features/profile/data/profile_repository.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
 
-class _InMemoryAccounts implements AccountRepository {
-  final created = <Account>[];
+/// Stands in for Supabase: one in-memory "backend" behind all three
+/// repositories, so the flow is tested end to end without the network.
+class _FakeBackend
+    implements OnboardingRepository, ProfileRepository, AccountRepository {
+  UserProfile? profile;
+  final accounts = <Account>[];
+  int completeCalls = 0;
 
   @override
-  Stream<List<Account>> watchAll() => Stream.value(List.of(created));
-
-  @override
-  Future<Account> create({
-    required String name,
-    required AccountType type,
+  Future<void> complete({
+    required String displayName,
     required String currencyCode,
+    required CoachTone coachTone,
+    required String accountName,
+    required AccountType accountType,
     required int openingBalanceMinor,
   }) async {
-    final account = Account(
-      id: created.length + 1,
-      name: name,
-      type: type,
+    completeCalls++;
+    profile = UserProfile(
+      name: displayName,
       currencyCode: currencyCode,
-      openingBalanceMinor: openingBalanceMinor,
-      createdAt: DateTime(2026),
+      coachTone: coachTone,
+      onboardedAt: DateTime(2026),
     );
-    created.add(account);
-    return account;
+    accounts.add(
+      Account(
+        id: 'acc-1',
+        name: accountName,
+        type: accountType,
+        currencyCode: currencyCode,
+        openingBalanceMinor: openingBalanceMinor,
+        createdAt: DateTime(2026),
+      ),
+    );
   }
+
+  @override
+  Future<UserProfile?> fetch() async => profile;
+
+  @override
+  Future<List<Account>> fetchAll() async => List.of(accounts);
 }
 
 void main() {
-  late _InMemoryAccounts accounts;
-  late SharedPreferences prefs;
+  late _FakeBackend backend;
 
-  setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    prefs = await SharedPreferences.getInstance();
-    accounts = _InMemoryAccounts();
-  });
+  setUp(() => backend = _FakeBackend());
 
   Future<ProviderContainer> pumpFlow(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          sharedPreferencesProvider.overrideWithValue(prefs),
-          accountRepositoryProvider.overrideWithValue(accounts),
+          onboardingRepositoryProvider.overrideWithValue(backend),
+          profileRepositoryProvider.overrideWithValue(backend),
+          accountRepositoryProvider.overrideWithValue(backend),
           deviceCurrencyProvider.overrideWithValue(Currencies.byCode('PHP')),
         ],
         child: MaterialApp(theme: AppTheme.dark, home: const OnboardingFlow()),
@@ -128,17 +140,16 @@ void main() {
     await tapNext(tester, 'Start tracking');
     await tester.pump(const Duration(seconds: 1));
 
-    expect(accounts.created, hasLength(1));
-    final account = accounts.created.single;
+    expect(backend.completeCalls, 1);
+    final account = backend.accounts.single;
     expect(account.name, 'E-wallet');
     expect(account.type, AccountType.eWallet);
     expect(account.currencyCode, 'PHP');
     expect(account.openingBalanceMinor, 1200000);
 
-    final profile = container.read(profileProvider);
+    final profile = await container.read(profileProvider.future);
     expect(profile?.name, 'Marc');
     expect(profile?.coachTone, CoachTone.direct);
-    expect(prefs.getString('profile.v1'), isNotNull);
 
     expect(find.byType(HomeScreen), findsOneWidget);
   });

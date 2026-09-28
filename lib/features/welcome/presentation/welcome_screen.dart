@@ -12,7 +12,7 @@ import 'widgets/mascot_hero.dart';
 
 /// The first screen users see.
 ///
-/// Velora is offline-first and needs no account, so there's one clear
+/// Velora signs users in anonymously behind the scenes, so there's one clear
 /// call-to-action instead of a sign-in wall. If cloud sign-in is added later,
 /// its buttons go in the actions column above "Get started".
 class WelcomeScreen extends StatefulWidget {
@@ -237,7 +237,7 @@ class _PrivacyNote extends StatelessWidget {
         const SizedBox(width: 6),
         Flexible(
           child: Text(
-            'No account needed · Your data stays on this device',
+            'No sign-up needed · Your data stays private',
             textAlign: TextAlign.center,
             style: style,
           ),

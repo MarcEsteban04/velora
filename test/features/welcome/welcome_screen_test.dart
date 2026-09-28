@@ -19,7 +19,7 @@ void main() {
 
     expect(find.bySemanticsLabel('Velora'), findsOneWidget);
     expect(find.textContaining('cozy companion'), findsOneWidget);
-    expect(find.textContaining('No account needed'), findsOneWidget);
+    expect(find.textContaining('No sign-up needed'), findsOneWidget);
     semantics.dispose();
   });
 

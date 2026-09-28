@@ -1,67 +1,34 @@
-import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/database/app_database.dart';
+import '../../../core/supabase/supabase_providers.dart';
 import '../domain/account.dart';
 
 abstract interface class AccountRepository {
-  Stream<List<Account>> watchAll();
-
-  Future<Account> create({
-    required String name,
-    required AccountType type,
-    required String currencyCode,
-    required int openingBalanceMinor,
-  });
+  /// The signed-in user's accounts, oldest first. RLS limits the results to
+  /// the user's own rows, so no user filter is needed here.
+  Future<List<Account>> fetchAll();
 }
 
-class DriftAccountRepository implements AccountRepository {
-  DriftAccountRepository(this._db);
+class SupabaseAccountRepository implements AccountRepository {
+  SupabaseAccountRepository(this._db);
 
-  final AppDatabase _db;
-
-  @override
-  Stream<List<Account>> watchAll() {
-    final query = _db.select(_db.accounts)
-      ..orderBy([(a) => OrderingTerm.asc(a.createdAt)]);
-    return query.watch().map((rows) => rows.map(_toDomain).toList());
-  }
+  final SupabaseClient _db;
 
   @override
-  Future<Account> create({
-    required String name,
-    required AccountType type,
-    required String currencyCode,
-    required int openingBalanceMinor,
-  }) async {
-    final row = await _db
-        .into(_db.accounts)
-        .insertReturning(
-          AccountsCompanion.insert(
-            name: name,
-            type: type.name,
-            currencyCode: currencyCode,
-            openingBalanceMinor: openingBalanceMinor,
-            createdAt: DateTime.now(),
-          ),
-        );
-    return _toDomain(row);
+  Future<List<Account>> fetchAll() async {
+    final rows = await _db
+        .from('accounts')
+        .select()
+        .order('created_at', ascending: true);
+    return rows.map(Account.fromRow).toList();
   }
-
-  Account _toDomain(AccountRow row) => Account(
-    id: row.id,
-    name: row.name,
-    type: AccountType.values.asNameMap()[row.type] ?? AccountType.cash,
-    currencyCode: row.currencyCode,
-    openingBalanceMinor: row.openingBalanceMinor,
-    createdAt: row.createdAt,
-  );
 }
 
 final accountRepositoryProvider = Provider<AccountRepository>(
-  (ref) => DriftAccountRepository(ref.watch(appDatabaseProvider)),
+  (ref) => SupabaseAccountRepository(ref.watch(supabaseClientProvider)),
 );
 
-final accountsProvider = StreamProvider<List<Account>>(
-  (ref) => ref.watch(accountRepositoryProvider).watchAll(),
+final accountsProvider = FutureProvider<List<Account>>(
+  (ref) => ref.watch(accountRepositoryProvider).fetchAll(),
 );

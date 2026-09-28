@@ -1,5 +1,5 @@
 name: velora
-description: "Velora — a friendly, offline-first companion for tracking your money."
+description: "Velora: a friendly companion for tracking your money."
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -7,21 +7,15 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  drift: ^2.35.0
-  drift_flutter: ^0.3.1
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.4.3
   intl: ^0.20.3
-  shared_preferences: ^2.5.5
-
+  supabase_flutter: ^2.17.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  drift_dev: ^2.35.0
-  build_runner: ^2.16.1
-
 flutter:
   uses-material-design: true
 

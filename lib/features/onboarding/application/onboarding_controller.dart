@@ -5,6 +5,7 @@ import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/user_profile.dart';
+import '../data/onboarding_repository.dart';
 
 /// Everything collected during onboarding. Nothing is saved until
 /// [OnboardingController.complete], so backing out leaves no partial data.
@@ -75,27 +76,22 @@ class OnboardingController extends Notifier<OnboardingDraft> {
   void setCoachTone(CoachTone value) =>
       state = state.copyWith(coachTone: value);
 
-  /// Saves the first account, then the profile. The profile goes last because
-  /// its existence is what marks onboarding as done.
+  /// Saves the profile and first account together on the server, then
+  /// refreshes what the rest of the app reads.
   Future<void> complete() async {
     final draft = state;
     await ref
-        .read(accountRepositoryProvider)
-        .create(
-          name: draft.accountName.trim(),
-          type: draft.accountType,
+        .read(onboardingRepositoryProvider)
+        .complete(
+          displayName: draft.firstName,
           currencyCode: draft.currency.code,
+          coachTone: draft.coachTone,
+          accountName: draft.accountName.trim(),
+          accountType: draft.accountType,
           openingBalanceMinor: draft.openingBalanceMinor,
         );
-    await ref
-        .read(profileProvider.notifier)
-        .save(
-          UserProfile(
-            name: draft.firstName,
-            currencyCode: draft.currency.code,
-            coachTone: draft.coachTone,
-            onboardedAt: DateTime.now(),
-          ),
-        );
+    ref
+      ..invalidate(profileProvider)
+      ..invalidate(accountsProvider);
   }
 }

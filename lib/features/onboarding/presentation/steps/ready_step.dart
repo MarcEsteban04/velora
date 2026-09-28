@@ -55,8 +55,8 @@ class ReadyStep extends ConsumerWidget {
           center: true,
           title: "You're all set, ${draft.firstName}!",
           subtitle:
-              "Here's your starting point. Everything stays on this "
-              'device.',
+              "Here's your starting point. It's saved securely and only "
+              'you can see it.',
         ),
         const SizedBox(height: 22),
         GlassCard(

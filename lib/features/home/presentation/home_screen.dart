@@ -34,7 +34,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(profileProvider);
+    final profile = ref.watch(profileProvider).value;
     final accounts = ref.watch(accountsProvider).value ?? const [];
     final text = Theme.of(context).textTheme;
     final currency = Currencies.byCode(profile?.currencyCode ?? 'USD');

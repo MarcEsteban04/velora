@@ -1,0 +1,13 @@
+{
+  // F5 runs Velora with the Supabase settings from .env.app (git-ignored).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Velora",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define-from-file=.env.app"]
+    }
+  ]
+}

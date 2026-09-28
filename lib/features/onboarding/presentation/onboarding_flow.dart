@@ -111,7 +111,9 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Couldn't save your setup. Please try again."),
+          content: Text(
+            "Couldn't reach Velora. Check your connection and try again.",
+          ),
         ),
       );
       return;

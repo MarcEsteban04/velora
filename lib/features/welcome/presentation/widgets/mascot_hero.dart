@@ -30,7 +30,7 @@ class MascotHero extends StatefulWidget {
     "Hi, I'm Velora!",
     "Let's make money feel calm.",
     'Small steps, big savings.',
-    'Psst… your data stays right here.',
+    'Psst… no sign-up needed!',
   ];
 
   @override

@@ -1,47 +1,43 @@
-import 'dart:convert';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/storage/preferences.dart';
+import '../../../core/supabase/supabase_providers.dart';
+import '../../auth/data/auth_repository.dart';
 import '../domain/user_profile.dart';
 
-class ProfileRepository {
-  ProfileRepository(this._prefs);
+abstract interface class ProfileRepository {
+  /// The signed-in user's profile, or null when there's no session yet or
+  /// onboarding hasn't finished.
+  Future<UserProfile?> fetch();
+}
 
-  final SharedPreferences _prefs;
-  static const _key = 'profile.v1';
+class SupabaseProfileRepository implements ProfileRepository {
+  SupabaseProfileRepository(this._db, this._auth);
 
-  UserProfile? load() {
-    final raw = _prefs.getString(_key);
-    if (raw == null) return null;
-    try {
-      return UserProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-    } on Object {
-      // A corrupt profile shouldn't crash the app; onboarding runs again.
-      return null;
-    }
+  final SupabaseClient _db;
+  final AuthRepository _auth;
+
+  @override
+  Future<UserProfile?> fetch() async {
+    final userId = _auth.currentUserId;
+    if (userId == null) return null;
+    final row = await _db
+        .from('profiles')
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
+    return row == null ? null : UserProfile.fromRow(row);
   }
-
-  Future<void> save(UserProfile profile) =>
-      _prefs.setString(_key, jsonEncode(profile.toJson()));
 }
 
 final profileRepositoryProvider = Provider<ProfileRepository>(
-  (ref) => ProfileRepository(ref.watch(sharedPreferencesProvider)),
+  (ref) => SupabaseProfileRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(authRepositoryProvider),
+  ),
 );
 
-/// The signed-in user's profile, or null before onboarding finishes.
-final profileProvider = NotifierProvider<ProfileNotifier, UserProfile?>(
-  ProfileNotifier.new,
+/// Loading, error (usually offline) or the profile (null means new user).
+final profileProvider = FutureProvider<UserProfile?>(
+  (ref) => ref.watch(profileRepositoryProvider).fetch(),
 );
-
-class ProfileNotifier extends Notifier<UserProfile?> {
-  @override
-  UserProfile? build() => ref.watch(profileRepositoryProvider).load();
-
-  Future<void> save(UserProfile profile) async {
-    await ref.read(profileRepositoryProvider).save(profile);
-    state = profile;
-  }
-}
