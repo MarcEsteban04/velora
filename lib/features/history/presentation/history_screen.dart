@@ -131,6 +131,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
+  Future<void> _pickMonth() async {
+    final picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      builder: (_) => _MonthPicker(selected: _month),
+    );
+    if (picked != null && picked != _month) {
+      HapticFeedback.selectionClick();
+      setState(() {
+        _month = picked;
+        _day = null;
+      });
+    }
+  }
+
   void _edit(Transaction t) =>
       Navigator.of(context).push(TransactionEntryScreen.route(existing: t));
 
@@ -174,15 +188,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       ].join(' ').toLowerCase();
       return haystack.contains(q);
     }).toList();
-    final summary = FlowSummary.of(visible, inCurrency: inMain);
 
     final byDay = <DateTime, List<Transaction>>{};
     for (final t in visible) {
       byDay.putIfAbsent(DateUtils.dateOnly(t.occurredAt), () => []).add(t);
     }
 
-    String fmt(int minor) =>
-        hidden ? '${main.symbol} ••••' : Money.format(minor, main);
     final menu = TransactionMenu(
       onEdit: _edit,
       onRepeat: _repeat,
@@ -275,6 +286,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           hidden: hidden,
           onSelect: (d) => setState(() => _day = d),
           onSwipe: _shiftMonth,
+          canGoNext: !_isCurrentMonth,
         ),
         if (dayTxns.isEmpty)
           _EmptyDay(
@@ -311,7 +323,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           FadeSlideIn(
             child: Row(
               children: [
-                Expanded(child: Text('History', style: text.displaySmall)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('History', style: text.displaySmall),
+                      _MonthLabel(month: _month, onTap: _pickMonth),
+                    ],
+                  ),
+                ),
                 RoundIconButton(
                   icon: _searching ? Icons.close_rounded : Icons.search_rounded,
                   semanticLabel: _searching ? 'Close search' : 'Search',
@@ -403,126 +423,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 onChanged: (f) => setState(() => _filter = f),
               ),
             ),
-          const SizedBox(height: 14),
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 60),
-            child: _MonthBar(
-              month: _month,
-              canGoNext: !_isCurrentMonth,
-              onShift: _shiftMonth,
-              income: fmt(summary.incomeMinor),
-              spent: fmt(summary.spentMinor),
-              net:
-                  '${summary.netMinor < 0 ? '−' : ''}${fmt(summary.netMinor.abs())}',
-              filtered: filtered,
-            ),
-          ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           ...body,
-        ],
-      ),
-    );
-  }
-}
-
-class _MonthBar extends StatelessWidget {
-  const _MonthBar({
-    required this.month,
-    required this.canGoNext,
-    required this.onShift,
-    required this.income,
-    required this.spent,
-    required this.net,
-    required this.filtered,
-  });
-
-  final DateTime month;
-  final bool canGoNext;
-  final ValueChanged<int> onShift;
-  final String income;
-  final String spent;
-  final String net;
-  final bool filtered;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return GlassCard(
-      radius: 24,
-      padding: const EdgeInsets.fromLTRB(6, 6, 6, 14),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              IconButton(
-                tooltip: 'Previous month',
-                onPressed: () => onShift(-1),
-                icon: const Icon(Icons.chevron_left_rounded),
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      DateFormat('MMMM y').format(month),
-                      style: text.titleMedium,
-                    ),
-                    if (filtered)
-                      Text(
-                        'Filtered',
-                        style: text.labelMedium?.copyWith(
-                          fontSize: 10,
-                          color: AppColors.ember,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: 'Next month',
-                onPressed: canGoNext ? () => onShift(1) : null,
-                icon: const Icon(Icons.chevron_right_rounded),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              _Stat(label: 'In', value: income, color: AppColors.leafBright),
-              _Stat(
-                label: 'Out',
-                value: spent,
-                color: TransactionKind.expense.color,
-              ),
-              _Stat(label: 'Net', value: net, color: AppColors.textPrimary),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value, required this.color});
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            label.toUpperCase(),
-            style: text.labelMedium?.copyWith(fontSize: 11, letterSpacing: 1.4),
-          ),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(value, style: text.titleMedium?.copyWith(color: color)),
-          ),
         ],
       ),
     );
@@ -665,6 +567,120 @@ class _EmptyHistory extends StatelessWidget {
               style: text.bodyMedium,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The month on show, under the title. Tap to pick another.
+class _MonthLabel extends StatelessWidget {
+  const _MonthLabel({required this.month, required this.onTap});
+
+  final DateTime month;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      label: '${DateFormat('MMMM y').format(month)}, change month',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  DateFormat('MMMM y').format(month),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.bodyLarge,
+                ),
+              ),
+              Icon(
+                Icons.expand_more_rounded,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The last two years of months to jump to.
+class _MonthPicker extends StatelessWidget {
+  const _MonthPicker({required this.selected});
+
+  final DateTime selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final now = DateTime.now();
+    final months = [
+      for (var i = 0; i < 24; i++) DateTime(now.year, now.month - i),
+    ];
+    final years = <int, List<DateTime>>{};
+    for (final m in months) {
+      years.putIfAbsent(m.year, () => []).add(m);
+    }
+
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Pick a month', style: text.headlineSmall),
+              for (final MapEntry(key: year, value: list) in years.entries) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(2, 16, 2, 8),
+                  child: Text(
+                    '$year',
+                    style: text.labelMedium?.copyWith(letterSpacing: 1.4),
+                  ),
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final m in list)
+                      ChoiceChip(
+                        label: Text(DateFormat('MMM').format(m)),
+                        selected: m == selected,
+                        showCheckmark: false,
+                        onSelected: (_) => Navigator.pop(context, m),
+                        labelStyle: text.labelMedium?.copyWith(
+                          fontSize: 13,
+                          color: m == selected
+                              ? AppColors.onBrand
+                              : AppColors.textSecondary,
+                        ),
+                        selectedColor: AppColors.leaf,
+                        backgroundColor: AppColors.surface.withValues(
+                          alpha: 0.6,
+                        ),
+                        side: BorderSide(color: AppColors.hairline(0.08)),
+                        shape: const StadiumBorder(),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

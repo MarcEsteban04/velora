@@ -101,7 +101,8 @@ void main() {
     await frames(tester);
     expect(find.text('Salary'), findsNothing);
     expect(find.text('Ramen'), findsOneWidget);
-    expect(find.text('Filtered'), findsOneWidget);
+    // The filter in use shows as a removable chip.
+    expect(find.widgetWithText(InputChip, 'Expenses'), findsOneWidget);
     semantics.dispose();
   });
 

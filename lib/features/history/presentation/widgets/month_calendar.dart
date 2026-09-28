@@ -32,6 +32,7 @@ class MonthCalendar extends StatelessWidget {
     required this.hidden,
     required this.onSelect,
     required this.onSwipe,
+    this.canGoNext = true,
   });
 
   /// Any day in the month shown.
@@ -44,6 +45,9 @@ class MonthCalendar extends StatelessWidget {
 
   /// -1 for the previous month, +1 for the next.
   final ValueChanged<int> onSwipe;
+
+  /// False on the current month: there's nothing ahead yet.
+  final bool canGoNext;
 
   static String compact(int minor, Currency currency) {
     final unit = currency.decimalDigits == 0 ? 1 : 100;
@@ -76,6 +80,30 @@ class MonthCalendar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
         child: Column(
           children: [
+            Row(
+              children: [
+                IconButton(
+                  tooltip: 'Previous month',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => onSwipe(-1),
+                  icon: const Icon(Icons.chevron_left_rounded),
+                ),
+                Expanded(
+                  child: Text(
+                    DateFormat('MMMM y').format(month),
+                    textAlign: TextAlign.center,
+                    style: text.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Next month',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: canGoNext ? () => onSwipe(1) : null,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
             Row(
               children: [
                 for (final d in const ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
