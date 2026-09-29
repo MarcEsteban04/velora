@@ -62,6 +62,7 @@ class DayGroup extends StatelessWidget {
     required this.menu,
     this.collapsed = false,
     this.onToggle,
+    this.viewedAccountId,
   });
 
   final DateTime day;
@@ -77,12 +78,21 @@ class DayGroup extends StatelessWidget {
   final bool collapsed;
   final VoidCallback? onToggle;
 
+  /// Seen from one account (its own screen): transfers count as money in
+  /// or out of it, in its currency, and the day's net includes them.
+  final String? viewedAccountId;
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final flow = FlowSummary.of(transactions, inCurrency: inMainCurrency);
-    final net = flow.netMinor;
-    final hasFlow = flow.incomeMinor != 0 || flow.spentMinor != 0;
+    final viewed = viewedAccountId;
+    final net = viewed == null
+        ? flow.netMinor
+        : transactions.fold(0, (s, t) => s + t.changeTo(viewed));
+    final hasFlow = viewed == null
+        ? flow.incomeMinor != 0 || flow.spentMinor != 0
+        : net != 0;
     final netColor = net < 0 ? AppColors.rust : AppColors.leafBright;
 
     final header = Padding(
@@ -179,6 +189,7 @@ class DayGroup extends StatelessWidget {
                           categories: categories,
                           hidden: hidden,
                           menu: menu,
+                          viewedAccountId: viewedAccountId,
                         ),
                     ],
                   ),
@@ -201,9 +212,11 @@ class _TimelineEntry extends StatelessWidget {
     required this.categories,
     required this.hidden,
     required this.menu,
+    this.viewedAccountId,
   });
 
   final Transaction transaction;
+  final String? viewedAccountId;
   final bool first;
   final bool last;
   final Map<String, Account> accounts;
@@ -275,6 +288,7 @@ class _TimelineEntry extends StatelessWidget {
                       categories: categories,
                       hidden: hidden,
                       menu: menu,
+                      viewedAccountId: viewedAccountId,
                     ),
                   ],
                 ),
@@ -328,6 +342,7 @@ class _TimelinePainter extends CustomPainter {
 
 class _TransactionCard extends StatelessWidget {
   const _TransactionCard({
+    this.viewedAccountId,
     required this.transaction,
     required this.accounts,
     required this.categories,
@@ -340,12 +355,22 @@ class _TransactionCard extends StatelessWidget {
   final Map<String, Category> categories;
   final bool hidden;
   final TransactionMenu menu;
+  final String? viewedAccountId;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final t = transaction;
     final account = accounts[t.accountId];
+    // Money that arrived in the viewed account, from a transfer.
+    final arriving =
+        t.kind == TransactionKind.transfer &&
+        viewedAccountId != null &&
+        t.toAccountId == viewedAccountId;
+    final leaving =
+        t.kind == TransactionKind.transfer &&
+        viewedAccountId != null &&
+        t.accountId == viewedAccountId;
     final toAccount = t.toAccountId == null ? null : accounts[t.toAccountId];
     final category = t.categoryId == null ? null : categories[t.categoryId];
     final currency = Currencies.byCode(account?.currencyCode ?? 'USD');
@@ -366,16 +391,25 @@ class _TransactionCard extends StatelessWidget {
         ? note
         : null;
 
+    final shownCurrency = arriving
+        ? Currencies.byCode(toAccount?.currencyCode ?? currency.code)
+        : currency;
+    final shownMinor = arriving
+        ? t.toAmountMinor ?? t.amountMinor
+        : t.amountMinor;
     final amount = hidden
-        ? '${currency.symbol} ••••'
-        : Money.format(t.amountMinor, currency);
+        ? '${shownCurrency.symbol} ••••'
+        : Money.format(shownMinor, shownCurrency);
     final signed = switch (t.kind) {
       TransactionKind.expense => '−$amount',
       TransactionKind.income => '+$amount',
+      TransactionKind.transfer when arriving => '+$amount',
+      TransactionKind.transfer when leaving => '−$amount',
       TransactionKind.transfer => amount,
     };
     final amountColor = switch (t.kind) {
       TransactionKind.income => AppColors.leafBright,
+      TransactionKind.transfer when arriving => AppColors.leafBright,
       TransactionKind.expense => AppColors.textPrimary,
       TransactionKind.transfer => AppColors.textSecondary,
     };

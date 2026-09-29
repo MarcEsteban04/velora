@@ -19,10 +19,10 @@ import '../application/wallet_insight_providers.dart';
 import '../data/account_repository.dart';
 import '../domain/account.dart';
 import 'account_form_screen.dart';
+import 'account_screen.dart';
 import 'institutions.dart';
 import 'widgets/account_avatar.dart';
 import 'widgets/account_card.dart';
-import 'widgets/account_details_sheet.dart';
 import 'widgets/account_deck.dart';
 import 'widgets/allocation_bar.dart';
 import 'widgets/wallet_insight_cards.dart';
@@ -50,19 +50,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       Navigator.of(context)
           .push(AccountFormScreen.route(defaultCurrency: _mainCurrency));
 
-  /// Payoneer has its own screen for salary; other accounts show details.
-  void _open(Account a, bool hidden) {
-    if (Institutions.forAccount(a)?.isPayoneer ?? false) {
-      Navigator.of(context).push(PayoneerScreen.route(a.id));
-      return;
-    }
-    AccountDetailsSheet.show(
-      context,
-      account: a,
-      defaultCurrency: _mainCurrency,
-      hidden: hidden,
-    );
-  }
+  /// Each account opens its own screen with all its transactions; Payoneer
+  /// has its salary one.
+  void _open(Account a, bool hidden) => Navigator.of(context).push(
+    (Institutions.forAccount(a)?.isPayoneer ?? false)
+        ? PayoneerScreen.route(a.id)
+        : AccountScreen.route(a.id),
+  );
 
   @override
   Widget build(BuildContext context) {

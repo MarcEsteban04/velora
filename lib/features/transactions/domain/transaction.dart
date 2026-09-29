@@ -51,6 +51,18 @@ class Transaction {
     occurredAt: AppClock.wall(DateTime.parse(row['occurred_at'] as String)),
   );
 
+  /// How much this moved [accountId]'s balance, in its currency: income
+  /// in, expenses out, and transfers either way (what arrived, for the
+  /// receiving account).
+  int changeTo(String accountId) => switch (kind) {
+    TransactionKind.income when this.accountId == accountId => amountMinor,
+    TransactionKind.expense when this.accountId == accountId => -amountMinor,
+    TransactionKind.transfer when toAccountId == accountId =>
+      toAmountMinor ?? amountMinor,
+    TransactionKind.transfer when this.accountId == accountId => -amountMinor,
+    _ => 0,
+  };
+
   TransactionDraft toDraft() => TransactionDraft(
     kind: kind,
     amountMinor: amountMinor,

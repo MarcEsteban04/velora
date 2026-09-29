@@ -328,8 +328,11 @@ void main() {
     expect(backend.accounts.last.openingBalanceMinor, 800000);
     expect(find.text('Accounts · 2'), findsOneWidget);
 
-    // Open it, then delete it with confirmation.
+    // Open it (its own screen), then delete it from ⋯ with confirmation.
     await tester.tap(find.text('BPI Savings').first);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.bySemanticsLabel(RegExp('Account details')));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Edit account'), findsOneWidget);
@@ -340,6 +343,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 
+    // The account's screen closes itself: back on Wallet.
+    await tester.pump(const Duration(seconds: 1));
     expect(backend.accounts, hasLength(1));
     expect(find.text('Accounts · 1'), findsOneWidget);
     semantics.dispose();

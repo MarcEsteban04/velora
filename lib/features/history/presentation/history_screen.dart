@@ -4,11 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/errors/friendly_error.dart';
-import '../../../core/money/currency.dart';
 import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/island_toast.dart';
 import '../../../core/widgets/pressable_button.dart';
 import '../../../core/widgets/reveal.dart';
 import '../../../core/widgets/round_icon_button.dart';
@@ -22,10 +20,8 @@ import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/domain/category.dart';
 import '../../transactions/domain/transaction.dart';
 import '../../transactions/presentation/category_style.dart';
-import '../../transactions/presentation/transaction_details_sheet.dart';
 import '../../transactions/presentation/transaction_entry_screen.dart';
-import '../../receipts/presentation/widgets/receipt_attachment.dart';
-import '../../receipts/presentation/widgets/receipt_image.dart';
+import 'transaction_menu_actions.dart';
 import 'widgets/day_group.dart';
 import 'widgets/history_filter.dart';
 import 'widgets/month_calendar.dart';
@@ -72,69 +68,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     });
   }
 
-  Future<void> _delete(Transaction t) async {
-    setState(() => _removed.add(t.id));
-    final actions = TransactionActions.of(context);
-    final toast = Toast.of(context);
-    try {
-      await actions.delete(t.id);
-      HapticFeedback.mediumImpact();
-      toast.show(
-        'Transaction deleted',
-        tone: ToastTone.info,
-        icon: Icons.delete_outline_rounded,
-        action: ToastAction('Undo', () => actions.create(t.toDraft())),
-      );
-    } on Object catch (error) {
-      toast.show(
-        friendlyError(error, action: 'delete that'),
-        tone: ToastTone.error,
-      );
-      if (mounted) setState(() => _removed.remove(t.id));
-    }
-  }
-
-  /// Logs the same transaction again, now.
-  Future<void> _repeat(Transaction t) async {
-    final actions = TransactionActions.of(context);
-    final toast = Toast.of(context);
-    final currency = Currencies.byCode(
-      ref
-              .read(accountsProvider)
-              .value
-              ?.where((a) => a.id == t.accountId)
-              .firstOrNull
-              ?.currencyCode ??
-          ref.read(mainCurrencyProvider).code,
-    );
-    try {
-      final d = t.toDraft();
-      final saved = await actions.create(
-        TransactionDraft(
-          kind: d.kind,
-          amountMinor: d.amountMinor,
-          accountId: d.accountId,
-          toAccountId: d.toAccountId,
-          toAmountMinor: d.toAmountMinor,
-          categoryId: d.categoryId,
-          note: d.note,
-          occurredAt: AppClock.now(),
-        ),
-      );
-      HapticFeedback.mediumImpact();
-      toast.show(
-        'Logged again · ${Money.format(t.amountMinor, currency)}',
-        icon: Icons.replay_rounded,
-        action: ToastAction('Undo', () => actions.delete(saved.id)),
-      );
-    } on Object catch (error) {
-      toast.show(
-        friendlyError(error, action: 'log that'),
-        tone: ToastTone.error,
-      );
-    }
-  }
-
   Future<void> _pickMonth() async {
     final picked = await showModalBottomSheet<DateTime>(
       context: context,
@@ -148,50 +81,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       });
     }
   }
-
-  /// Shows the receipt (to replace or remove), or adds one.
-  Future<void> _receipt(Transaction t) async {
-    final actions = TransactionActions.of(context);
-    final toast = Toast.of(context);
-    Future<void> attach() async {
-      final photo = await chooseReceiptPhoto(context, ref);
-      if (photo == null) return;
-      try {
-        await actions.attachReceipt(t.id, photo);
-        toast.show('Receipt attached', icon: Icons.attach_file_rounded);
-      } on Object catch (error) {
-        toast.error(friendlyError(error, action: 'upload the receipt'));
-      }
-    }
-
-    if (!t.hasReceipt) return attach();
-    final action = await ReceiptViewer.show(
-      context,
-      path: t.receiptPath,
-      canEdit: true,
-    );
-    if (!mounted) return;
-    switch (action) {
-      case ReceiptViewerAction.replace:
-        await attach();
-      case ReceiptViewerAction.remove:
-        try {
-          await actions.removeReceipt(t);
-          toast.show(
-            'Receipt removed',
-            tone: ToastTone.info,
-            icon: Icons.delete_outline_rounded,
-          );
-        } on Object catch (error) {
-          toast.error(friendlyError(error, action: 'remove the receipt'));
-        }
-      case null:
-        break;
-    }
-  }
-
-  void _edit(Transaction t) =>
-      Navigator.of(context).push(TransactionEntryScreen.route(existing: t));
 
   Future<void> _openFilter(List<Account> accounts, List<Category> cats) async {
     final picked = await HistoryFilter.edit(
@@ -239,12 +128,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       byDay.putIfAbsent(DateUtils.dateOnly(t.occurredAt), () => []).add(t);
     }
 
-    final menu = TransactionMenu(
-      onView: (t) => TransactionDetailsSheet.show(context, t),
-      onEdit: _edit,
-      onRepeat: _repeat,
-      onDelete: _delete,
-      onReceipt: _receipt,
+    final menu = transactionMenuFor(
+      context,
+      ref,
+      hide: (id) => setState(() => _removed.add(id)),
+      unhide: (id) {
+        if (mounted) setState(() => _removed.remove(id));
+      },
     );
 
     Widget group(

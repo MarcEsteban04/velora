@@ -103,8 +103,12 @@ void main() {
     await frames(16);
     expect(find.bySemanticsLabel(RegExp('^Maya card')), findsOneWidget);
 
-    // Tapping the card opens the account.
+    // Tapping the card opens the account's own screen; its details and
+    // Delete are under ⋯.
     await tester.tap(find.bySemanticsLabel(RegExp('^Maya card')));
+    await frames(16);
+    expect(find.text('In this month'.toUpperCase()), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel(RegExp('Account details')));
     await frames(12);
     expect(find.text('Delete account'), findsOneWidget);
     semantics.dispose();
