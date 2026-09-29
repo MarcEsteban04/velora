@@ -276,8 +276,10 @@ class _NetWorthCard extends StatelessWidget {
     String fmt(int minor, Currency c) =>
         hidden ? '${c.symbol} ••••••' : Money.format(minor, c);
 
+    // Compact: the accounts below are what people come to Wallet for.
     return GlassCard(
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      radius: 24,
+      padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -289,9 +291,12 @@ class _NetWorthCard extends StatelessWidget {
                   children: [
                     Text(
                       'NET WORTH',
-                      style: text.labelMedium?.copyWith(letterSpacing: 1.6),
+                      style: text.labelMedium?.copyWith(
+                        fontSize: 11,
+                        letterSpacing: 1.4,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 2),
                     TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0, end: worth.totalMinor.toDouble()),
                       duration: const Duration(milliseconds: 1100),
@@ -301,32 +306,27 @@ class _NetWorthCard extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           fmt(v.round(), currency),
-                          style: text.displaySmall?.copyWith(fontSize: 32),
+                          style: text.displaySmall?.copyWith(fontSize: 26),
                         ),
                       ),
                     ),
+                    if (worth.otherCurrencies.isNotEmpty)
+                      Text(
+                        'Plus ${worth.otherCurrencies.entries.map((e) => fmt(e.value, Currencies.byCode(e.key))).join(' · ')} '
+                        'in other currencies',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.labelMedium?.copyWith(fontSize: 11),
+                      ),
                   ],
                 ),
               ),
               const VeloraMascot(
                 pose: MascotPose.accounts,
-                size: 92,
+                size: 56,
                 halo: false,
               ),
             ],
-          ),
-          if (worth.otherCurrencies.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              'Plus ${worth.otherCurrencies.entries.map((e) => fmt(e.value, Currencies.byCode(e.key))).join(' · ')} '
-              'in other currencies',
-              style: text.labelMedium,
-            ),
-          ],
-          const SizedBox(height: 18),
-          Text(
-            'WHERE YOUR MONEY LIVES',
-            style: text.labelMedium?.copyWith(fontSize: 11, letterSpacing: 1.4),
           ),
           const SizedBox(height: 10),
           AllocationBar(byType: worth.byType),

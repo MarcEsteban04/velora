@@ -5,9 +5,9 @@ import '../../../../core/utils/percentages.dart';
 import '../../domain/account.dart';
 import '../account_type_style.dart';
 
-/// "Where your money lives": one segmented bar sized by each account type's
-/// share, with a legend underneath. Types that are zero or negative are left
-/// out, so the percentages always add up.
+/// "Where your money lives": one slim segmented bar sized by each account
+/// type's share, with a one-line legend underneath. Types that are zero or
+/// negative are left out, so the percentages always add up.
 class AllocationBar extends StatelessWidget {
   const AllocationBar({super.key, required this.byType});
 
@@ -36,7 +36,7 @@ class AllocationBar extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: SizedBox(
-            height: 10,
+            height: 6,
             child: Row(
               children: [
                 for (final (i, e) in entries.indexed) ...[
@@ -62,27 +62,28 @@ class AllocationBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Wrap(
-          spacing: 16,
-          runSpacing: 8,
+          spacing: 12,
+          runSpacing: 4,
           children: [
             for (final e in entries)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 8,
-                    height: 8,
+                    width: 6,
+                    height: 6,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: e.key.gradient.first,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 5),
                   Text(
                     '${e.key.label} ${percents[entries.indexOf(e)]}%',
                     style: text.labelMedium?.copyWith(
+                      fontSize: 11,
                       color: AppColors.textSecondary,
                     ),
                   ),

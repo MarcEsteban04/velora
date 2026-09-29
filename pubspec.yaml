@@ -1,7 +1,7 @@
 name: velora
 description: "Velora: a friendly companion for tracking your money."
 publish_to: 'none'
-version: 0.1.9+10
+version: 0.1.10+11
 
 environment:
   sdk: ^3.13.0
