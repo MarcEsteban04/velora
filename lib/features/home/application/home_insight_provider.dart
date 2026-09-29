@@ -46,15 +46,11 @@ final homeInsightProvider = FutureProvider<String?>((ref) async {
     }
   }
 
-  final raw = await AiClient.complete(
+  final text = await completeInsight(
     system: homeInsightPrompt(c.coachTone, trackedDays),
-    messages: [('user', jsonEncode(facts))],
-    // Room for the model's reasoning too; the reply is still one
-    // sentence (see the prompt and tightenInsight).
-    maxTokens: 400,
+    user: jsonEncode(facts),
     temperature: 0.7,
   );
-  final text = raw == null ? null : tightenInsight(raw);
   if (text == null) return null;
   await prefs.setCachedHomeInsight(
     jsonEncode({'day': day, 'key': key, 'text': text}),
@@ -129,7 +125,7 @@ Map<String, Object?> homeFacts(MoneyContext c, {required int trackedDays}) {
 String homeInsightPrompt(String tone, int trackedDays) => [
   'You are Velora, a friendly red panda money coach on the Home screen of a',
   'budgeting app used mostly in the Philippines.',
-  'Write ONE short sentence (under $insightMaxChars characters) about',
+  'Write ONE short sentence of at most $insightTargetWords words about',
   'the user\'s spending habits right now: today, this week, this month,',
   'their budgets or their streak. Pick the single most useful or',
   'encouraging thing, and be specific with a number or category.',

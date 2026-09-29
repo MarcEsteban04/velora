@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import '../../../core/ai/ai_client.dart';
 import '../../../core/ai/insight_text.dart';
 import '../../../core/money/currency.dart';
 import '../../../core/money/money.dart';
@@ -24,8 +23,8 @@ class DirectInsightRepository implements InsightRepository {
 
   static String systemPrompt(WalletSnapshot s, CoachTone tone) => [
     'You are Velora, a friendly personal finance coach inside a budgeting app.',
-    'Write ONE short sentence about the user\'s wallet, under',
-    '$insightMaxChars characters: the single most useful thing. ${_tone[tone]}',
+    'Write ONE short sentence about the user\'s wallet, at most',
+    '$insightTargetWords words: the single most useful thing. ${_tone[tone]}',
     'Use only the numbers given. Do not invent facts, give investment advice,',
     'or use emojis, markdown, quotes or greetings. Amounts are in',
     '${s.currencyCode}: write them like ${Money.short(123456700, Currencies.byCode(s.currencyCode))}, with the symbol and',
@@ -62,14 +61,9 @@ class DirectInsightRepository implements InsightRepository {
 
   @override
   Future<String?> walletInsight(WalletSnapshot snapshot, CoachTone tone) async {
-    final raw = await AiClient.complete(
+    return completeInsight(
       system: systemPrompt(snapshot, tone),
-      messages: [('user', userPrompt(snapshot))],
-      // Room for the model's reasoning too; the reply is still one
-      // sentence (see the prompt and tightenInsight).
-      maxTokens: 400,
-      temperature: 0.6,
+      user: userPrompt(snapshot),
     );
-    return raw == null ? null : tightenInsight(raw);
   }
 }

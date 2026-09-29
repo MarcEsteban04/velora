@@ -24,4 +24,24 @@ void main() {
     expect(t.length, lessThanOrEqualTo(insightMaxChars + 1));
     expect(t, endsWith('spending…'));
   });
+
+  test('one long sentence ends at a natural break, never mid-thought', () {
+    // What the Wallet card showed as "…early tracking shows high…".
+    const long =
+        'Your ₱30,666 net worth is split 39% cash and 61% e-wallet, with ₱837 '
+        'spent in just 2 days, so early tracking shows high daily spending '
+        'worth watching.';
+    expect(
+      tightenInsight(long),
+      'Your ₱30,666 net worth is split 39% cash and 61% e-wallet, with ₱837 '
+      'spent in just 2 days.',
+    );
+    expect(tightenInsight(long, allowCut: false), isNotNull);
+  });
+
+  test('with no clean break, the caller can ask for a shorter one', () {
+    final words = List.filled(40, 'spending').join(' ');
+    expect(tightenInsight(words, allowCut: false), isNull);
+    expect(tightenInsight(words), endsWith('…'));
+  });
 }
