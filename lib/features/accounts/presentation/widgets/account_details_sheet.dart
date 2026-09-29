@@ -107,11 +107,20 @@ class _AccountDetailsSheetState extends ConsumerState<AccountDetailsSheet> {
       ('Type', accountKindLabel(a.type, Institutions.forAccount(a))),
       ('Currency', '${currency.code} · ${currency.name}'),
       (
-        'Starting balance',
+        a.isCredit ? 'Owed when added' : 'Starting balance',
         widget.hidden
             ? '${currency.symbol} ••••••'
+            : a.isCredit
+            ? Money.format(-a.openingBalanceMinor, currency)
             : Money.format(a.openingBalanceMinor, currency),
       ),
+      if (a.creditLimitMinor case final l? when a.isCredit)
+        (
+          'Credit limit',
+          widget.hidden
+              ? '${currency.symbol} ••••••'
+              : Money.format(l, currency),
+        ),
       ('Added', DateFormat('MMM d, y').format(a.createdAt)),
       ('In net worth', a.includeInNetWorth ? 'Yes' : 'No'),
     ];
@@ -130,6 +139,7 @@ class _AccountDetailsSheetState extends ConsumerState<AccountDetailsSheet> {
               balanceMinor: a.balanceMinor,
               obscured: widget.hidden,
               institution: Institutions.forAccount(a),
+              creditLimitMinor: a.creditLimitMinor,
             ),
             const SizedBox(height: 16),
             for (final (label, value) in rows)

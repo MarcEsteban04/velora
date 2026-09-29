@@ -1,6 +1,18 @@
+import 'dart:math' as math;
+
 import '../../../core/time/app_clock.dart';
 
-enum AccountType { cash, bank, eWallet, savings }
+enum AccountType {
+  cash,
+  bank,
+  eWallet,
+  savings,
+
+  /// A card or pay-later plan (BillEase). Its balance is what's owed, as a
+  /// negative number: spending on it takes it down, paying the bill (a
+  /// transfer in) brings it back up to zero.
+  credit,
+}
 
 class Account {
   const Account({
@@ -12,6 +24,7 @@ class Account {
     required this.createdAt,
     this.includeInNetWorth = true,
     this.institutionId,
+    this.creditLimitMinor,
     int? balanceMinor,
   }) : balanceMinor = balanceMinor ?? openingBalanceMinor;
 
@@ -36,6 +49,20 @@ class Account {
   /// computes it (the `account_balances` view).
   final int balanceMinor;
 
+  /// A credit account's limit, if known.
+  final int? creditLimitMinor;
+
+  bool get isCredit => type == AccountType.credit;
+
+  /// What's owed on a credit account (zero for the others).
+  int get owedMinor => isCredit && balanceMinor < 0 ? -balanceMinor : 0;
+
+  /// How much more can go on a credit account, when it has a limit.
+  int? get availableCreditMinor => switch (creditLimitMinor) {
+    final limit? when isCredit => math.max(0, limit - owedMinor),
+    _ => null,
+  };
+
   Account withBalance(int minor) => Account(
     id: id,
     name: name,
@@ -45,6 +72,7 @@ class Account {
     createdAt: createdAt,
     includeInNetWorth: includeInNetWorth,
     institutionId: institutionId,
+    creditLimitMinor: creditLimitMinor,
     balanceMinor: minor,
   );
 
@@ -60,6 +88,7 @@ class Account {
     // Reads tolerate a database that hasn't had the migration yet.
     includeInNetWorth: row['include_in_net_worth'] as bool? ?? true,
     institutionId: row['institution'] as String?,
+    creditLimitMinor: (row['credit_limit_minor'] as num?)?.toInt(),
   );
 }
 
@@ -72,6 +101,7 @@ class AccountDraft {
     required this.openingBalanceMinor,
     this.includeInNetWorth = true,
     this.institutionId,
+    this.creditLimitMinor,
   });
 
   final String name;
@@ -81,13 +111,19 @@ class AccountDraft {
   final bool includeInNetWorth;
   final String? institutionId;
 
-  Map<String, Object> toRow() => {
+  /// Only kept for a credit account.
+  final int? creditLimitMinor;
+
+  Map<String, Object?> toRow() => {
     'name': name.trim(),
     'type': type.name,
     'currency_code': currencyCode,
     'opening_balance_minor': openingBalanceMinor,
     'include_in_net_worth': includeInNetWorth,
     'institution': ?institutionId,
+    // Only sent for credit (other types ignore it), so saving the rest
+    // works before the credit migration.
+    if (type == AccountType.credit) 'credit_limit_minor': creditLimitMinor,
   };
 }
 

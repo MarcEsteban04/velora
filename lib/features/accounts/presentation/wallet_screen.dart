@@ -20,6 +20,7 @@ import '../data/account_repository.dart';
 import '../domain/account.dart';
 import 'account_form_screen.dart';
 import 'account_screen.dart';
+import 'account_type_style.dart';
 import 'institutions.dart';
 import 'widgets/account_avatar.dart';
 import 'widgets/account_card.dart';
@@ -406,7 +407,7 @@ class _ListRow extends StatelessWidget {
         trailing: Text(
           hidden
               ? '${currency.symbol} ••••'
-              : Money.format(account.balanceMinor, currency),
+              : balanceText(account.type, account.balanceMinor, currency),
           style: text.titleMedium?.copyWith(fontSize: 14),
         ),
       ),

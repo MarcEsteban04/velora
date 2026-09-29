@@ -97,7 +97,16 @@ class _AccountStepState extends ConsumerState<AccountStep> {
           ),
         ),
         const FieldLabel('Account type'),
-        AccountTypePicker(selected: draft.accountType, onChanged: _selectType),
+        AccountTypePicker(
+          selected: draft.accountType,
+          onChanged: _selectType,
+          types: const [
+            AccountType.cash,
+            AccountType.bank,
+            AccountType.eWallet,
+            AccountType.savings,
+          ],
+        ),
         if (Institutions.ofType(draft.accountType).isNotEmpty) ...[
           FieldLabel(
             draft.accountType == AccountType.bank ? 'Bank' : 'E-wallet',

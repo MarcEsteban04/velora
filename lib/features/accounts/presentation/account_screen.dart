@@ -207,6 +207,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             obscured: hidden,
             excluded: !account.includeInNetWorth,
             institution: institution,
+            creditLimitMinor: account.creditLimitMinor,
           ),
         ),
         const SizedBox(height: 12),

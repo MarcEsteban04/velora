@@ -13,6 +13,7 @@ import '../../categories/presentation/category_editor_sheet.dart';
 import '../../receipts/presentation/widgets/receipt_attachment.dart';
 import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
+import '../../accounts/presentation/account_type_style.dart';
 import '../../accounts/presentation/widgets/account_avatar.dart';
 import '../../profile/data/profile_repository.dart';
 import '../application/amount_expression.dart';
@@ -966,10 +967,15 @@ class _AccountTile extends StatelessWidget {
     final accent = accentColor ?? AppColors.leafBright;
     final a = account;
     final currency = Currencies.byCode(a?.currencyCode ?? 'USD');
-    final balance = a == null ? '' : Money.format(a.balanceMinor, currency);
-    final after = afterMinor == null
+    final balance = a == null
+        ? ''
+        : balanceText(a.type, a.balanceMinor, currency);
+    final after = afterMinor == null || a == null
         ? null
-        : Money.format(afterMinor!, currency);
+        : balanceText(a.type, afterMinor!, currency);
+    // Below zero is a warning, except on credit, where it's what's owed.
+    final short =
+        afterMinor != null && afterMinor! < 0 && !(a?.isCredit ?? false);
 
     return Semantics(
       button: true,
@@ -1036,9 +1042,7 @@ class _AccountTile extends StatelessWidget {
                                 TextSpan(
                                   text: after,
                                   style: TextStyle(
-                                    color: afterMinor! < 0
-                                        ? AppColors.rust
-                                        : accent,
+                                    color: short ? AppColors.rust : accent,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),

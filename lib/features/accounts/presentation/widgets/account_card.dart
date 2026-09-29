@@ -22,6 +22,7 @@ class AccountCard extends StatelessWidget {
     this.compact = false,
     this.excluded = false,
     this.institution,
+    this.creditLimitMinor,
   });
 
   final String name;
@@ -43,6 +44,21 @@ class AccountCard extends StatelessWidget {
   /// When set, the card wears the bank's or e-wallet's brand colours and logo.
   final Institution? institution;
 
+  /// A credit account's limit: the card adds what's still available.
+  final int? creditLimitMinor;
+
+  bool get _credit => type == AccountType.credit;
+
+  /// "₱12,028.56 available of ₱17,500.00", for credit with a limit.
+  String? get _available {
+    final limit = creditLimitMinor;
+    if (!_credit || limit == null || obscured) return null;
+    final owed = balanceMinor < 0 ? -balanceMinor : 0;
+    final left = limit - owed < 0 ? 0 : limit - owed;
+    return '${Money.format(left, currency)} available of '
+        '${Money.format(limit, currency)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     // Cards sit on a brand gradient: text stays white in both scenes.
@@ -54,7 +70,7 @@ class AccountCard extends StatelessWidget {
     return Semantics(
       label:
           '$name, ${type.label} account, '
-          'balance ${obscured ? 'hidden' : Money.format(balanceMinor, currency)}',
+          '${obscured ? 'balance hidden' : balanceText(type, balanceMinor, currency)}',
       excludeSemantics: true,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 380),
@@ -130,7 +146,7 @@ class AccountCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'BALANCE',
+                    cardCaption(type, balanceMinor),
                     style: text.labelMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.75),
                       letterSpacing: 1.6,
@@ -150,11 +166,21 @@ class AccountCard extends StatelessWidget {
                       child: Text(
                         obscured
                             ? '${currency.symbol} ••••••'
-                            : Money.format(value.round(), currency),
+                            : cardAmount(type, value.round(), currency),
                         style: text.displaySmall?.copyWith(fontSize: 28),
                       ),
                     ),
                   ),
+                  if (_available case final a?)
+                    Text(
+                      a,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.labelMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 11,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -171,12 +197,12 @@ class AccountCard extends StatelessWidget {
   ) {
     final balance = obscured
         ? '${currency.symbol} ••••••'
-        : Money.format(balanceMinor, currency);
+        : cardAmount(type, balanceMinor, currency);
 
     return Semantics(
       label:
-          '$name, ${type.label} account, balance '
-          '${obscured ? 'hidden' : balance}'
+          '$name, ${type.label} account, '
+          '${obscured ? 'balance hidden' : balanceText(type, balanceMinor, currency)}'
           '${excluded ? ', not counted in net worth' : ''}',
       excludeSemantics: true,
       child: AnimatedContainer(
@@ -255,7 +281,7 @@ class AccountCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'BALANCE',
+                    cardCaption(type, balanceMinor),
                     style: text.labelMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.75),
                       letterSpacing: 1.4,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/money/currency.dart';
-import '../../../../core/money/money.dart';
+import '../../../accounts/presentation/account_type_style.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../accounts/domain/account.dart';
 import '../../../accounts/presentation/widgets/account_avatar.dart';
@@ -79,7 +79,7 @@ class AccountPickerSheet extends StatelessWidget {
                           subtitle: Text(
                             disabled
                                 ? 'Already chosen'
-                                : Money.format(a.balanceMinor, currency),
+                                : balanceText(a.type, a.balanceMinor, currency),
                             style: text.labelMedium,
                           ),
                           trailing: a.id == selectedId

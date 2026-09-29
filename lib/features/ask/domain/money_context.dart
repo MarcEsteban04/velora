@@ -176,7 +176,14 @@ class MoneyContext {
           'name': a.name,
           'type': a.type.name,
           'currency': a.currencyCode,
-          'balance': _major(a.balanceMinor),
+          // A credit account's balance is what's owed, below zero.
+          if (a.isCredit) ...{
+            'owed': _major(a.owedMinor),
+            if (a.creditLimitMinor case final l?) 'credit_limit': _major(l),
+            if (a.availableCreditMinor case final v?)
+              'available_credit': _major(v),
+          } else
+            'balance': _major(a.balanceMinor),
           if (!a.includeInNetWorth) 'in_net_worth': false,
         },
     ],

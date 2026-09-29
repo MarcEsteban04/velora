@@ -103,21 +103,47 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     }
   });
   late final _name = TextEditingController(text: widget.account?.name ?? '');
+
+  /// For credit, what was owed when it was added, typed as a positive
+  /// number.
   late final _balance = TextEditingController(
-    text: widget.account == null
-        ? ''
-        : Money.toInputText(widget.account!.openingBalanceMinor, _currency),
+    text: switch (widget.account) {
+      null => '',
+      final a when a.isCredit => Money.toInputText(
+        -a.openingBalanceMinor,
+        _currency,
+      ),
+      final a => Money.toInputText(a.openingBalanceMinor, _currency),
+    },
+  );
+  late final _limit = TextEditingController(
+    text: switch (widget.account?.creditLimitMinor) {
+      final l? => Money.toInputText(l, _currency),
+      null => '',
+    },
   );
   bool _saving = false;
 
   bool get _isEdit => widget.account != null;
-  int get _balanceMinor => Money.parseMinor(_balance.text, _currency);
+  bool get _credit => _type == AccountType.credit;
+
+  /// The opening balance as stored: what's owed on credit is below zero.
+  int get _balanceMinor {
+    final typed = Money.parseMinor(_balance.text, _currency);
+    return _credit ? -typed : typed;
+  }
+
+  int? get _limitMinor => switch (Money.parseMinor(_limit.text, _currency)) {
+    final l when l > 0 && _credit => l,
+    _ => null,
+  };
   bool get _valid => _name.text.trim().isNotEmpty;
 
   @override
   void dispose() {
     _name.dispose();
     _balance.dispose();
+    _limit.dispose();
     super.dispose();
   }
 
@@ -127,10 +153,12 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     // Keep the amount the user typed, re-read with the new currency's
     // decimal rules.
     final minor = Money.parseMinor(_balance.text, picked);
+    final limit = Money.parseMinor(_limit.text, picked);
     setState(() {
       _currency = picked;
       _currencyPicked = true;
       _balance.text = Money.toInputText(minor, picked);
+      _limit.text = limit == 0 ? '' : Money.toInputText(limit, picked);
     });
   }
 
@@ -144,6 +172,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       openingBalanceMinor: _balanceMinor,
       includeInNetWorth: _include,
       institutionId: _institutionPicked ? _institution?.id : null,
+      creditLimitMinor: _limitMinor,
     );
     final repo = ref.read(accountRepositoryProvider);
     try {
@@ -215,14 +244,17 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                           institution: _institutionPicked
                               ? _institution
                               : _institution ?? Institutions.match(_name.text),
+                          creditLimitMinor: _limitMinor,
                         ),
                       ),
                       const FieldLabel('Account type'),
                       AccountTypePicker(selected: _type, onChanged: _setType),
                       if (Institutions.ofType(_type).isNotEmpty) ...[
-                        FieldLabel(
-                          _type == AccountType.bank ? 'Bank' : 'E-wallet',
-                        ),
+                        FieldLabel(switch (_type) {
+                          AccountType.bank => 'Bank',
+                          AccountType.credit => 'Card or pay later',
+                          _ => 'E-wallet',
+                        }),
                         InstitutionPicker(
                           type: _type,
                           selected: _institution,
@@ -254,6 +286,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                             AccountType.bank => 'e.g. BPI Savings',
                             AccountType.eWallet => 'e.g. GCash',
                             AccountType.savings => 'e.g. Emergency fund',
+                            AccountType.credit => 'e.g. BillEase',
                           },
                           prefixIcon: Icon(_type.icon, size: 20),
                         ),
@@ -270,7 +303,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                         ),
                         title: '${_currency.code} · ${_currency.name}',
                       ),
-                      const FieldLabel('Starting balance'),
+                      FieldLabel(_credit ? 'Owed now' : 'Starting balance'),
                       TextField(
                         controller: _balance,
                         keyboardType: TextInputType.numberWithOptions(
@@ -296,6 +329,46 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                         ),
                         onChanged: (_) => setState(() {}),
                       ),
+                      if (_credit) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6, top: 6),
+                          child: Text(
+                            'What you owe on it today. Spending on it adds '
+                            'to this; paying the bill (a transfer in) brings '
+                            'it down.',
+                            style: text.labelMedium,
+                          ),
+                        ),
+                        const FieldLabel('Credit limit (optional)'),
+                        TextField(
+                          controller: _limit,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: _currency.decimalDigits > 0,
+                          ),
+                          inputFormatters: [
+                            MoneyInputFormatter(_currency.decimalDigits),
+                          ],
+                          style: text.titleMedium?.copyWith(fontSize: 18),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. 17,500',
+                            prefixIcon: Padding(
+                              padding: const EdgeInsets.only(
+                                left: 18,
+                                right: 10,
+                              ),
+                              child: Text(
+                                _currency.symbol,
+                                style: text.titleMedium?.copyWith(
+                                  color: AppColors.leafBright,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            prefixIconConstraints: const BoxConstraints(),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       GlassCard(
                         padding: const EdgeInsets.fromLTRB(18, 8, 8, 8),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../domain/account.dart';
 import 'account_type_style.dart';
 
-/// A bank or e-wallet Velora knows: its logo and the brand colours used to
+/// A bank, e-wallet or credit line Velora knows: its logo and the brand colours used to
 /// theme its cards.
 class Institution {
   const Institution({
@@ -43,7 +43,7 @@ class Institution {
 }
 
 /// How an account reads in lists: "International bank" for one, else its
-/// type ("Bank", "E-wallet"...).
+/// type ("Bank", "E-wallet", "Credit"...).
 String accountKindLabel(AccountType type, Institution? institution) =>
     (institution?.international ?? false) ? 'International bank' : type.label;
 
@@ -102,7 +102,7 @@ abstract final class Institutions {
     Institution(
       id: 'billease',
       name: 'BillEase',
-      type: AccountType.eWallet,
+      type: AccountType.credit,
       asset: '$_dir/billease.png',
       gradient: [Color(0xFFF03A3A), Color(0xFF9E1B1B)],
       aliases: ['billease', 'bill ease'],

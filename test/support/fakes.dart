@@ -154,6 +154,7 @@ class FakeAccounts implements AccountRepository {
     openingBalanceMinor: d.openingBalanceMinor,
     includeInNetWorth: d.includeInNetWorth,
     institutionId: d.institutionId,
+    creditLimitMinor: d.type == AccountType.credit ? d.creditLimitMinor : null,
     createdAt: DateTime(2026),
   );
 

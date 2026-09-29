@@ -28,6 +28,15 @@ abstract final class LocalAnswers {
         '(^|[^a-z])${RegExp.escape(a.name.toLowerCase())}(\$|[^a-z])',
       ).hasMatch(t);
       if (named && any(['balance', 'how much', 'magkano', 'left', 'laman'])) {
+        if (a.isCredit) {
+          final owed = a.owedMinor == 0
+              ? 'You owe nothing on ${a.name}'
+              : 'You owe ${c.money(a.owedMinor)} on ${a.name}';
+          return switch (a.availableCreditMinor) {
+            final left? => '$owed, with ${c.money(left)} of credit left.',
+            null => '$owed.',
+          };
+        }
         return '${a.name} has ${c.money(a.balanceMinor)}.';
       }
     }
@@ -41,7 +50,9 @@ abstract final class LocalAnswers {
       'magkano pera',
       'all my money',
     ])) {
-      final top = [...c.accounts]
+      // What's owed on credit brings net worth down; it isn't a place the
+      // money is.
+      final top = c.accounts.where((a) => !a.isCredit).toList()
         ..sort((a, b) => b.balanceMinor.compareTo(a.balanceMinor));
       final parts = top
           .take(3)

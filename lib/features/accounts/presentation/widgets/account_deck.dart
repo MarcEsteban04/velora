@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/money/currency.dart';
-import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/account.dart';
@@ -393,8 +392,8 @@ class _DeckCard extends StatelessWidget {
 
     return Semantics(
       label:
-          '${a.name}, ${a.type.label}, balance '
-          '${hidden ? 'hidden' : Money.format(a.balanceMinor, currency)}'
+          '${a.name}, ${a.type.label}, '
+          '${hidden ? 'balance hidden' : balanceText(a.type, a.balanceMinor, currency)}'
           '${a.includeInNetWorth ? '' : ', not in net worth'}',
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -484,7 +483,10 @@ class _DeckCard extends StatelessWidget {
                       ],
                     ),
                     const Spacer(),
-                    Text('BALANCE', style: small(0.7)),
+                    Text(
+                      cardCaption(a.type, a.balanceMinor),
+                      style: small(0.7),
+                    ),
                     Row(
                       children: [
                         Flexible(
@@ -494,7 +496,11 @@ class _DeckCard extends StatelessWidget {
                             child: Text(
                               hidden
                                   ? '${currency.symbol} ••••  ••••'
-                                  : Money.format(a.balanceMinor, currency),
+                                  : cardAmount(
+                                      a.type,
+                                      a.balanceMinor,
+                                      currency,
+                                    ),
                               style: TextStyle(
                                 fontFamily: AppTypography.display,
                                 fontWeight: FontWeight.w700,
