@@ -275,7 +275,7 @@ class _DebtCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final p = progress;
     final c = Currencies.byCode(p.debt.currencyCode);
-    final color = p.debt.kind.color;
+    final color = p.debt.color;
     return Semantics(
       button: true,
       label: '${p.debt.name}, ${money(p.remainingMinor, c)} left',
@@ -287,19 +287,7 @@ class _DebtCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
           child: Row(
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(
-                  p.isPaidOff ? Icons.celebration_rounded : p.debt.kind.icon,
-                  size: 21,
-                  color: color,
-                ),
-              ),
+              DebtBadge(debt: p.debt, paidOff: p.isPaidOff),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

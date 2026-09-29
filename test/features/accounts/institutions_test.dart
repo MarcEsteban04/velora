@@ -63,7 +63,7 @@ void main() {
   test('every logo asset exists, with the exact same letter case', () {
     // Android asset names are case-sensitive, but Windows file lookups
     // aren't, so compare against the real names in the folder.
-    for (final i in Institutions.all) {
+    for (final i in [...Institutions.all, ...Institutions.lenders]) {
       final file = File(i.asset);
       final names = file.parent
           .listSync()
@@ -71,5 +71,15 @@ void main() {
           .toSet();
       expect(names, contains(file.uri.pathSegments.last), reason: i.asset);
     }
+  });
+
+  test("debts wear their lender's logo", () {
+    expect(Institutions.forDebt('SPayLater')?.id, 'spaylater');
+    expect(Institutions.forDebt('Shopee PayLater')?.id, 'spaylater');
+    expect(Institutions.forDebt('BillEase gadgets')?.id, 'billease');
+    expect(Institutions.forDebt('BPI credit card')?.id, 'bpi');
+    expect(Institutions.forDebt('Borrowed from Mom'), isNull);
+    // A lender isn't offered as an account.
+    expect(Institutions.all.any((i) => i.id == 'spaylater'), isFalse);
   });
 }

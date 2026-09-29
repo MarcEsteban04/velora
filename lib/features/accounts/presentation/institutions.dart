@@ -137,10 +137,35 @@ abstract final class Institutions {
   /// The institution an account name refers to, if any, for example
   /// "Maribank savings" → Maribank. It matches whole words, so "Mayari
   /// Farms" isn't taken for Maya.
-  static Institution? match(String name) {
+  static Institution? match(String name) => matchIn(all, name);
+
+  /// Brands people owe money to but don't keep an account with, for
+  /// debts. Not offered when adding an account.
+  static const lenders = <Institution>[
+    Institution(
+      id: 'spaylater',
+      name: 'SPayLater',
+      type: AccountType.eWallet,
+      asset: '$_dir/spaylater.png',
+      gradient: [Color(0xFFEE4D2D), Color(0xFFB8321A)],
+      aliases: [
+        'spaylater',
+        'spay later',
+        'shopee paylater',
+        'shopee pay later',
+      ],
+    ),
+  ];
+
+  /// The brand a debt's name refers to: a lender (SPayLater), or a bank
+  /// or e-wallet ("BPI credit card", "BillEase").
+  static Institution? forDebt(String name) =>
+      matchIn(lenders, name) ?? match(name);
+
+  static Institution? matchIn(Iterable<Institution> list, String name) {
     final normalized =
         ' ${name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ')} ';
-    for (final i in all) {
+    for (final i in list) {
       for (final alias in i.aliases) {
         if (normalized.contains(' $alias ')) return i;
       }

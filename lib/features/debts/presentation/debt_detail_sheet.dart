@@ -106,18 +106,7 @@ class _DebtDetail extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: debt.kind.color.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Icon(
-                    p.isPaidOff ? Icons.celebration_rounded : debt.kind.icon,
-                    color: debt.kind.color,
-                  ),
-                ),
+                DebtBadge(debt: debt, size: 48, paidOff: p.isPaidOff),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -162,7 +151,7 @@ class _DebtDetail extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            ProgressBar(value: p.fraction, color: debt.kind.color, height: 8),
+            ProgressBar(value: p.fraction, color: debt.color, height: 8),
             const SizedBox(height: 4),
             Text(
               '${(p.fraction * 100).floor()}% paid of ${money(p.totalMinor)}',

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../core/money/currency.dart';
 import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../accounts/presentation/institutions.dart';
+import '../../accounts/presentation/widgets/institution_logo.dart';
 import '../domain/debt.dart';
 
 extension DebtKindStyle on DebtKind {
@@ -20,6 +22,57 @@ extension DebtKindStyle on DebtKind {
     DebtKind.loan => AppColors.lilac,
     DebtKind.personal => AppColors.leafBright,
   };
+}
+
+extension DebtBrand on Debt {
+  /// The lender's brand, recognised from the name (BillEase, SPayLater,
+  /// "BPI credit card").
+  Institution? get institution => Institutions.forDebt(name);
+
+  /// The brand's colour when there is one, else the kind's.
+  Color get color => institution?.gradient.first ?? kind.color;
+}
+
+/// A debt's badge: the lender's logo on its plate when it has one, else
+/// the kind's icon in a tinted square. [size] is the square's side; a logo
+/// takes the same height and a wider plate.
+class DebtBadge extends StatelessWidget {
+  const DebtBadge({
+    super.key,
+    required this.debt,
+    this.size = 42,
+    this.paidOff = false,
+  });
+
+  final Debt debt;
+  final double size;
+  final bool paidOff;
+
+  @override
+  Widget build(BuildContext context) {
+    final brand = debt.institution;
+    if (brand != null && !paidOff) {
+      return InstitutionLogo(
+        institution: brand,
+        height: size * 0.72,
+        width: size * 1.6,
+      );
+    }
+    final color = debt.color;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(size * 0.31),
+      ),
+      child: Icon(
+        paidOff ? Icons.celebration_rounded : debt.kind.icon,
+        size: size * 0.5,
+        color: color,
+      ),
+    );
+  }
 }
 
 /// Quick starts for the empty state: a name and a kind.

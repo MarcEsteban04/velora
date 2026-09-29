@@ -433,8 +433,8 @@ class _DebtsCard extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 children: [
-                  Icon(p.debt.kind.icon, size: 18, color: p.debt.kind.color),
-                  const SizedBox(width: 8),
+                  DebtBadge(debt: p.debt, size: 26),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       p.debt.name,
