@@ -56,6 +56,9 @@ class DebtLine {
     required this.remainingMinor,
     this.monthlyMinor,
     this.nextDue,
+    this.creditLimitMinor,
+    this.availableMinor,
+    this.dueNowMinor,
   });
 
   final String name;
@@ -64,6 +67,12 @@ class DebtLine {
   final int remainingMinor;
   final int? monthlyMinor;
   final DateTime? nextDue;
+
+  /// For a card or pay-later plan: the limit, what's left of it, and what
+  /// needs paying now.
+  final int? creditLimitMinor;
+  final int? availableMinor;
+  final int? dueNowMinor;
 }
 
 /// Everything Velora can talk about, worked out on the phone. It holds
@@ -196,6 +205,9 @@ class MoneyContext {
             if (d.currencyCode != currency.code) 'currency': d.currencyCode,
             'left_to_pay': _major(d.remainingMinor),
             if (d.monthlyMinor case final m?) 'monthly_payment': _major(m),
+            if (d.creditLimitMinor case final l?) 'credit_limit': _major(l),
+            if (d.availableMinor case final a?) 'available_credit': _major(a),
+            if (d.dueNowMinor case final n?) 'due_now': _major(n),
             if (d.nextDue case final n?)
               'next_due': '${n.year}-${_two(n.month)}-${_two(n.day)}',
           },

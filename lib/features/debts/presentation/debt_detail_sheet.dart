@@ -17,6 +17,7 @@ import '../domain/debt.dart';
 import 'debt_editor_sheet.dart';
 import 'debt_entry_sheet.dart';
 import 'debt_style.dart';
+import 'scan_debt_screen.dart';
 
 /// One debt up close: what's left, what's been paid, when it's due, its
 /// history, and Pay, Borrowed more, Edit and Delete.
@@ -157,6 +158,10 @@ class _DebtDetail extends ConsumerWidget {
               '${(p.fraction * 100).floor()}% paid of ${money(p.totalMinor)}',
               style: text.labelMedium,
             ),
+            if (debt.kind.isCreditLine) ...[
+              const SizedBox(height: 14),
+              _CreditPanel(progress: p, money: money, now: now),
+            ],
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -215,6 +220,23 @@ class _DebtDetail extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(ScanDebtScreen.route(debt.id));
+              },
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+                shape: const StadiumBorder(),
+              ),
+              icon: const Icon(Icons.document_scanner_rounded, size: 18),
+              label: Text(
+                debt.kind.isCreditLine
+                    ? 'Scan a purchase or bill'
+                    : 'Scan a screenshot',
+              ),
             ),
             if (p.entries.isNotEmpty) ...[
               const SizedBox(height: 18),
@@ -300,7 +322,11 @@ class _EntryRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  paid ? 'Paid $amount' : 'Borrowed $amount',
+                  paid
+                      ? 'Paid $amount'
+                      : (entry.installments ?? 1) > 1
+                      ? 'Bought $amount · ${entry.installments} months'
+                      : 'Borrowed $amount',
                   style: text.titleMedium?.copyWith(fontSize: 14),
                 ),
                 Text(
@@ -326,6 +352,115 @@ class _EntryRow extends StatelessWidget {
               color: AppColors.textMuted,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A credit line at a glance, like the pay-later app's own page: the
+/// limit, what's available, and what needs paying now.
+class _CreditPanel extends StatelessWidget {
+  const _CreditPanel({
+    required this.progress,
+    required this.money,
+    required this.now,
+  });
+
+  final DebtProgress progress;
+  final String Function(int minor) money;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final p = progress;
+    final limit = p.debt.creditLimitMinor;
+    final due = p.dueNowMinor;
+    final used = p.usedFraction;
+
+    Widget stat(String label, String value, {Color? color, String? sub}) =>
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: text.labelMedium?.copyWith(
+                  fontSize: 10,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              const SizedBox(height: 3),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: text.titleMedium?.copyWith(fontSize: 16, color: color),
+                ),
+              ),
+              if (sub != null)
+                Text(
+                  sub,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.labelMedium?.copyWith(fontSize: 10),
+                ),
+            ],
+          ),
+        );
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.hairline(0.07)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              stat(
+                'Total credit',
+                limit == null ? 'Not set' : money(limit),
+                sub: limit == null ? 'Add it with Edit' : null,
+              ),
+              stat(
+                'Available',
+                p.availableMinor == null ? '—' : money(p.availableMinor!),
+                color: AppColors.leafBright,
+              ),
+              stat(
+                'Need to pay',
+                due == null ? '—' : money(due),
+                color: (due ?? 0) > 0 ? AppColors.ember : null,
+                sub: due == null
+                    ? 'Scan your bill'
+                    : due == 0
+                    ? 'All settled'
+                    : [
+                        if (p.dueOn != null) dueLabel(p.dueOn!, now),
+                        if (!p.dueFromBill) 'estimate',
+                      ].join(' · '),
+              ),
+            ],
+          ),
+          if (used != null) ...[
+            const SizedBox(height: 10),
+            ProgressBar(
+              value: used,
+              color: used > 0.85 ? AppColors.rust : p.debt.color,
+              height: 6,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${(used * 100).round()}% of your credit used',
+              style: text.labelMedium?.copyWith(fontSize: 11),
+            ),
+          ],
         ],
       ),
     );

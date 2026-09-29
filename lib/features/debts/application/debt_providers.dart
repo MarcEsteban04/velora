@@ -106,15 +106,46 @@ class DebtActions {
     required int amountMinor,
     required DateTime at,
     String? note,
+    int? installments,
   }) async {
     final entry = await _repo.borrow(
       debt.id,
       amountMinor: amountMinor,
       at: at,
       note: note,
+      installments: installments,
     );
     _refresh();
     return entry;
+  }
+
+  /// Sets the latest bill (and the limit, when a statement shows it).
+  /// Returns the debt as it was, for Undo.
+  Future<Debt> setBill(
+    Debt debt, {
+    required int? dueMinor,
+    DateTime? dueOn,
+    int? creditLimitMinor,
+  }) async {
+    await _repo.setBill(
+      debt.id,
+      dueMinor: dueMinor,
+      dueOn: dueOn,
+      creditLimitMinor: creditLimitMinor,
+    );
+    _refresh();
+    return debt;
+  }
+
+  /// Puts back the bill and limit [before] had.
+  Future<void> restoreBill(Debt before) async {
+    await _repo.setBill(
+      before.id,
+      dueMinor: before.billDueMinor,
+      dueOn: before.billDueOn,
+      creditLimitMinor: before.creditLimitMinor,
+    );
+    _refresh();
   }
 
   /// Takes an entry back, with the expense that paid it.

@@ -61,12 +61,19 @@ class _DebtEditorState extends ConsumerState<_DebtEditor> {
       null => '',
     },
   );
+  late final _limit = TextEditingController(
+    text: switch (widget.debt?.creditLimitMinor) {
+      final l? => Money.toInputText(l, _currency),
+      null => '',
+    },
+  );
   late int? _dueDay = widget.debt?.dueDay;
   bool _busy = false;
 
   bool get _isEdit => widget.debt != null;
   int get _owedMinor => Money.parseMinor(_owed.text, _currency);
   int get _monthlyMinor => Money.parseMinor(_monthly.text, _currency);
+  int get _limitMinor => Money.parseMinor(_limit.text, _currency);
   bool get _valid => _name.text.trim().isNotEmpty && _owedMinor > 0;
 
   @override
@@ -74,6 +81,7 @@ class _DebtEditorState extends ConsumerState<_DebtEditor> {
     _name.dispose();
     _owed.dispose();
     _monthly.dispose();
+    _limit.dispose();
     super.dispose();
   }
 
@@ -89,6 +97,9 @@ class _DebtEditorState extends ConsumerState<_DebtEditor> {
       owedMinor: _owedMinor,
       monthlyMinor: _monthlyMinor > 0 ? _monthlyMinor : null,
       dueDay: _dueDay,
+      creditLimitMinor: _kind.isCreditLine && _limitMinor > 0
+          ? _limitMinor
+          : null,
     );
     try {
       if (_isEdit) {
@@ -225,7 +236,11 @@ class _DebtEditorState extends ConsumerState<_DebtEditor> {
                     setState(() {
                       final owed = Money.parseMinor(_owed.text, picked);
                       final monthly = Money.parseMinor(_monthly.text, picked);
+                      final limit = Money.parseMinor(_limit.text, picked);
                       _currency = picked;
+                      _limit.text = limit == 0
+                          ? ''
+                          : Money.toInputText(limit, picked);
                       _owed.text = owed == 0
                           ? ''
                           : Money.toInputText(owed, picked);
@@ -239,6 +254,16 @@ class _DebtEditorState extends ConsumerState<_DebtEditor> {
                 ),
               ),
               const SizedBox(height: 6),
+              if (_kind.isCreditLine) ...[
+                MoneyField(
+                  controller: _limit,
+                  currency: _currency,
+                  label: 'Credit limit (optional)',
+                  helper: 'Your total credit. Velora shows what’s left of it.',
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 14),
+              ],
               MoneyField(
                 controller: _monthly,
                 currency: _currency,

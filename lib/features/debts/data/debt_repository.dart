@@ -29,12 +29,23 @@ abstract interface class DebtRepository {
     String? note,
   });
 
-  /// More borrowed on it: what's owed goes up.
+  /// More borrowed on it (a purchase, maybe over [installments] months):
+  /// what's owed goes up.
   Future<DebtEntry> borrow(
     String debtId, {
     required int amountMinor,
     required DateTime at,
     String? note,
+    int? installments,
+  });
+
+  /// The latest bill, from a statement or typed in. Null [dueMinor] clears
+  /// it. A [creditLimitMinor] updates the limit too.
+  Future<Debt> setBill(
+    String debtId, {
+    required int? dueMinor,
+    DateTime? dueOn,
+    int? creditLimitMinor,
   });
 
   Future<void> deleteEntry(String id);
@@ -112,6 +123,7 @@ class SupabaseDebtRepository implements DebtRepository {
     required int amountMinor,
     required DateTime at,
     String? note,
+    int? installments,
   }) async => DebtEntry.fromRow(
     await _db
         .from('debt_entries')
@@ -120,7 +132,35 @@ class SupabaseDebtRepository implements DebtRepository {
           'amount_minor': -amountMinor,
           'occurred_at': AppClock.toUtc(at).toIso8601String(),
           if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+          if (installments != null && installments > 1)
+            'installments': installments,
         })
+        .select()
+        .single(),
+  );
+
+  @override
+  Future<Debt> setBill(
+    String debtId, {
+    required int? dueMinor,
+    DateTime? dueOn,
+    int? creditLimitMinor,
+  }) async => Debt.fromRow(
+    await _db
+        .from('debts')
+        .update({
+          'bill_due_minor': dueMinor,
+          'bill_due_on': dueOn == null
+              ? null
+              : '${dueOn.year.toString().padLeft(4, '0')}-'
+                    '${dueOn.month.toString().padLeft(2, '0')}-'
+                    '${dueOn.day.toString().padLeft(2, '0')}',
+          'bill_set_at': dueMinor == null
+              ? null
+              : DateTime.now().toUtc().toIso8601String(),
+          'credit_limit_minor': ?creditLimitMinor,
+        })
+        .eq('id', debtId)
         .select()
         .single(),
   );

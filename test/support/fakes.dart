@@ -737,7 +737,7 @@ class FakeDebts implements DebtRepository {
   FakeDebts(this.db);
   final FakeBackend db;
 
-  Debt _from(String id, DebtDraft d) => Debt(
+  Debt _from(String id, DebtDraft d, {Debt? was}) => Debt(
     id: id,
     name: d.name.trim(),
     kind: d.kind,
@@ -745,6 +745,10 @@ class FakeDebts implements DebtRepository {
     owedMinor: d.owedMinor,
     monthlyMinor: d.monthlyMinor,
     dueDay: d.dueDay,
+    creditLimitMinor: d.kind.isCreditLine ? d.creditLimitMinor : null,
+    billDueMinor: was?.billDueMinor,
+    billDueOn: was?.billDueOn,
+    billSetAt: was?.billSetAt,
     createdAt: DateTime(2026),
   );
 
@@ -765,7 +769,32 @@ class FakeDebts implements DebtRepository {
   @override
   Future<Debt> update(String id, DebtDraft draft) async {
     final i = db.debts.indexWhere((d) => d.id == id);
-    return db.debts[i] = _from(id, draft);
+    return db.debts[i] = _from(id, draft, was: db.debts[i]);
+  }
+
+  @override
+  Future<Debt> setBill(
+    String debtId, {
+    required int? dueMinor,
+    DateTime? dueOn,
+    int? creditLimitMinor,
+  }) async {
+    final i = db.debts.indexWhere((d) => d.id == debtId);
+    final d = db.debts[i];
+    return db.debts[i] = Debt(
+      id: d.id,
+      name: d.name,
+      kind: d.kind,
+      currencyCode: d.currencyCode,
+      owedMinor: d.owedMinor,
+      monthlyMinor: d.monthlyMinor,
+      dueDay: d.dueDay,
+      creditLimitMinor: creditLimitMinor ?? d.creditLimitMinor,
+      billDueMinor: dueMinor,
+      billDueOn: dueOn,
+      billSetAt: dueMinor == null ? null : DateTime.now(),
+      createdAt: d.createdAt,
+    );
   }
 
   @override
@@ -815,6 +844,7 @@ class FakeDebts implements DebtRepository {
     required int amountMinor,
     required DateTime at,
     String? note,
+    int? installments,
   }) async {
     final e = DebtEntry(
       id: db.nextId('de'),
@@ -822,6 +852,7 @@ class FakeDebts implements DebtRepository {
       amountMinor: -amountMinor,
       occurredAt: at,
       note: note,
+      installments: installments,
     );
     db.debtEntries.add(e);
     return e;

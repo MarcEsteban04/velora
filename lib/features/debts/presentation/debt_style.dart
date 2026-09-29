@@ -101,6 +101,7 @@ String debtOutlook(DebtProgress p, DateTime now) {
   if (p.isPaidOff) return 'Paid off';
   final c = Currencies.byCode(p.debt.currencyCode);
   return [
+    if (p.availableMinor case final a?) '${Money.short(a, c)} available',
     if (p.nextDue case final d?) dueLabel(d, now),
     if (p.debt.monthlyMinor case final m?) '${Money.short(m, c)}/mo',
     if (p.monthsLeft case final n?)

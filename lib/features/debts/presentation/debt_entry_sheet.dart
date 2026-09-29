@@ -66,6 +66,9 @@ class _DebtEntrySheetState extends ConsumerState<_DebtEntrySheet> {
   bool _fromChosen = false;
   bool _busy = false;
 
+  /// Months a purchase is paid over (1: on the next bill).
+  int _months = 1;
+
   int get _amountMinor => Money.parseMinor(_amount.text, _currency);
 
   @override
@@ -107,6 +110,7 @@ class _DebtEntrySheetState extends ConsumerState<_DebtEntrySheet> {
               amountMinor: amount,
               at: atNow(_day),
               note: _note.text,
+              installments: _debt.kind.isCreditLine ? _months : null,
             );
       if (_paying && from != null) await prefs.setString(_lastFromKey, from.id);
       HapticFeedback.mediumImpact();
@@ -253,6 +257,33 @@ class _DebtEntrySheetState extends ConsumerState<_DebtEntrySheet> {
                     prefixIcon: Icon(Icons.edit_note_rounded),
                   ),
                 ),
+                if (_debt.kind.isCreditLine) ...[
+                  const SizedBox(height: 14),
+                  const FieldCaption('Pay over'),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final n in const [1, 2, 3, 6, 9, 12])
+                        ChoiceChip(
+                          label: Text(n == 1 ? 'Next bill' : '$n months'),
+                          selected: n == _months,
+                          showCheckmark: false,
+                          onSelected: (_) => setState(() => _months = n),
+                        ),
+                    ],
+                  ),
+                  if (_months > 1 && amount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, top: 6),
+                      child: Text(
+                        'About ${Money.format(amount ~/ _months, _currency)} '
+                        'a month. Enter the total, fees included, as the app '
+                        'shows it.',
+                        style: text.labelMedium,
+                      ),
+                    ),
+                ],
               ],
               const SizedBox(height: 14),
               DayChoice(
