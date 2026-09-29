@@ -84,11 +84,12 @@ const debtTemplates = <(String, DebtKind)>[
   ('Borrowed from a friend', DebtKind.personal),
 ];
 
-/// "Due Oct 5", "Due today", "Due tomorrow".
+/// "Due Oct 5", "Due today", "Due tomorrow", "Overdue since Oct 5".
 String dueLabel(DateTime due, DateTime now) {
   final today = DateTime(now.year, now.month, now.day);
-  final days = due.difference(today).inDays;
+  final days = DateTime(due.year, due.month, due.day).difference(today).inDays;
   return switch (days) {
+    < 0 => 'Overdue since ${DateFormat('MMM d').format(due)}',
     0 => 'Due today',
     1 => 'Due tomorrow',
     _ => 'Due ${DateFormat('MMM d').format(due)}',

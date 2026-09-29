@@ -73,8 +73,10 @@ void main() {
     await tester.tap(find.text('BillEase'));
     await tester.pump();
     await frames(tester);
+    // Name, what's owed, the credit limit (pay-later plans have one), then
+    // the monthly payment.
     await tester.enterText(sheetField(1), '6000');
-    await tester.enterText(sheetField(2), '1000');
+    await tester.enterText(sheetField(3), '1000');
     await tester.pump();
     await tester.tap(find.text('Add debt'));
     await tester.pump();
@@ -115,6 +117,81 @@ void main() {
     await frames(tester, 16);
     expect(db.debtEntries, isEmpty);
     expect(db.transactions, isEmpty);
+    semantics.dispose();
+  });
+
+  testWidgets('a credit line lists its bills; paying one marks it paid', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+    db.debts.add(
+      Debt(
+        id: 'spay',
+        name: 'SPayLater',
+        kind: DebtKind.bnpl,
+        currencyCode: 'PHP',
+        owedMinor: 1056754,
+        dueDay: 15,
+        creditLimitMinor: 1750000,
+        createdAt: DateTime(2026, 8),
+      ),
+    );
+    db.debtBills.addAll([
+      CreditBill(
+        id: 'oct',
+        debtId: 'spay',
+        amountMinor: 331669,
+        dueOn: DateTime(2026, 11, 15),
+      ),
+      CreditBill(
+        id: 'nov',
+        debtId: 'spay',
+        amountMinor: 159798,
+        dueOn: DateTime(2026, 12, 15),
+      ),
+    ]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fakeOverrides(db, pins, prefs),
+        child: const VeloraApp(),
+      ),
+    );
+    await frames(tester, 16);
+    for (final d in '2580'.split('')) {
+      await tester.tap(find.text(d).last);
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+    await frames(tester, 30);
+    await tester.tap(find.bySemanticsLabel(RegExp('Plan tab')));
+    await frames(tester, 16);
+    await tester.tap(find.text('DEBTS'));
+    await tester.pump();
+    await frames(tester, 20);
+    await tester.tap(find.text('SPayLater'));
+    await tester.pump();
+    await frames(tester);
+
+    expect(find.text('BILLS'), findsOneWidget);
+    expect(find.text('Unpaid'), findsNWidgets(2));
+    expect(find.text('Due 15 Nov 2026'), findsOneWidget);
+
+    // Pay the Oct bill: its amount is filled in.
+    await tester.ensureVisible(find.text('Due 15 Nov 2026'));
+    await tester.tap(find.text('Due 15 Nov 2026'));
+    await tester.pump();
+    await frames(tester);
+    await tester.tap(find.text('Pay ₱3,316.69'));
+    await tester.pump();
+    await frames(tester, 16);
+
+    final entry = db.debtEntries.single;
+    expect(entry.amountMinor, 331669);
+    expect(entry.billId, 'oct');
+    expect(find.text('Paid'), findsOneWidget);
+    expect(find.text('Unpaid'), findsOneWidget);
     semantics.dispose();
   });
 }

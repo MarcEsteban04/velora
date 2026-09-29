@@ -15,29 +15,37 @@ import '../../accounts/data/account_repository.dart';
 import '../../accounts/domain/account.dart';
 import '../application/debt_providers.dart';
 import '../domain/debt.dart';
+import 'debt_bill_sheet.dart';
 import 'debt_style.dart';
 
 enum DebtEntryMode { pay, borrow }
 
 /// A payment toward a debt (by default taken out of an account, so the
-/// balance there drops too), or more borrowed on it.
+/// balance there drops too), or more borrowed on it. On a credit line with
+/// bills, a payment goes to [bill], else the soonest unpaid one.
 abstract final class DebtEntrySheet {
   static Future<void> show(
     BuildContext context, {
     required DebtProgress progress,
     required DebtEntryMode mode,
+    BillStatus? bill,
   }) => showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _DebtEntrySheet(progress: progress, mode: mode),
+    builder: (_) => _DebtEntrySheet(progress: progress, mode: mode, bill: bill),
   );
 }
 
 class _DebtEntrySheet extends ConsumerStatefulWidget {
-  const _DebtEntrySheet({required this.progress, required this.mode});
+  const _DebtEntrySheet({
+    required this.progress,
+    required this.mode,
+    this.bill,
+  });
 
   final DebtProgress progress;
   final DebtEntryMode mode;
+  final BillStatus? bill;
 
   @override
   ConsumerState<_DebtEntrySheet> createState() => _DebtEntrySheetState();
@@ -50,10 +58,21 @@ class _DebtEntrySheetState extends ConsumerState<_DebtEntrySheet> {
   bool get _paying => widget.mode == DebtEntryMode.pay;
   late final Currency _currency = Currencies.byCode(_debt.currencyCode);
 
+  /// The unpaid bills a payment can go to, soonest due first.
+  late final List<BillStatus> _unpaid = _paying
+      ? widget.progress.bills.where((b) => !b.isPaid).toList()
+      : const [];
+
+  /// The bill it pays; null when it has none.
+  late String? _billId = (widget.bill ?? _unpaid.firstOrNull)?.bill.id;
+
   late final _amount = TextEditingController(
-    text: _paying && widget.progress.suggestedPaymentMinor > 0
-        ? Money.toInputText(widget.progress.suggestedPaymentMinor, _currency)
-        : '',
+    text: switch ((_paying, widget.bill)) {
+      (true, final b?) => Money.toInputText(b.leftMinor, _currency),
+      (true, _) when widget.progress.suggestedPaymentMinor > 0 =>
+        Money.toInputText(widget.progress.suggestedPaymentMinor, _currency),
+      _ => '',
+    },
   );
   final _note = TextEditingController();
   late DateTime _day = () {
@@ -104,6 +123,7 @@ class _DebtEntrySheetState extends ConsumerState<_DebtEntrySheet> {
               amountMinor: amount,
               paidAt: atNow(_day),
               accountId: from?.id,
+              billId: _billId,
             )
           : await actions.borrow(
               _debt,
@@ -168,6 +188,40 @@ class _DebtEntrySheetState extends ConsumerState<_DebtEntrySheet> {
                 '${Money.format(remaining, _currency)} left to pay',
                 style: text.bodyMedium,
               ),
+              if (_unpaid.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const FieldCaption('For'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final b in _unpaid)
+                      ChoiceChip(
+                        label: Text(
+                          '${billName(b.bill)} '
+                          '${Money.short(b.leftMinor, _currency)}',
+                        ),
+                        selected: b.bill.id == _billId,
+                        showCheckmark: false,
+                        onSelected: (_) => setState(() {
+                          _billId = b.bill.id;
+                          _amount.text = Money.toInputText(
+                            b.leftMinor,
+                            _currency,
+                          );
+                        }),
+                      ),
+                  ],
+                ),
+                if (_unpaid.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, top: 6),
+                    child: Text(
+                      'Paying more than a bill goes to the next one.',
+                      style: text.labelMedium,
+                    ),
+                  ),
+              ],
               const SizedBox(height: 16),
               MoneyField(
                 controller: _amount,

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:velora/features/debts/data/debt_scan_reader.dart';
 import 'package:velora/features/debts/domain/debt.dart';
 import 'package:velora/features/debts/presentation/debt_style.dart';
 
@@ -224,5 +225,145 @@ void main() {
       ),
     ], now: now);
     expect(p.dueNowMinor, 200000); // Just the monthly payment.
+  });
+
+  group('bills on one credit line', () {
+    // SPayLater: ₱17,500 of credit, ₱10,567.54 owed, four bills out.
+    final spay = Debt(
+      id: 's',
+      name: 'SPayLater',
+      kind: DebtKind.bnpl,
+      currencyCode: 'PHP',
+      owedMinor: 1056754,
+      dueDay: 15,
+      creditLimitMinor: 1750000,
+      createdAt: DateTime(2026, 8),
+    );
+    CreditBill bill(String id, int amount, DateTime dueOn) =>
+        CreditBill(id: id, debtId: 's', amountMinor: amount, dueOn: dueOn);
+    final bills = [
+      bill('nov', 331669, DateTime(2026, 11, 15)),
+      bill('sep', 547144, DateTime(2026, 10, 15)),
+      bill('dec', 159798, DateTime(2026, 12, 15)),
+      bill('jan', 5655, DateTime(2027, 1, 15)),
+      // Another debt's bill doesn't count.
+      CreditBill(
+        id: 'x',
+        debtId: 'other',
+        amountMinor: 999900,
+        dueOn: DateTime(2026, 10, 1),
+      ),
+    ];
+    DebtEntry pay(String id, int amount, {String? bill}) => DebtEntry(
+      id: id,
+      debtId: 's',
+      amountMinor: amount,
+      occurredAt: DateTime(2026, 9, 29),
+      billId: bill,
+    );
+
+    test('the soonest unpaid bill is what needs paying', () {
+      final p = DebtProgress.of(spay, const [], bills: bills, now: now);
+      expect(p.bills.map((b) => b.bill.id), ['sep', 'nov', 'dec', 'jan']);
+      expect(p.bills.first.bill.month, DateTime(2026, 9)); // The "Sep" bill.
+      expect(p.dueNowMinor, 547144);
+      expect(p.dueFromBill, isTrue);
+      expect(p.dueOn, DateTime(2026, 10, 15));
+      expect(p.nextDue, DateTime(2026, 10, 15));
+      expect(p.nextBill?.bill.id, 'sep');
+      expect(p.billsLeftMinor, 1044266);
+      expect(p.availableMinor, 693246);
+      expect(p.suggestedPaymentMinor, 547144);
+    });
+
+    test('paying more than a bill goes to the next one', () {
+      final p = DebtProgress.of(
+        spay,
+        [pay('1', 600000, bill: 'sep')],
+        bills: bills,
+        now: now,
+      );
+      expect(p.bills[0].isPaid, isTrue);
+      expect(p.bills[1].paidMinor, 52856);
+      expect(p.bills[1].leftMinor, 278813);
+      expect(p.dueNowMinor, 278813);
+      expect(p.dueOn, DateTime(2026, 11, 15));
+      expect(p.remainingMinor, 456754);
+    });
+
+    test('a payment to a later bill does not pay an earlier one', () {
+      final p = DebtProgress.of(
+        spay,
+        [
+          pay('1', 159798, bill: 'dec'),
+          pay('2', 100000), // Not to any bill.
+        ],
+        bills: bills,
+        now: now,
+      );
+      expect(p.bills.map((b) => b.isPaid), [false, false, true, false]);
+      expect(p.dueNowMinor, 547144);
+    });
+
+    test('overdue bills are all due now', () {
+      final oct20 = DebtProgress.of(
+        spay,
+        const [],
+        bills: bills,
+        now: DateTime(2026, 10, 20),
+      );
+      expect(oct20.bills.first.isOverdue(DateTime(2026, 10, 20)), isTrue);
+      expect(oct20.dueNowMinor, 547144);
+      expect(oct20.nextDue, DateTime(2026, 10, 15));
+      final nov20 = DebtProgress.of(
+        spay,
+        const [],
+        bills: bills,
+        now: DateTime(2026, 11, 20),
+      );
+      expect(nov20.dueNowMinor, 547144 + 331669);
+      expect(
+        dueLabel(DateTime(2026, 10, 15), DateTime(2026, 10, 20)),
+        'Overdue since Oct 15',
+      );
+    });
+
+    test('with every bill paid, it goes back to the due day', () {
+      final p = DebtProgress.of(
+        spay,
+        [pay('1', 1044266, bill: 'sep')],
+        bills: bills,
+        now: now,
+      );
+      expect(p.bills.every((b) => b.isPaid), isTrue);
+      expect(p.billsLeftMinor, 0);
+      expect(p.nextBill, isNull);
+      expect(p.nextDue, DateTime(2026, 10, 15));
+    });
+  });
+
+  test('a "My Bill" list is read into its bills', () {
+    final scan = AiDebtScanReader.parse(
+      '{"type": "bill", "amount_due": 5471.44, "due_date": "2026-10-15",'
+      ' "credit_limit": 17500, "available_credit": 6932.46, "bills": ['
+      '{"amount": 3316.69, "due_date": "2026-11-15", "paid": false},'
+      '{"amount": 1597.98, "due_date": "2026-12-15", "paid": false},'
+      '{"amount": 56.55, "due_date": "2027-01-15", "paid": false},'
+      '{"amount": 1200, "due_date": "2026-09-15", "paid": true},'
+      '{"amount": "n/a", "due_date": "2026-08-15"}]}',
+      now: now,
+      currencyCode: 'PHP',
+    );
+    expect(scan, isA<DebtBill>());
+    final bill = scan! as DebtBill;
+    expect(bill.bills, hasLength(4)); // The unreadable one is dropped.
+    expect(bill.bills.first.paid, isTrue);
+    // The paid one is left out; the next bill, not in the list, is added.
+    expect(bill.unpaidBills.map((b) => (b.amountMinor, b.dueOn)), [
+      (547144, DateTime(2026, 10, 15)),
+      (331669, DateTime(2026, 11, 15)),
+      (159798, DateTime(2026, 12, 15)),
+      (5655, DateTime(2027, 1, 15)),
+    ]);
   });
 }

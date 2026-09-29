@@ -41,6 +41,7 @@ final class DebtPurchase extends DebtScan {
 }
 
 /// A bill or dashboard: what's due, and what the credit line looks like.
+/// A list of monthly bills ("My Bill") fills [bills].
 final class DebtBill extends DebtScan {
   const DebtBill({
     this.dueMinor,
@@ -48,6 +49,7 @@ final class DebtBill extends DebtScan {
     this.creditLimitMinor,
     this.availableMinor,
     this.outstandingMinor,
+    this.bills = const [],
   });
 
   final int? dueMinor;
@@ -58,11 +60,39 @@ final class DebtBill extends DebtScan {
   /// Everything owed on it, per the app.
   final int? outstandingMinor;
 
+  /// Every bill the screen lists, soonest due first.
+  final List<ScannedBill> bills;
+
+  /// The unpaid bills to add: the listed ones, and the one due when it
+  /// isn't among them.
+  List<ScannedBill> get unpaidBills {
+    final list = bills.where((b) => !b.paid).toList();
+    if ((dueMinor, dueOn) case (final due?, final on?)
+        when due > 0 && bills.every((b) => b.dueOn != on)) {
+      list.add(ScannedBill(amountMinor: due, dueOn: on));
+    }
+    return list..sort((a, b) => a.dueOn.compareTo(b.dueOn));
+  }
+
   bool get isEmpty =>
       dueMinor == null &&
       creditLimitMinor == null &&
       availableMinor == null &&
-      outstandingMinor == null;
+      outstandingMinor == null &&
+      bills.isEmpty;
+}
+
+/// One month's bill from a list of them.
+final class ScannedBill {
+  const ScannedBill({
+    required this.amountMinor,
+    required this.dueOn,
+    this.paid = false,
+  });
+
+  final int amountMinor;
+  final DateTime dueOn;
+  final bool paid;
 }
 
 abstract interface class DebtScanReader {
@@ -91,7 +121,7 @@ class AiDebtScanReader implements DebtScanReader {
       messages: const [('user', 'Read this.')],
       image: page.bytes,
       json: true,
-      maxTokens: 500,
+      maxTokens: 900,
       temperature: 0.1,
     );
     return raw == null
@@ -109,7 +139,9 @@ class AiDebtScanReader implements DebtScanReader {
     '"installments": number | null, "monthly": number | null,',
     '"date": "YYYY-MM-DD" | null, "amount_due": number | null,',
     '"due_date": "YYYY-MM-DD" | null, "credit_limit": number | null,',
-    '"available_credit": number | null, "outstanding": number | null}',
+    '"available_credit": number | null, "outstanding": number | null,',
+    '"bills": [{"amount": number, "due_date": "YYYY-MM-DD", "paid": boolean}]',
+    '| null}',
     'type is "purchase" for an order, checkout or transaction paid with',
     'the credit line; "bill" for a statement, bill or account page',
     'showing what is due, the limit or what is available; else "other".',
@@ -117,7 +149,10 @@ class AiDebtScanReader implements DebtScanReader {
     'charged), installments (number of months; 1 if paid in full on the',
     'next bill) and monthly (the per-month amount, if shown), and date.',
     'For a bill: amount_due, due_date, credit_limit, available_credit and',
-    'outstanding (total owed), whichever are shown.',
+    'outstanding (total owed), whichever are shown. A list of monthly bills',
+    '(like "My Bill": Oct, Nov, Dec, each with an amount, a due date and',
+    'Unpaid or Paid) is a "bill" too: put every one in bills, and the',
+    'soonest unpaid one in amount_due and due_date. Else bills is null.',
     'Amounts are plain numbers like 1250.50. Today is '
         '${today.year}-${today.month.toString().padLeft(2, '0')}-'
         '${today.day.toString().padLeft(2, '0')}.',
@@ -193,6 +228,18 @@ class AiDebtScanReader implements DebtScanReader {
           },
           availableMinor: minor(j['available_credit']),
           outstandingMinor: minor(j['outstanding']),
+          bills: [
+            if (j['bills'] case final List list)
+              for (final b in list.take(24))
+                if (b case {'amount': final a, 'due_date': final d})
+                  if ((minor(a), day(d, future: true))
+                      case (final amount?, final on?) when amount > 0)
+                    ScannedBill(
+                      amountMinor: amount,
+                      dueOn: on,
+                      paid: b['paid'] == true,
+                    ),
+          ]..sort((a, b) => a.dueOn.compareTo(b.dueOn)),
         );
         return bill.isEmpty ? null : bill;
       default:

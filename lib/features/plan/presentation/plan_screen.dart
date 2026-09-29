@@ -55,7 +55,8 @@ class PlanScreen extends ConsumerWidget {
           ..invalidate(goalsProvider)
           ..invalidate(goalEntriesProvider)
           ..invalidate(debtsProvider)
-          ..invalidate(debtEntriesProvider);
+          ..invalidate(debtEntriesProvider)
+          ..invalidate(debtBillsProvider);
         await ref.read(budgetsProvider.future);
       },
       child: ListView(

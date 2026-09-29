@@ -131,6 +131,7 @@ class DebtEntry {
     this.note,
     this.transactionId,
     this.installments,
+    this.billId,
   });
 
   factory DebtEntry.fromRow(Map<String, dynamic> row) => DebtEntry(
@@ -141,6 +142,7 @@ class DebtEntry {
     occurredAt: AppClock.wall(DateTime.parse(row['occurred_at'] as String)),
     transactionId: row['transaction_id'] as String?,
     installments: (row['installments'] as num?)?.toInt(),
+    billId: row['bill_id'] as String?,
   );
 
   final String id;
@@ -155,7 +157,53 @@ class DebtEntry {
   /// Months a purchase is split over (null or 1: pay in full).
   final int? installments;
 
+  /// The bill a payment went to, if it went to one.
+  final String? billId;
+
   bool get isPayment => amountMinor > 0;
+}
+
+/// One monthly bill on a card or pay-later plan, like SPayLater's "Oct"
+/// bill due Nov 15. A credit line can have several unpaid at once.
+class CreditBill {
+  const CreditBill({
+    required this.id,
+    required this.debtId,
+    required this.amountMinor,
+    required this.dueOn,
+  });
+
+  factory CreditBill.fromRow(Map<String, dynamic> row) => CreditBill(
+    id: row['id'] as String,
+    debtId: row['debt_id'] as String,
+    amountMinor: (row['amount_minor'] as num).toInt(),
+    dueOn: DateTime.parse(row['due_on'] as String),
+  );
+
+  final String id;
+  final String debtId;
+  final int amountMinor;
+
+  /// The day it's due (a date, no time).
+  final DateTime dueOn;
+
+  /// The month it bills, as the apps name it: the one before it's due
+  /// ("Oct" for a bill due Nov 15).
+  DateTime get month => DateTime(dueOn.year, dueOn.month - 1);
+}
+
+/// A bill and how much of it is paid.
+class BillStatus {
+  const BillStatus(this.bill, this.paidMinor);
+
+  final CreditBill bill;
+  final int paidMinor;
+
+  int get leftMinor => math.max(0, bill.amountMinor - paidMinor);
+  bool get isPaid => leftMinor == 0;
+
+  bool isOverdue(DateTime now) =>
+      !isPaid && bill.dueOn.isBefore(DateTime(now.year, now.month, now.day));
 }
 
 /// Where a debt stands.
@@ -169,12 +217,15 @@ class DebtProgress {
     required this.dueNowMinor,
     required this.dueFromBill,
     required this.dueOn,
+    required this.bills,
   });
 
-  /// [entries] may hold every debt's; only this one's count. Newest first.
+  /// [entries] and [bills] may hold every debt's; only this one's count.
+  /// Entries newest first; bills soonest due first.
   factory DebtProgress.of(
     Debt debt,
     Iterable<DebtEntry> entries, {
+    Iterable<CreditBill> bills = const [],
     required DateTime now,
   }) {
     final mine = entries.where((e) => e.debtId == debt.id).toList()
@@ -187,9 +238,17 @@ class DebtProgress {
         borrowed -= e.amountMinor;
       }
     }
-    final next = nextDueDate(debt.dueDay, now);
+    final statuses = _billStatuses(
+      bills.where((b) => b.debtId == debt.id),
+      mine,
+    );
     final remaining = math.max(0, debt.owedMinor + borrowed - paid);
-    final (due, fromBill, dueOn) = _dueNow(debt, mine, next, remaining);
+    final unpaid = statuses.where((s) => !s.isPaid).toList();
+    final next =
+        unpaid.firstOrNull?.bill.dueOn ?? nextDueDate(debt.dueDay, now);
+    final (due, fromBill, dueOn) = unpaid.isEmpty
+        ? _dueNow(debt, mine, next, remaining)
+        : _dueFromBills(unpaid, remaining, now);
     return DebtProgress._(
       debt: debt,
       entries: mine,
@@ -199,7 +258,46 @@ class DebtProgress {
       dueNowMinor: due,
       dueFromBill: fromBill,
       dueOn: dueOn,
+      bills: statuses,
     );
+  }
+
+  /// Each bill with what's paid on it: the payments that name it, and
+  /// whatever an earlier bill's payments had over (paying more than a
+  /// bill goes to the next one).
+  static List<BillStatus> _billStatuses(
+    Iterable<CreditBill> bills,
+    List<DebtEntry> entries,
+  ) {
+    final sorted = bills.toList()..sort((a, b) => a.dueOn.compareTo(b.dueOn));
+    final paidTo = <String, int>{};
+    for (final e in entries) {
+      if (e.billId case final id? when e.isPayment) {
+        paidTo[id] = (paidTo[id] ?? 0) + e.amountMinor;
+      }
+    }
+    var spare = 0;
+    final statuses = <BillStatus>[];
+    for (final b in sorted) {
+      final pool = spare + (paidTo[b.id] ?? 0);
+      final applied = math.min(pool, b.amountMinor);
+      spare = pool - applied;
+      statuses.add(BillStatus(b, applied));
+    }
+    return statuses;
+  }
+
+  /// With unpaid bills, what's due is every overdue one, else the next.
+  static (int?, bool, DateTime?) _dueFromBills(
+    List<BillStatus> unpaid,
+    int remaining,
+    DateTime now,
+  ) {
+    final overdue = unpaid.where((s) => s.isOverdue(now));
+    final due = overdue.isEmpty
+        ? unpaid.first.leftMinor
+        : overdue.fold(0, (s, b) => s + b.leftMinor);
+    return (math.min(due, remaining), true, unpaid.first.bill.dueOn);
   }
 
   /// What's due now: the latest bill less what's been paid since, or, with
@@ -253,7 +351,8 @@ class DebtProgress {
   final int paidMinor;
   final int borrowedMinor;
 
-  /// The next time a payment is due, if the debt has a due day.
+  /// The next time a payment is due: the soonest unpaid bill's date (maybe
+  /// already past), else from the debt's due day, if it has one.
   final DateTime? nextDue;
 
   /// What still needs paying for the current bill, when that's known.
@@ -264,6 +363,15 @@ class DebtProgress {
 
   /// When [dueNowMinor] is due.
   final DateTime? dueOn;
+
+  /// Its bills, soonest due first, with what's paid on each.
+  final List<BillStatus> bills;
+
+  /// What the unpaid bills still ask for, together.
+  int get billsLeftMinor => bills.fold(0, (s, b) => s + b.leftMinor);
+
+  /// The bill a payment goes to by default: the soonest unpaid one.
+  BillStatus? get nextBill => bills.where((b) => !b.isPaid).firstOrNull;
 
   /// Everything ever owed on it: the start plus anything borrowed since.
   int get totalMinor => debt.owedMinor + borrowedMinor;

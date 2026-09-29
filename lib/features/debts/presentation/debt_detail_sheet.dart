@@ -14,6 +14,7 @@ import '../../../core/widgets/progress_visuals.dart';
 import '../../home/application/balance_privacy.dart';
 import '../application/debt_providers.dart';
 import '../domain/debt.dart';
+import 'debt_bill_sheet.dart';
 import 'debt_editor_sheet.dart';
 import 'debt_entry_sheet.dart';
 import 'debt_style.dart';
@@ -161,6 +162,8 @@ class _DebtDetail extends ConsumerWidget {
             if (debt.kind.isCreditLine) ...[
               const SizedBox(height: 14),
               _CreditPanel(progress: p, money: money, now: now),
+              const SizedBox(height: 14),
+              _BillsPanel(progress: p, money: money, now: now),
             ],
             const SizedBox(height: 14),
             Container(
@@ -462,6 +465,194 @@ class _CreditPanel extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A credit line's bills, like the app's "My Bill": each month's amount,
+/// due date and whether it's paid. Tap one to pay it; the pencil edits it.
+class _BillsPanel extends StatelessWidget {
+  const _BillsPanel({
+    required this.progress,
+    required this.money,
+    required this.now,
+  });
+
+  final DebtProgress progress;
+  final String Function(int minor) money;
+  final DateTime now;
+
+  /// Paid bills kept in view, newest first.
+  static const _paidShown = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final p = progress;
+    final unpaid = p.bills.where((b) => !b.isPaid).toList();
+    final paid = p.bills.reversed
+        .where((b) => b.isPaid)
+        .take(_paidShown)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'BILLS',
+                style: text.labelMedium?.copyWith(
+                  fontSize: 11,
+                  letterSpacing: 1.4,
+                ),
+              ),
+            ),
+            if (unpaid.length > 1)
+              Text(
+                '${money(p.billsLeftMinor)} in ${unpaid.length} bills',
+                style: text.labelMedium?.copyWith(fontSize: 11),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (p.bills.isEmpty)
+          Text(
+            'Add each month’s bill from “My Bill” in ${p.debt.name}, or scan '
+            'the list, to see what’s due when.',
+            style: text.labelMedium,
+          ),
+        for (final b in [...unpaid, ...paid])
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _BillRow(
+              status: b,
+              money: money,
+              now: now,
+              onTap: b.isPaid
+                  ? () => DebtBillSheet.show(context, progress: p, bill: b.bill)
+                  : () => DebtEntrySheet.show(
+                      context,
+                      progress: p,
+                      mode: DebtEntryMode.pay,
+                      bill: b,
+                    ),
+              onEdit: () =>
+                  DebtBillSheet.show(context, progress: p, bill: b.bill),
+            ),
+          ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => DebtBillSheet.show(context, progress: p),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add a bill'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BillRow extends StatelessWidget {
+  const _BillRow({
+    required this.status,
+    required this.money,
+    required this.now,
+    required this.onTap,
+    required this.onEdit,
+  });
+
+  final BillStatus status;
+  final String Function(int minor) money;
+  final DateTime now;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final s = status;
+    final overdue = s.isOverdue(now);
+    final (String tag, Color color) = s.isPaid
+        ? ('Paid', AppColors.leafBright)
+        : overdue
+        ? ('Overdue', AppColors.rust)
+        : s.paidMinor > 0
+        ? ('${money(s.leftMinor)} left', AppColors.ember)
+        : ('Unpaid', AppColors.ember);
+
+    return Material(
+      color: AppColors.surfaceRaised,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.hairline(0.07)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DateFormat('MMM').format(s.bill.month),
+                      style: text.titleMedium?.copyWith(fontSize: 15),
+                    ),
+                    const SizedBox(height: 3),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: color.withValues(alpha: 0.7)),
+                      ),
+                      child: Text(
+                        tag,
+                        style: text.labelMedium?.copyWith(
+                          fontSize: 10,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Due ${DateFormat('d MMM y').format(s.bill.dueOn)}',
+                      style: text.labelMedium?.copyWith(fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                money(s.bill.amountMinor),
+                style: text.titleMedium?.copyWith(
+                  fontSize: 16,
+                  color: s.isPaid ? AppColors.textMuted : null,
+                  decoration: s.isPaid ? TextDecoration.lineThrough : null,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Edit bill',
+                visualDensity: VisualDensity.compact,
+                onPressed: onEdit,
+                icon: Icon(
+                  Icons.edit_rounded,
+                  size: 16,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

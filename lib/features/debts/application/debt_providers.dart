@@ -16,22 +16,33 @@ final debtEntriesProvider = FutureProvider<List<DebtEntry>>(
   (ref) => ref.watch(debtRepositoryProvider).fetchEntries(),
 );
 
+final debtBillsProvider = FutureProvider<List<CreditBill>>(
+  (ref) => ref.watch(debtRepositoryProvider).fetchBills(),
+);
+
 /// Every debt with where it stands: still owing first (soonest due first,
 /// then most owed), paid off last. Null while loading.
 final debtProgressProvider = Provider<List<DebtProgress>?>((ref) {
   final debts = ref.watch(debtsProvider).value;
   final entries = ref.watch(debtEntriesProvider).value;
+  final billsAsync = ref.watch(debtBillsProvider);
   if (debts == null || entries == null) return null;
+  if (billsAsync.isLoading && !billsAsync.hasValue) return null;
+  // Bills that won't load don't hide the debts.
+  final bills = billsAsync.value ?? const <CreditBill>[];
   final now = AppClock.now();
-  final list = [for (final d in debts) DebtProgress.of(d, entries, now: now)]
-    ..sort((a, b) {
-      if (a.isPaidOff != b.isPaidOff) return a.isPaidOff ? 1 : -1;
-      final da = a.nextDue, db = b.nextDue;
-      if (da != null && db != null && da != db) return da.compareTo(db);
-      if (da != null && db == null) return -1;
-      if (db != null && da == null) return 1;
-      return b.remainingMinor.compareTo(a.remainingMinor);
-    });
+  final list =
+      [
+        for (final d in debts)
+          DebtProgress.of(d, entries, bills: bills, now: now),
+      ]..sort((a, b) {
+        if (a.isPaidOff != b.isPaidOff) return a.isPaidOff ? 1 : -1;
+        final da = a.nextDue, db = b.nextDue;
+        if (da != null && db != null && da != db) return da.compareTo(db);
+        if (da != null && db == null) return -1;
+        if (db != null && da == null) return 1;
+        return b.remainingMinor.compareTo(a.remainingMinor);
+      });
   return list;
 });
 
@@ -58,7 +69,8 @@ class DebtActions {
 
   void _refresh() => _container
     ..invalidate(debtsProvider)
-    ..invalidate(debtEntriesProvider);
+    ..invalidate(debtEntriesProvider)
+    ..invalidate(debtBillsProvider);
 
   Future<Debt> create(DebtDraft draft) async {
     final d = await _repo.create(draft);
@@ -82,6 +94,7 @@ class DebtActions {
     required int amountMinor,
     required DateTime paidAt,
     String? accountId,
+    String? billId,
   }) async {
     final category = accountId == null
         ? null
@@ -93,6 +106,7 @@ class DebtActions {
       accountId: accountId,
       categoryId: category?.id,
       note: '${debt.name} payment',
+      billId: billId,
     );
     _refresh();
     if (entry.transactionId != null) {
@@ -145,6 +159,60 @@ class DebtActions {
       dueOn: before.billDueOn,
       creditLimitMinor: before.creditLimitMinor,
     );
+    _refresh();
+  }
+
+  /// Adds the bill due on [dueOn] (or updates the one due then). Returns
+  /// it, and the one it replaced, for Undo.
+  Future<(CreditBill, CreditBill?)> putBill(
+    Debt debt, {
+    required int amountMinor,
+    required DateTime dueOn,
+  }) async {
+    final bills = await _container.read(debtBillsProvider.future);
+    final day = DateTime(dueOn.year, dueOn.month, dueOn.day);
+    final before = bills
+        .where((b) => b.debtId == debt.id && b.dueOn == day)
+        .firstOrNull;
+    final bill = await _repo.putBill(
+      debt.id,
+      amountMinor: amountMinor,
+      dueOn: day,
+    );
+    _refresh();
+    return (bill, before);
+  }
+
+  Future<CreditBill> updateBill(
+    CreditBill bill, {
+    required int amountMinor,
+    required DateTime dueOn,
+  }) async {
+    final b = await _repo.updateBill(
+      bill.id,
+      amountMinor: amountMinor,
+      dueOn: DateTime(dueOn.year, dueOn.month, dueOn.day),
+    );
+    _refresh();
+    return b;
+  }
+
+  Future<void> deleteBill(CreditBill bill) async {
+    await _repo.deleteBill(bill.id);
+    _refresh();
+  }
+
+  /// Undoes [putBill]: puts back the bill it replaced, or removes it.
+  Future<void> unputBill(CreditBill bill, CreditBill? before) async {
+    if (before == null) {
+      await _repo.deleteBill(bill.id);
+    } else {
+      await _repo.updateBill(
+        bill.id,
+        amountMinor: before.amountMinor,
+        dueOn: before.dueOn,
+      );
+    }
     _refresh();
   }
 

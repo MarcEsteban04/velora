@@ -11,6 +11,9 @@ abstract interface class DebtRepository {
   /// Every debt's entries, newest first.
   Future<List<DebtEntry>> fetchEntries();
 
+  /// Every credit line's bills, soonest due first.
+  Future<List<CreditBill>> fetchBills();
+
   Future<Debt> create(DebtDraft draft);
 
   Future<Debt> update(String id, DebtDraft draft);
@@ -19,7 +22,7 @@ abstract interface class DebtRepository {
   Future<void> delete(String id);
 
   /// A payment, and when [accountId] is given, the expense from it too.
-  /// Returns the entry.
+  /// [billId] is the bill it pays, if any. Returns the entry.
   Future<DebtEntry> pay(
     String debtId, {
     required int amountMinor,
@@ -27,6 +30,7 @@ abstract interface class DebtRepository {
     String? accountId,
     String? categoryId,
     String? note,
+    String? billId,
   });
 
   /// More borrowed on it (a purchase, maybe over [installments] months):
@@ -49,6 +53,22 @@ abstract interface class DebtRepository {
   });
 
   Future<void> deleteEntry(String id);
+
+  /// Adds the bill due on [dueOn], or updates the one already due then.
+  Future<CreditBill> putBill(
+    String debtId, {
+    required int amountMinor,
+    required DateTime dueOn,
+  });
+
+  Future<CreditBill> updateBill(
+    String id, {
+    required int amountMinor,
+    required DateTime dueOn,
+  });
+
+  /// Deletes a bill. Payments made to it stay, with no bill.
+  Future<void> deleteBill(String id);
 }
 
 class SupabaseDebtRepository implements DebtRepository {
@@ -72,6 +92,21 @@ class SupabaseDebtRepository implements DebtRepository {
         .select()
         .order('occurred_at', ascending: false);
     return rows.map(DebtEntry.fromRow).toList();
+  }
+
+  @override
+  Future<List<CreditBill>> fetchBills() async {
+    try {
+      final rows = await _db
+          .from('debt_bills')
+          .select()
+          .order('due_on', ascending: true);
+      return rows.map(CreditBill.fromRow).toList();
+    } on PostgrestException catch (error) {
+      // A database without the bills migration yet: no bills.
+      if (error.code == 'PGRST205' || error.code == '42P01') return const [];
+      rethrow;
+    }
   }
 
   @override
@@ -100,6 +135,7 @@ class SupabaseDebtRepository implements DebtRepository {
     String? accountId,
     String? categoryId,
     String? note,
+    String? billId,
   }) async {
     final id = await _db.rpc<String>(
       'record_debt_payment',
@@ -110,6 +146,8 @@ class SupabaseDebtRepository implements DebtRepository {
         'p_account': accountId,
         'p_category': categoryId,
         'p_note': note,
+        // Left out without one, so payments work before the bills migration.
+        'p_bill': ?billId,
       },
     );
     return DebtEntry.fromRow(
@@ -150,11 +188,7 @@ class SupabaseDebtRepository implements DebtRepository {
         .from('debts')
         .update({
           'bill_due_minor': dueMinor,
-          'bill_due_on': dueOn == null
-              ? null
-              : '${dueOn.year.toString().padLeft(4, '0')}-'
-                    '${dueOn.month.toString().padLeft(2, '0')}-'
-                    '${dueOn.day.toString().padLeft(2, '0')}',
+          'bill_due_on': dueOn == null ? null : _date(dueOn),
           'bill_set_at': dueMinor == null
               ? null
               : DateTime.now().toUtc().toIso8601String(),
@@ -168,6 +202,47 @@ class SupabaseDebtRepository implements DebtRepository {
   @override
   Future<void> deleteEntry(String id) =>
       _db.from('debt_entries').delete().eq('id', id);
+
+  @override
+  Future<CreditBill> putBill(
+    String debtId, {
+    required int amountMinor,
+    required DateTime dueOn,
+  }) async => CreditBill.fromRow(
+    await _db
+        .from('debt_bills')
+        .upsert({
+          'debt_id': debtId,
+          'amount_minor': amountMinor,
+          'due_on': _date(dueOn),
+        }, onConflict: 'debt_id,due_on')
+        .select()
+        .single(),
+  );
+
+  @override
+  Future<CreditBill> updateBill(
+    String id, {
+    required int amountMinor,
+    required DateTime dueOn,
+  }) async => CreditBill.fromRow(
+    await _db
+        .from('debt_bills')
+        .update({'amount_minor': amountMinor, 'due_on': _date(dueOn)})
+        .eq('id', id)
+        .select()
+        .single(),
+  );
+
+  @override
+  Future<void> deleteBill(String id) =>
+      _db.from('debt_bills').delete().eq('id', id);
+
+  /// "2026-11-15".
+  static String _date(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
 }
 
 final debtRepositoryProvider = Provider<DebtRepository>(

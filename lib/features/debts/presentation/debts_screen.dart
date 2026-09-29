@@ -65,7 +65,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                 icon: Icons.refresh_rounded,
                 onPressed: () => ref
                   ..invalidate(debtsProvider)
-                  ..invalidate(debtEntriesProvider),
+                  ..invalidate(debtEntriesProvider)
+                  ..invalidate(debtBillsProvider),
               ),
             ],
           ),
@@ -242,7 +243,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
       onRefresh: () async {
         ref
           ..invalidate(debtsProvider)
-          ..invalidate(debtEntriesProvider);
+          ..invalidate(debtEntriesProvider)
+          ..invalidate(debtBillsProvider);
         await ref.read(debtsProvider.future);
       },
       actions: [

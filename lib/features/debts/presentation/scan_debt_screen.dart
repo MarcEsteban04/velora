@@ -21,6 +21,7 @@ import '../../receipts/presentation/widgets/scanning_preview.dart';
 import '../application/debt_providers.dart';
 import '../data/debt_scan_reader.dart';
 import '../domain/debt.dart';
+import 'debt_bill_sheet.dart';
 
 enum _Stage { start, reading, done, failed }
 
@@ -36,15 +37,19 @@ final class _Bought extends _Result {
 }
 
 final class _Billed extends _Result {
-  const _Billed(this.scan, this.before, this.limit);
+  const _Billed(this.scan, this.before, this.limit, this.bills);
   final DebtBill scan;
   final Debt before;
   final int? limit;
+
+  /// The bills it added, each with the one it replaced (for Undo).
+  final List<(CreditBill, CreditBill?)> bills;
 }
 
 /// Snap or pick a screenshot from SPayLater, BillEase or a card app. A
-/// purchase is added to the debt (over its installments); a bill updates
-/// what's due, and the limit. Logged straight away, with Undo.
+/// purchase is added to the debt (over its installments); a bill, or the
+/// list of them, adds the bills and updates the limit. Logged straight
+/// away, with Undo.
 class ScanDebtScreen extends ConsumerStatefulWidget {
   const ScanDebtScreen({super.key, required this.debtId});
 
@@ -133,13 +138,25 @@ class _ScanDebtScreenState extends ConsumerState<ScanDebtScreen> {
                 final a? => a + (scan.outstandingMinor ?? p.remainingMinor),
                 null => null,
               };
+          final unpaid = scan.unpaidBills;
+          final bills = <(CreditBill, CreditBill?)>[
+            for (final b in unpaid)
+              await actions.putBill(
+                p.debt,
+                amountMinor: b.amountMinor,
+                dueOn: b.dueOn,
+              ),
+          ];
+          // With bills, they say what's due; the single latest bill goes.
           final before = await actions.setBill(
             p.debt,
-            dueMinor: scan.dueMinor ?? p.debt.billDueMinor,
-            dueOn: scan.dueOn ?? p.debt.billDueOn,
+            dueMinor: bills.isNotEmpty
+                ? null
+                : scan.dueMinor ?? p.debt.billDueMinor,
+            dueOn: bills.isNotEmpty ? null : scan.dueOn ?? p.debt.billDueOn,
             creditLimitMinor: limit,
           );
-          result = _Billed(scan, before, limit);
+          result = _Billed(scan, before, limit, bills);
       }
       HapticFeedback.heavyImpact();
       if (mounted) {
@@ -164,7 +181,10 @@ class _ScanDebtScreenState extends ConsumerState<ScanDebtScreen> {
       switch (r) {
         case _Bought(:final entry):
           await actions.undo(entry);
-        case _Billed(:final before):
+        case _Billed(:final before, :final bills):
+          for (final (bill, was) in bills.reversed) {
+            await actions.unputBill(bill, was);
+          }
           await actions.restoreBill(before);
       }
       if (mounted) setState(() => _undone = true);
@@ -309,8 +329,8 @@ class _Start extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'A screenshot from $name: something you bought (Velora adds it, '
-              'over its installments) or your bill (Velora updates what’s due '
-              'and your limit). You can undo.',
+              'over its installments), or your bill or “My Bill” list (Velora '
+              'adds each month’s bill and updates your limit). You can undo.',
               textAlign: TextAlign.center,
               style: text.bodyMedium,
             ),
@@ -405,13 +425,24 @@ class _ResultCard extends StatelessWidget {
           if (scan.date case final d?) ('Bought', date(d)),
         ],
       ),
-      _Billed(:final scan, :final limit) => (
+      _Billed(:final scan, :final limit, :final bills) => (
         Icons.receipt_long_rounded,
         AppColors.sky,
-        'Bill updated',
+        switch (bills.length) {
+          0 => 'Bill updated',
+          1 => 'Bill added',
+          final n => '$n bills added',
+        },
         [
-          if (scan.dueMinor case final d?) ('Due', money(d)),
-          if (scan.dueOn case final d?) ('Due on', date(d)),
+          for (final (b, _) in bills)
+            (
+              billName(b),
+              '${money(b.amountMinor)} · due ${DateFormat('MMM d').format(b.dueOn)}',
+            ),
+          if (bills.isEmpty) ...[
+            if (scan.dueMinor case final d?) ('Due', money(d)),
+            if (scan.dueOn case final d?) ('Due on', date(d)),
+          ],
           if (limit case final l?) ('Credit limit', money(l)),
           if (scan.availableMinor case final a?) ('Available', money(a)),
           if (scan.outstandingMinor case final o?)
@@ -420,9 +451,17 @@ class _ResultCard extends StatelessWidget {
       ),
     };
 
-    final outstanding = switch (result) {
-      _Billed(:final scan) => scan.outstandingMinor,
-      _ => null,
+    // What the app says is owed, else at least what the bills ask for.
+    final (int? outstanding, String says) = switch (result) {
+      _Billed(:final scan) when scan.outstandingMinor != null => (
+        scan.outstandingMinor,
+        'The app says you owe',
+      ),
+      _Billed(:final bills)
+          when bills.isNotEmpty &&
+              progress.billsLeftMinor > progress.remainingMinor =>
+        (progress.billsLeftMinor, 'Your bills add up to'),
+      _ => (null, ''),
     };
     final mismatch =
         !undone &&
@@ -497,7 +536,7 @@ class _ResultCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'The app says you owe ${money(outstanding)}; Velora has '
+                      '$says ${money(outstanding)}; Velora has '
                       '${money(progress.remainingMinor)}.',
                       style: text.bodyMedium,
                     ),

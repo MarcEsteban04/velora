@@ -47,6 +47,7 @@ class FakeBackend implements OnboardingRepository, ProfileRepository {
   final invoices = <Invoice>[];
   final debts = <Debt>[];
   final debtEntries = <DebtEntry>[];
+  final debtBills = <CreditBill>[];
   final categories = <Category>[
     const Category(
       id: 'food',
@@ -760,6 +761,67 @@ class FakeDebts implements DebtRepository {
       [...db.debtEntries]..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
 
   @override
+  Future<List<CreditBill>> fetchBills() async =>
+      [...db.debtBills]..sort((a, b) => a.dueOn.compareTo(b.dueOn));
+
+  @override
+  Future<CreditBill> putBill(
+    String debtId, {
+    required int amountMinor,
+    required DateTime dueOn,
+  }) async {
+    final i = db.debtBills.indexWhere(
+      (b) => b.debtId == debtId && b.dueOn == dueOn,
+    );
+    final bill = CreditBill(
+      id: i < 0 ? db.nextId('bill') : db.debtBills[i].id,
+      debtId: debtId,
+      amountMinor: amountMinor,
+      dueOn: dueOn,
+    );
+    if (i < 0) {
+      db.debtBills.add(bill);
+    } else {
+      db.debtBills[i] = bill;
+    }
+    return bill;
+  }
+
+  @override
+  Future<CreditBill> updateBill(
+    String id, {
+    required int amountMinor,
+    required DateTime dueOn,
+  }) async {
+    final i = db.debtBills.indexWhere((b) => b.id == id);
+    final was = db.debtBills[i];
+    return db.debtBills[i] = CreditBill(
+      id: id,
+      debtId: was.debtId,
+      amountMinor: amountMinor,
+      dueOn: dueOn,
+    );
+  }
+
+  @override
+  Future<void> deleteBill(String id) async {
+    db.debtBills.removeWhere((b) => b.id == id);
+    for (final (i, e) in db.debtEntries.indexed.toList()) {
+      if (e.billId == id) {
+        db.debtEntries[i] = DebtEntry(
+          id: e.id,
+          debtId: e.debtId,
+          amountMinor: e.amountMinor,
+          occurredAt: e.occurredAt,
+          note: e.note,
+          transactionId: e.transactionId,
+          installments: e.installments,
+        );
+      }
+    }
+  }
+
+  @override
   Future<Debt> create(DebtDraft draft) async {
     final d = _from(db.nextId('debt'), draft);
     db.debts.add(d);
@@ -801,6 +863,7 @@ class FakeDebts implements DebtRepository {
   Future<void> delete(String id) async {
     db.debts.removeWhere((d) => d.id == id);
     db.debtEntries.removeWhere((e) => e.debtId == id);
+    db.debtBills.removeWhere((b) => b.debtId == id);
   }
 
   @override
@@ -811,6 +874,7 @@ class FakeDebts implements DebtRepository {
     String? accountId,
     String? categoryId,
     String? note,
+    String? billId,
   }) async {
     String? tx;
     if (accountId != null) {
@@ -833,6 +897,7 @@ class FakeDebts implements DebtRepository {
       amountMinor: amountMinor,
       occurredAt: paidAt,
       transactionId: tx,
+      billId: billId,
     );
     db.debtEntries.add(e);
     return e;

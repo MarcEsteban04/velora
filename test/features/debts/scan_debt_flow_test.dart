@@ -170,16 +170,19 @@ void main() {
     await tester.pump();
     await frames(tester, 16);
 
-    expect(find.text('Bill updated'), findsOneWidget);
+    // The bill is kept with the others on the credit line.
+    expect(find.text('Bill added'), findsOneWidget);
+    final bill = db.debtBills.single;
+    expect(bill.amountMinor, 161967);
+    expect(bill.dueOn, DateTime(2026, 10, 15));
     final debt = db.debts.single;
-    expect(debt.billDueMinor, 161967);
-    expect(debt.billDueOn, DateTime(2026, 10, 15));
+    expect(debt.billDueMinor, isNull);
     expect(debt.creditLimitMinor, 2500000);
 
     await tester.tap(find.text('Undo'));
     await tester.pump();
     await frames(tester);
-    expect(db.debts.single.billDueMinor, isNull);
+    expect(db.debtBills, isEmpty);
     expect(db.debts.single.creditLimitMinor, 2000000);
     semantics.dispose();
   });
@@ -209,6 +212,90 @@ void main() {
     await frames(tester, 16);
     expect(db.debtEntries.single.amountMinor, -905000);
     expect(find.text('Match it'), findsNothing);
+    semantics.dispose();
+  });
+
+  testWidgets('a "My Bill" list adds each unpaid bill, and can be undone', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await openScan(
+      tester,
+      _Reader(
+        DebtBill(
+          dueMinor: 547144,
+          dueOn: DateTime(2026, 10, 15),
+          bills: [
+            ScannedBill(
+              amountMinor: 120000,
+              dueOn: DateTime(2026, 9, 15),
+              paid: true,
+            ),
+            ScannedBill(amountMinor: 331669, dueOn: DateTime(2026, 11, 15)),
+            ScannedBill(amountMinor: 159798, dueOn: DateTime(2026, 12, 15)),
+            ScannedBill(amountMinor: 5655, dueOn: DateTime(2027, 1, 15)),
+          ],
+        ),
+      ),
+    );
+    await tester.tap(find.text('Choose a screenshot'));
+    await tester.pump();
+    await frames(tester, 16);
+
+    expect(find.text('4 bills added'), findsOneWidget);
+    expect(
+      db.debtBills.map((b) => (b.amountMinor, b.dueOn)),
+      unorderedEquals([
+        (547144, DateTime(2026, 10, 15)),
+        (331669, DateTime(2026, 11, 15)),
+        (159798, DateTime(2026, 12, 15)),
+        (5655, DateTime(2027, 1, 15)),
+      ]),
+    );
+    // The bills ask for ₱10,442.66; Velora has ₱1,000 owed.
+    expect(find.textContaining('Your bills add up to'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pump();
+    await frames(tester);
+    expect(find.text('Undone'), findsOneWidget);
+    expect(db.debtBills, isEmpty);
+    semantics.dispose();
+  });
+
+  testWidgets('scanning the list again updates a bill, not a second one', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    db.debtBills.add(
+      CreditBill(
+        id: 'b1',
+        debtId: 'spay',
+        amountMinor: 300000,
+        dueOn: DateTime(2026, 11, 15),
+      ),
+    );
+    await openScan(
+      tester,
+      _Reader(
+        DebtBill(
+          bills: [
+            ScannedBill(amountMinor: 331669, dueOn: DateTime(2026, 11, 15)),
+          ],
+        ),
+      ),
+    );
+    await tester.tap(find.text('Choose a screenshot'));
+    await tester.pump();
+    await frames(tester, 16);
+    expect(find.text('Bill added'), findsOneWidget);
+    expect(db.debtBills.single.amountMinor, 331669);
+
+    // Undo puts back what it was.
+    await tester.tap(find.text('Undo'));
+    await tester.pump();
+    await frames(tester);
+    expect(db.debtBills.single.amountMinor, 300000);
     semantics.dispose();
   });
 
