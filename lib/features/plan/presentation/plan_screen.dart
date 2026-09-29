@@ -18,6 +18,10 @@ import '../../debts/domain/debt.dart';
 import '../../debts/presentation/debt_style.dart';
 import '../../debts/presentation/debts_screen.dart';
 import '../../home/application/balance_privacy.dart';
+import '../../owed/application/owed_providers.dart';
+import '../../owed/domain/owed.dart';
+import '../../owed/presentation/owed_screen.dart';
+import '../../owed/presentation/owed_style.dart';
 import '../../goals/application/goal_providers.dart';
 import '../../goals/domain/goal.dart';
 import '../../goals/presentation/goal_style.dart';
@@ -38,6 +42,7 @@ class PlanScreen extends ConsumerWidget {
     final budgets = ref.watch(budgetStatusesProvider);
     final goals = ref.watch(goalProgressProvider);
     final debts = ref.watch(debtProgressProvider);
+    final owed = ref.watch(owedProgressProvider);
     final hidden = ref.watch(balancesHiddenProvider);
 
     void open(Route<void> route) {
@@ -56,7 +61,9 @@ class PlanScreen extends ConsumerWidget {
           ..invalidate(goalEntriesProvider)
           ..invalidate(debtsProvider)
           ..invalidate(debtEntriesProvider)
-          ..invalidate(debtBillsProvider);
+          ..invalidate(debtBillsProvider)
+          ..invalidate(owedProvider)
+          ..invalidate(owedEntriesProvider);
         await ref.read(budgetsProvider.future);
       },
       child: ListView(
@@ -74,7 +81,7 @@ class PlanScreen extends ConsumerWidget {
               children: [
                 Text('Plan', style: text.displaySmall),
                 Text(
-                  'Budgets, goals, debts and what’s coming up',
+                  'Budgets, goals, debts and who owes you',
                   style: text.bodyLarge,
                 ),
               ],
@@ -105,6 +112,16 @@ class PlanScreen extends ConsumerWidget {
               currency: currency,
               hidden: hidden,
               onOpen: () => open(DebtsScreen.route()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 162),
+            child: _OwedCard(
+              owed: owed,
+              currency: currency,
+              hidden: hidden,
+              onOpen: () => open(OwedScreen.route()),
             ),
           ),
           const SizedBox(height: 12),
@@ -142,12 +159,6 @@ class PlanScreen extends ConsumerWidget {
               crossAxisSpacing: 10,
               childAspectRatio: 1.9,
               children: [
-                _SoonTile(
-                  icon: Icons.handshake_rounded,
-                  color: AppColors.leafBright,
-                  title: 'Owed to you',
-                  subtitle: 'Who still owes you',
-                ),
                 _SoonTile(
                   icon: Icons.event_repeat_rounded,
                   color: AppColors.sky,
@@ -474,6 +485,131 @@ class _DebtsCard extends StatelessWidget {
               _CardHeader(
                 label: 'DEBTS',
                 action: d == null || d.isEmpty ? null : 'See all',
+              ),
+              const SizedBox(height: 12),
+              content,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OwedCard extends StatelessWidget {
+  const _OwedCard({
+    required this.owed,
+    required this.currency,
+    required this.hidden,
+    required this.onOpen,
+  });
+
+  final List<OwedProgress>? owed;
+  final Currency currency;
+  final bool hidden;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final o = owed;
+    String money(int m, Currency c) =>
+        hidden ? '${c.symbol}••••' : Money.format(m, c);
+
+    Widget content;
+    if (o == null) {
+      content = const SizedBox(height: 60);
+    } else if (o.isEmpty) {
+      content = _Invite(
+        pose: MascotPose.coin,
+        title: 'Track who owes you',
+        body:
+            'Lunch you covered or a loan to a friend. Count it until it’s '
+            'back.',
+      );
+    } else {
+      final owing = o.where((p) => !p.isSettled).toList();
+      final totals = OwedTotals.of(
+        o.where((p) => p.owed.currencyCode == currency.code),
+      );
+      final now = AppClock.now();
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    money(totals.owedMinor, currency),
+                    style: text.headlineSmall,
+                  ),
+                ),
+              ),
+              Text(
+                owing.isEmpty ? 'All paid back' : 'still owed to you',
+                style: text.labelMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ProgressBar(
+            value: totals.fraction,
+            color: AppColors.leafBright,
+            height: 6,
+          ),
+          const SizedBox(height: 10),
+          for (final p in owing.take(2))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  OwedAvatar(owed: p.owed, size: 26),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      p.owed.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium?.copyWith(fontSize: 13),
+                    ),
+                  ),
+                  Text(
+                    p.owed.dueOn == null
+                        ? money(
+                            p.remainingMinor,
+                            Currencies.byCode(p.owed.currencyCode),
+                          )
+                        : payBackLabel(p.owed.dueOn!, now),
+                    style: text.labelMedium?.copyWith(
+                      fontSize: 11,
+                      color: p.isOverdue(now) ? AppColors.rust : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: 'Owed to you',
+      child: GestureDetector(
+        onTap: onOpen,
+        child: GlassCard(
+          radius: 24,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _CardHeader(
+                label: 'OWED TO YOU',
+                action: o == null || o.isEmpty ? null : 'See all',
               ),
               const SizedBox(height: 12),
               content,

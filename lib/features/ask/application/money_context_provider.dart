@@ -7,6 +7,7 @@ import '../../accounts/data/account_repository.dart';
 import '../../budgets/application/budget_providers.dart';
 import '../../budgets/presentation/budget_style.dart';
 import '../../debts/application/debt_providers.dart';
+import '../../owed/application/owed_providers.dart';
 import '../../goals/application/goal_providers.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../streaks/application/streak_providers.dart';
@@ -38,6 +39,7 @@ final moneyContextProvider = Provider<MoneyContext?>((ref) {
   final budgets = ref.watch(budgetStatusesProvider) ?? const [];
   final goals = ref.watch(goalProgressProvider) ?? const [];
   final debts = ref.watch(debtProgressProvider) ?? const [];
+  final owed = ref.watch(owedProgressProvider) ?? const [];
   final streakOn = ref.watch(streakSettingsProvider).enabled;
   final streak = streakOn ? ref.watch(streakProvider) : null;
 
@@ -136,6 +138,15 @@ final moneyContextProvider = Provider<MoneyContext?>((ref) {
           creditLimitMinor: d.debt.creditLimitMinor,
           availableMinor: d.availableMinor,
           dueNowMinor: d.dueNowMinor,
+        ),
+    ],
+    owedToYou: [
+      for (final o in owed.where((o) => !o.isSettled))
+        OwedLine(
+          name: o.owed.name,
+          currencyCode: o.owed.currencyCode,
+          owedMinor: o.remainingMinor,
+          dueOn: o.owed.dueOn,
         ),
     ],
     streakDays: streak?.current,

@@ -22,6 +22,8 @@ import 'package:velora/features/debts/domain/debt.dart';
 import 'package:velora/features/goals/data/goal_repository.dart';
 import 'package:velora/features/goals/domain/goal.dart';
 import 'package:velora/features/onboarding/application/onboarding_controller.dart';
+import 'package:velora/features/owed/data/owed_repository.dart';
+import 'package:velora/features/owed/domain/owed.dart';
 import 'package:velora/features/onboarding/data/onboarding_repository.dart';
 import 'package:velora/features/profile/data/profile_repository.dart';
 import 'package:velora/features/receipts/data/receipt_storage.dart';
@@ -48,6 +50,8 @@ class FakeBackend implements OnboardingRepository, ProfileRepository {
   final debts = <Debt>[];
   final debtEntries = <DebtEntry>[];
   final debtBills = <CreditBill>[];
+  final owed = <Owed>[];
+  final owedEntries = <OwedEntry>[];
   final categories = <Category>[
     const Category(
       id: 'food',
@@ -928,6 +932,103 @@ class FakeDebts implements DebtRepository {
       db.debtEntries.removeWhere((e) => e.id == id);
 }
 
+/// Who owes the user, in memory. An entry that moved an account logs the
+/// income or expense too, as the database functions do.
+class FakeOwed implements OwedRepository {
+  FakeOwed(this.db);
+  final FakeBackend db;
+
+  Owed _from(String id, OwedDraft d) => Owed(
+    id: id,
+    name: d.name.trim(),
+    note: switch (d.note?.trim()) {
+      final n? when n.isNotEmpty => n,
+      _ => null,
+    },
+    currencyCode: d.currencyCode,
+    dueOn: d.dueOn,
+    createdAt: DateTime(2026),
+  );
+
+  @override
+  Future<List<Owed>> fetchOwed() async => [...db.owed];
+
+  @override
+  Future<List<OwedEntry>> fetchEntries() async =>
+      [...db.owedEntries]..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+
+  @override
+  Future<Owed> create(
+    OwedDraft draft, {
+    required int lentMinor,
+    required DateTime lentAt,
+    String? accountId,
+  }) async {
+    final o = _from(db.nextId('owed'), draft);
+    db.owed.add(o);
+    await record(
+      o.id,
+      amountMinor: -lentMinor,
+      at: lentAt,
+      accountId: accountId,
+    );
+    return o;
+  }
+
+  @override
+  Future<Owed> update(String id, OwedDraft draft) async {
+    final i = db.owed.indexWhere((o) => o.id == id);
+    return db.owed[i] = _from(id, draft);
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    db.owed.removeWhere((o) => o.id == id);
+    db.owedEntries.removeWhere((e) => e.owedId == id);
+  }
+
+  @override
+  Future<OwedEntry> record(
+    String owedId, {
+    required int amountMinor,
+    required DateTime at,
+    String? accountId,
+    String? note,
+  }) async {
+    final name = db.owed.firstWhere((o) => o.id == owedId).name;
+    String? tx;
+    if (accountId != null) {
+      tx = db.nextId('tx');
+      db.transactions.add(
+        Transaction(
+          id: tx,
+          kind: amountMinor > 0
+              ? TransactionKind.income
+              : TransactionKind.expense,
+          amountMinor: amountMinor.abs(),
+          accountId: accountId,
+          note: amountMinor > 0 ? '$name paid you back' : 'Lent to $name',
+          occurredAt: at,
+        ),
+      );
+    }
+    final e = OwedEntry(
+      id: db.nextId('oe'),
+      owedId: owedId,
+      amountMinor: amountMinor,
+      occurredAt: at,
+      note: note == null || note.trim().isEmpty ? null : note.trim(),
+      transactionId: tx,
+    );
+    db.owedEntries.add(e);
+    return e;
+  }
+
+  @override
+  Future<void> deleteEntry(String id) async =>
+      db.owedEntries.removeWhere((e) => e.id == id);
+}
+
 /// Every override the full app needs to run on the fakes above. [prefs]
 /// comes from `SharedPreferences.getInstance()` after
 /// `SharedPreferences.setMockInitialValues`.
@@ -948,6 +1049,7 @@ List<Override> fakeOverrides(
   updateRepositoryProvider.overrideWithValue(updates ?? FakeUpdates()),
   invoiceRepositoryProvider.overrideWithValue(FakeInvoices(db)),
   debtRepositoryProvider.overrideWithValue(FakeDebts(db)),
+  owedRepositoryProvider.overrideWithValue(FakeOwed(db)),
   exchangeRateSourceProvider.overrideWithValue(rates ?? FakeRates()),
   updateInstallerProvider.overrideWithValue(installer ?? FakeInstaller()),
   onboardingRepositoryProvider.overrideWithValue(db),

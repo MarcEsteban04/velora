@@ -75,6 +75,23 @@ class DebtLine {
   final int? dueNowMinor;
 }
 
+/// Someone who still owes the user.
+class OwedLine {
+  const OwedLine({
+    required this.name,
+    required this.currencyCode,
+    required this.owedMinor,
+    this.dueOn,
+  });
+
+  final String name;
+  final String currencyCode;
+  final int owedMinor;
+
+  /// When they said they'd pay it back, if they did.
+  final DateTime? dueOn;
+}
+
 /// Everything Velora can talk about, worked out on the phone. It holds
 /// names and totals, never notes, so it's safe to share with the AI.
 class MoneyContext {
@@ -92,6 +109,7 @@ class MoneyContext {
     required this.budgets,
     required this.goals,
     this.debts = const [],
+    this.owedToYou = const [],
     this.streakDays,
     this.streakPhrase,
   });
@@ -118,6 +136,9 @@ class MoneyContext {
 
   /// What's still owed, one line per debt that isn't paid off.
   final List<DebtLine> debts;
+
+  /// Who still owes the user, one line per person.
+  final List<OwedLine> owedToYou;
   final int? streakDays;
 
   /// "a 5-day logging streak", "5 no-spend days in a row"...
@@ -210,6 +231,17 @@ class MoneyContext {
             if (d.dueNowMinor case final n?) 'due_now': _major(n),
             if (d.nextDue case final n?)
               'next_due': '${n.year}-${_two(n.month)}-${_two(n.day)}',
+          },
+      ],
+    if (owedToYou.isNotEmpty)
+      'owed_to_you': [
+        for (final o in owedToYou)
+          {
+            'name': o.name,
+            if (o.currencyCode != currency.code) 'currency': o.currencyCode,
+            'still_owes': _major(o.owedMinor),
+            if (o.dueOn case final d?)
+              'pay_back_by': '${d.year}-${_two(d.month)}-${_two(d.day)}',
           },
       ],
     if (streakDays != null)
