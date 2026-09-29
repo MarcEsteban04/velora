@@ -17,6 +17,8 @@ import 'package:velora/features/auth/data/auth_repository.dart';
 import 'package:velora/features/auth/domain/backup_status.dart';
 import 'package:velora/features/budgets/data/budget_repository.dart';
 import 'package:velora/features/budgets/domain/budget.dart';
+import 'package:velora/features/debts/data/debt_repository.dart';
+import 'package:velora/features/debts/domain/debt.dart';
 import 'package:velora/features/goals/data/goal_repository.dart';
 import 'package:velora/features/goals/domain/goal.dart';
 import 'package:velora/features/onboarding/application/onboarding_controller.dart';
@@ -43,6 +45,8 @@ class FakeBackend implements OnboardingRepository, ProfileRepository {
   final goals = <Goal>[];
   final goalEntries = <GoalEntry>[];
   final invoices = <Invoice>[];
+  final debts = <Debt>[];
+  final debtEntries = <DebtEntry>[];
   final categories = <Category>[
     const Category(
       id: 'food',
@@ -727,6 +731,107 @@ class FakeRates implements ExchangeRateSource {
   );
 }
 
+/// Debts in memory. Paying from an account logs the expense too, as the
+/// database function does.
+class FakeDebts implements DebtRepository {
+  FakeDebts(this.db);
+  final FakeBackend db;
+
+  Debt _from(String id, DebtDraft d) => Debt(
+    id: id,
+    name: d.name.trim(),
+    kind: d.kind,
+    currencyCode: d.currencyCode,
+    owedMinor: d.owedMinor,
+    monthlyMinor: d.monthlyMinor,
+    dueDay: d.dueDay,
+    createdAt: DateTime(2026),
+  );
+
+  @override
+  Future<List<Debt>> fetchDebts() async => [...db.debts];
+
+  @override
+  Future<List<DebtEntry>> fetchEntries() async =>
+      [...db.debtEntries]..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+
+  @override
+  Future<Debt> create(DebtDraft draft) async {
+    final d = _from(db.nextId('debt'), draft);
+    db.debts.add(d);
+    return d;
+  }
+
+  @override
+  Future<Debt> update(String id, DebtDraft draft) async {
+    final i = db.debts.indexWhere((d) => d.id == id);
+    return db.debts[i] = _from(id, draft);
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    db.debts.removeWhere((d) => d.id == id);
+    db.debtEntries.removeWhere((e) => e.debtId == id);
+  }
+
+  @override
+  Future<DebtEntry> pay(
+    String debtId, {
+    required int amountMinor,
+    required DateTime paidAt,
+    String? accountId,
+    String? categoryId,
+    String? note,
+  }) async {
+    String? tx;
+    if (accountId != null) {
+      tx = db.nextId('tx');
+      db.transactions.add(
+        Transaction(
+          id: tx,
+          kind: TransactionKind.expense,
+          amountMinor: amountMinor,
+          accountId: accountId,
+          categoryId: categoryId,
+          note: note,
+          occurredAt: paidAt,
+        ),
+      );
+    }
+    final e = DebtEntry(
+      id: db.nextId('de'),
+      debtId: debtId,
+      amountMinor: amountMinor,
+      occurredAt: paidAt,
+      transactionId: tx,
+    );
+    db.debtEntries.add(e);
+    return e;
+  }
+
+  @override
+  Future<DebtEntry> borrow(
+    String debtId, {
+    required int amountMinor,
+    required DateTime at,
+    String? note,
+  }) async {
+    final e = DebtEntry(
+      id: db.nextId('de'),
+      debtId: debtId,
+      amountMinor: -amountMinor,
+      occurredAt: at,
+      note: note,
+    );
+    db.debtEntries.add(e);
+    return e;
+  }
+
+  @override
+  Future<void> deleteEntry(String id) async =>
+      db.debtEntries.removeWhere((e) => e.id == id);
+}
+
 /// Every override the full app needs to run on the fakes above. [prefs]
 /// comes from `SharedPreferences.getInstance()` after
 /// `SharedPreferences.setMockInitialValues`.
@@ -746,6 +851,7 @@ List<Override> fakeOverrides(
   authRepositoryProvider.overrideWithValue(auth ?? FakeAuth(db)),
   updateRepositoryProvider.overrideWithValue(updates ?? FakeUpdates()),
   invoiceRepositoryProvider.overrideWithValue(FakeInvoices(db)),
+  debtRepositoryProvider.overrideWithValue(FakeDebts(db)),
   exchangeRateSourceProvider.overrideWithValue(rates ?? FakeRates()),
   updateInstallerProvider.overrideWithValue(installer ?? FakeInstaller()),
   onboardingRepositoryProvider.overrideWithValue(db),

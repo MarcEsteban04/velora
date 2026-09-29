@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/money/currency.dart';
-import '../../../../core/money/money.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/time/app_clock.dart';
+import '../money/currency.dart';
+import '../money/money.dart';
+import '../theme/app_colors.dart';
+import '../time/app_clock.dart';
 
 /// A labelled amount in [currency], e.g. "$ 1,250.00".
 class MoneyField extends StatelessWidget {

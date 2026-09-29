@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/money/currency.dart';
 import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/time/app_clock.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/progress_visuals.dart';
 import '../../../core/widgets/reveal.dart';
@@ -12,6 +13,11 @@ import '../../../core/widgets/velora_mascot.dart';
 import '../../budgets/application/budget_providers.dart';
 import '../../budgets/presentation/budget_style.dart';
 import '../../categories/presentation/categories_screen.dart';
+import '../../debts/application/debt_providers.dart';
+import '../../debts/domain/debt.dart';
+import '../../debts/presentation/debt_style.dart';
+import '../../debts/presentation/debts_screen.dart';
+import '../../home/application/balance_privacy.dart';
 import '../../goals/application/goal_providers.dart';
 import '../../goals/domain/goal.dart';
 import '../../goals/presentation/goal_style.dart';
@@ -31,6 +37,8 @@ class PlanScreen extends ConsumerWidget {
     final currency = ref.watch(mainCurrencyProvider);
     final budgets = ref.watch(budgetStatusesProvider);
     final goals = ref.watch(goalProgressProvider);
+    final debts = ref.watch(debtProgressProvider);
+    final hidden = ref.watch(balancesHiddenProvider);
 
     void open(Route<void> route) {
       HapticFeedback.selectionClick();
@@ -45,7 +53,9 @@ class PlanScreen extends ConsumerWidget {
           ..invalidate(budgetsProvider)
           ..invalidate(budgetTransactionsProvider)
           ..invalidate(goalsProvider)
-          ..invalidate(goalEntriesProvider);
+          ..invalidate(goalEntriesProvider)
+          ..invalidate(debtsProvider)
+          ..invalidate(debtEntriesProvider);
         await ref.read(budgetsProvider.future);
       },
       child: ListView(
@@ -63,7 +73,7 @@ class PlanScreen extends ConsumerWidget {
               children: [
                 Text('Plan', style: text.displaySmall),
                 Text(
-                  'Budgets, goals and what’s coming up',
+                  'Budgets, goals, debts and what’s coming up',
                   style: text.bodyLarge,
                 ),
               ],
@@ -84,6 +94,16 @@ class PlanScreen extends ConsumerWidget {
             child: _GoalsCard(
               goals: goals,
               onOpen: () => open(GoalsScreen.route()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 155),
+            child: _DebtsCard(
+              debts: debts,
+              currency: currency,
+              hidden: hidden,
+              onOpen: () => open(DebtsScreen.route()),
             ),
           ),
           const SizedBox(height: 12),
@@ -121,12 +141,6 @@ class PlanScreen extends ConsumerWidget {
               crossAxisSpacing: 10,
               childAspectRatio: 1.9,
               children: [
-                _SoonTile(
-                  icon: Icons.receipt_long_rounded,
-                  color: const Color(0xFFF4C24D),
-                  title: 'Debts',
-                  subtitle: 'What you still owe',
-                ),
                 _SoonTile(
                   icon: Icons.handshake_rounded,
                   color: AppColors.leafBright,
@@ -339,6 +353,126 @@ class _BudgetsCard extends StatelessWidget {
               _CardHeader(
                 label: 'CATEGORY BUDGETS',
                 action: v == null || v.isEmpty ? null : 'See all',
+              ),
+              const SizedBox(height: 12),
+              content,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DebtsCard extends StatelessWidget {
+  const _DebtsCard({
+    required this.debts,
+    required this.currency,
+    required this.hidden,
+    required this.onOpen,
+  });
+
+  final List<DebtProgress>? debts;
+  final Currency currency;
+  final bool hidden;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final d = debts;
+    String money(int m, Currency c) =>
+        hidden ? '${c.symbol}••••' : Money.format(m, c);
+
+    Widget content;
+    if (d == null) {
+      content = const SizedBox(height: 60);
+    } else if (d.isEmpty) {
+      content = _Invite(
+        pose: MascotPose.wallet,
+        title: 'Track what you owe',
+        body: 'A card, a pay-later plan or a loan. Watch it go down to zero.',
+      );
+    } else {
+      final owing = d.where((p) => !p.isPaidOff).toList();
+      final totals = DebtTotals.of(
+        d.where((p) => p.debt.currencyCode == currency.code),
+      );
+      final now = AppClock.now();
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    money(totals.owedMinor, currency),
+                    style: text.headlineSmall,
+                  ),
+                ),
+              ),
+              Text(
+                owing.isEmpty ? 'All paid off' : 'left to pay',
+                style: text.labelMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ProgressBar(
+            value: totals.fraction,
+            color: AppColors.leafBright,
+            height: 6,
+          ),
+          const SizedBox(height: 10),
+          for (final p in owing.take(2))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Icon(p.debt.kind.icon, size: 18, color: p.debt.kind.color),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      p.debt.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium?.copyWith(fontSize: 13),
+                    ),
+                  ),
+                  Text(
+                    p.nextDue == null
+                        ? money(
+                            p.remainingMinor,
+                            Currencies.byCode(p.debt.currencyCode),
+                          )
+                        : dueLabel(p.nextDue!, now),
+                    style: text.labelMedium?.copyWith(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: 'Debts',
+      child: GestureDetector(
+        onTap: onOpen,
+        child: GlassCard(
+          radius: 24,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _CardHeader(
+                label: 'DEBTS',
+                action: d == null || d.isEmpty ? null : 'See all',
               ),
               const SizedBox(height: 12),
               content,

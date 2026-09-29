@@ -29,7 +29,7 @@ import 'invoice_sheet.dart';
 import 'mark_paid_sheet.dart';
 import 'scan_invoice_screen.dart';
 import 'widgets/payoneer_balance_card.dart';
-import 'widgets/payoneer_fields.dart';
+import '../../../core/widgets/money_fields.dart';
 import 'withdraw_sheet.dart';
 
 /// Salary through Payoneer: the dollar balance and what it's worth in

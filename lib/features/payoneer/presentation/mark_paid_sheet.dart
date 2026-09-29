@@ -13,7 +13,7 @@ import '../../accounts/domain/account.dart';
 import '../../transactions/application/transaction_providers.dart';
 import '../application/payoneer_providers.dart';
 import '../domain/invoice.dart';
-import 'widgets/payoneer_fields.dart';
+import '../../../core/widgets/money_fields.dart';
 
 /// The client paid: log what actually landed in Payoneer (after any fee)
 /// as salary.

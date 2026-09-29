@@ -48,6 +48,24 @@ class GoalLine {
   final DateTime? targetDate;
 }
 
+class DebtLine {
+  const DebtLine({
+    required this.name,
+    required this.kind,
+    required this.currencyCode,
+    required this.remainingMinor,
+    this.monthlyMinor,
+    this.nextDue,
+  });
+
+  final String name;
+  final String kind;
+  final String currencyCode;
+  final int remainingMinor;
+  final int? monthlyMinor;
+  final DateTime? nextDue;
+}
+
 /// Everything Velora can talk about, worked out on the phone. It holds
 /// names and totals, never notes, so it's safe to share with the AI.
 class MoneyContext {
@@ -64,6 +82,7 @@ class MoneyContext {
     required this.spentByCategory,
     required this.budgets,
     required this.goals,
+    this.debts = const [],
     this.streakDays,
     this.streakPhrase,
   });
@@ -87,6 +106,9 @@ class MoneyContext {
   final Map<Span, Map<String, int>> spentByCategory;
   final List<BudgetLine> budgets;
   final List<GoalLine> goals;
+
+  /// What's still owed, one line per debt that isn't paid off.
+  final List<DebtLine> debts;
   final int? streakDays;
 
   /// "a 5-day logging streak", "5 no-spend days in a row"...
@@ -165,6 +187,19 @@ class MoneyContext {
             'target_date': '${d.year}-${_two(d.month)}-${_two(d.day)}',
         },
     ],
+    if (debts.isNotEmpty)
+      'debts': [
+        for (final d in debts)
+          {
+            'name': d.name,
+            'kind': d.kind,
+            if (d.currencyCode != currency.code) 'currency': d.currencyCode,
+            'left_to_pay': _major(d.remainingMinor),
+            if (d.monthlyMinor case final m?) 'monthly_payment': _major(m),
+            if (d.nextDue case final n?)
+              'next_due': '${n.year}-${_two(n.month)}-${_two(n.day)}',
+          },
+      ],
     if (streakDays != null)
       'streak': {'days': streakDays, 'summary': streakPhrase},
   };

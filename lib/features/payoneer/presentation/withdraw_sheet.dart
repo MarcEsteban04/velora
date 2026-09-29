@@ -17,7 +17,7 @@ import '../../profile/application/main_currency.dart';
 import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/domain/transaction.dart';
 import '../application/payoneer_providers.dart';
-import 'widgets/payoneer_fields.dart';
+import '../../../core/widgets/money_fields.dart';
 
 /// Moves money out to a bank, for example dollars to pesos in Maribank.
 /// Velora estimates the pesos from today's market rate less Payoneer's

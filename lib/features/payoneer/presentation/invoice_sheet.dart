@@ -12,7 +12,7 @@ import '../../../core/widgets/pressable_button.dart';
 import '../../accounts/domain/account.dart';
 import '../application/payoneer_providers.dart';
 import '../domain/invoice.dart';
-import 'widgets/payoneer_fields.dart';
+import '../../../core/widgets/money_fields.dart';
 
 /// Logs an invoice sent through Payoneer, or edits one. New invoices start
 /// from the last one: same client and amount, the next number.
