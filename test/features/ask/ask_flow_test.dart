@@ -101,17 +101,55 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('answers from the numbers, and uses the AI when it can', (
+  testWidgets('offline, the phone answers from the numbers', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openAsk(tester);
+
+    // The AI is tried first; when it's unreachable, the phone answers.
+    await say(tester, 'What’s my net worth?');
+    expect(ask.requests, hasLength(1));
+    expect(find.textContaining('Your net worth is ₱12,000.00'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('a real conversation, remembered turn to turn', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openAsk(tester);
+
+    ask.reply = const AiReply(text: 'Hi Marc! How’s your day going?');
+    await say(tester, 'hi velora!');
+    expect(find.text('Hi Marc! How’s your day going?'), findsOneWidget);
+    expect(find.text('Log it'), findsNothing);
+
+    ask.reply = const AiReply(text: 'Mostly food this week.');
+    await say(tester, 'why so much?');
+    expect(find.text('Mostly food this week.'), findsOneWidget);
+    // The follow-up carries the chat so far.
+    final history = ask.histories.last;
+    expect(history.map((m) => m.$2), [
+      'hi velora!',
+      'Hi Marc! How’s your day going?',
+      'why so much?',
+    ]);
+    expect(ask.requests.last['net_worth'], '12000.00');
+    semantics.dispose();
+  });
+
+  testWidgets('a question with an amount is talked about, not logged', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
     await openAsk(tester);
+    ask.reply = const AiReply(text: 'That’s a solid start for a fund.');
+    await say(tester, 'I earn 30000 a month, is that enough?');
+    expect(find.text('That’s a solid start for a fund.'), findsOneWidget);
+    expect(find.text('Log it'), findsNothing);
+    semantics.dispose();
+  });
 
-    await say(tester, 'What’s my net worth?');
-    expect(find.textContaining('Your net worth is ₱12,000.00'), findsOneWidget);
-    expect(ask.requests, isEmpty);
-
-    // Longer questions go to the AI, with the money summary.
+  testWidgets('the AI can still offer to log something', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openAsk(tester);
     ask.reply = const AiReply(
       text: 'Here’s what I’ll log for the concert.',
       action: AiAction(kind: 'expense', amount: 1500, category: 'Fun'),

@@ -49,7 +49,9 @@ final homeInsightProvider = FutureProvider<String?>((ref) async {
   final raw = await AiClient.complete(
     system: homeInsightPrompt(c.coachTone, trackedDays),
     messages: [('user', jsonEncode(facts))],
-    maxTokens: 60,
+    // Room for the model's reasoning too; the reply is still one
+    // sentence (see the prompt and tightenInsight).
+    maxTokens: 400,
     temperature: 0.7,
   );
   final text = raw == null ? null : tightenInsight(raw);

@@ -469,12 +469,16 @@ class FakeAsk implements AskRepository {
   AiReply? reply;
   final requests = <Map<String, Object?>>[];
 
+  /// The conversation each request carried, oldest message first.
+  final histories = <List<(String, String)>>[];
+
   @override
   Future<AiReply?> ask({
     required List<(String, String)> history,
     required Map<String, Object?> context,
   }) async {
     requests.add(context);
+    histories.add(history);
     return reply;
   }
 }

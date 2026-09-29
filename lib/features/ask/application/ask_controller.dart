@@ -112,8 +112,9 @@ class AskController extends Notifier<AskState> {
     final parser = _parser();
     final ctx = ref.read(moneyContextProvider);
 
-    // 1. A transaction, understood on the phone.
-    final parsed = parser?.parse(text);
+    // 1. A clear "spent 250 on lunch", understood on the phone. A question
+    // ("I earn 30k, is that enough?") is conversation, never a log.
+    final parsed = text.contains('?') ? null : parser?.parse(text);
     if (parsed != null) {
       await _pause();
       _add(
@@ -127,16 +128,9 @@ class AskController extends Notifier<AskState> {
       return;
     }
 
-    // 2. A short, common question, answered from the numbers.
+    // 2. The AI, for everything else: a real conversation that remembers
+    // the chat. The phone's own answers are the offline fallback.
     final local = ctx == null ? null : LocalAnswers.answer(text, ctx);
-    final short = text.split(RegExp(r'\s+')).length <= 9;
-    if (local != null && short) {
-      await _pause();
-      _add(ChatMessage(id: _id(), role: ChatRole.velora, text: local));
-      return;
-    }
-
-    // 3. The AI.
     final ai = ctx == null
         ? null
         : await ref
@@ -148,7 +142,7 @@ class AskController extends Notifier<AskState> {
                           .skip(1)
                           .toList()
                           .reversed
-                          .take(10)
+                          .take(16)
                           .toList()
                           .reversed)
                     (m.role == ChatRole.user ? 'user' : 'assistant', m.text),
@@ -175,7 +169,7 @@ class AskController extends Notifier<AskState> {
       return;
     }
 
-    // 4. Offline, or the AI isn't set up: the phone does its best.
+    // 3. Offline, or the AI isn't set up: the phone does its best.
     _add(
       ChatMessage(
         id: _id(),

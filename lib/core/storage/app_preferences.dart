@@ -64,8 +64,9 @@ class AppPreferences {
   static const _kNavBar = 'prefs.navBarStyle';
   static const _kFont = 'prefs.font';
   // v2: insights now know how many days were tracked.
-  static const _kInsight = 'cache.walletInsight.v3';
-  static const _kHomeInsight = 'cache.homeInsight.v2';
+  // v4/v3: earlier notes could be cut off mid-sentence.
+  static const _kInsight = 'cache.walletInsight.v4';
+  static const _kHomeInsight = 'cache.homeInsight.v3';
 
   /// Today's AI insight, so reopening Wallet doesn't spend tokens.
   String? get cachedInsight => _prefs.getString(_kInsight);

@@ -24,7 +24,16 @@ void main() {
     expect(r.text, 'Here is your coffee');
     expect(r.action?.amount, 180);
     expect(r.action?.account, 'GCash');
-    expect(DirectAskRepository.parseReply('not json'), isNull);
     expect(DirectAskRepository.parseReply('{"reply": ""}'), isNull);
+    // Broken JSON is nothing to show.
+    expect(DirectAskRepository.parseReply('{"reply": "Hi'), isNull);
+  });
+
+  test('a plain-text reply is still a reply, just without an action', () {
+    final r = DirectAskRepository.parseReply(
+      'Hey Marc! How’s your **day** going?',
+    )!;
+    expect(r.text, 'Hey Marc! How’s your day going?');
+    expect(r.action, isNull);
   });
 }

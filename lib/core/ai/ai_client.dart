@@ -183,13 +183,35 @@ abstract final class AiClient {
         ],
       }),
     );
+    if (res.statusCode == 400 && r.json) {
+      // Groq refuses a reply that isn't valid JSON but hands back what the
+      // model wrote: usually a fine plain-text answer. Callers read that.
+      final failed = _failedGeneration(res.bodyBytes);
+      if (failed != null) return failed;
+    }
     if (res.statusCode != 200) {
       throw http.ClientException('HTTP ${res.statusCode}');
     }
     final data = jsonDecode(utf8.decode(res.bodyBytes));
-    return (((data as Map)['choices'] as List?)?.firstOrNull
-            as Map?)?['message']?['content']
-        as String?;
+    final choice = ((data as Map)['choices'] as List?)?.firstOrNull as Map?;
+    // Cut off mid-sentence (or mid-JSON): not worth showing.
+    if (choice?['finish_reason'] == 'length') {
+      throw http.ClientException('Reply hit the token limit');
+    }
+    return choice?['message']?['content'] as String?;
+  }
+
+  static String? _failedGeneration(List<int> body) {
+    try {
+      final error = (jsonDecode(utf8.decode(body)) as Map)['error'];
+      if (error is Map && error['code'] == 'json_validate_failed') {
+        final text = error['failed_generation'];
+        if (text is String && text.trim().isNotEmpty) return text;
+      }
+    } on FormatException {
+      // Not JSON either; treat it as the error it is.
+    }
+    return null;
   }
 
   static Future<String?> _gemini(http.Client c, String key, _Request r) async {
@@ -234,11 +256,12 @@ abstract final class AiClient {
       throw http.ClientException('HTTP ${res.statusCode}');
     }
     final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map;
+    final candidate = (data['candidates'] as List?)?.firstOrNull as Map?;
+    if (candidate?['finishReason'] == 'MAX_TOKENS') {
+      throw http.ClientException('Reply hit the token limit');
+    }
     final parts =
-        ((((data['candidates'] as List?)?.firstOrNull as Map?)?['content']
-                as Map?)?['parts']
-            as List?) ??
-        const [];
+        ((candidate?['content'] as Map?)?['parts'] as List?) ?? const [];
     return parts.map((p) => (p as Map)['text'] ?? '').join();
   }
 }

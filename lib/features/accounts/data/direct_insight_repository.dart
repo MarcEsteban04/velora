@@ -65,7 +65,9 @@ class DirectInsightRepository implements InsightRepository {
     final raw = await AiClient.complete(
       system: systemPrompt(snapshot, tone),
       messages: [('user', userPrompt(snapshot))],
-      maxTokens: 60,
+      // Room for the model's reasoning too; the reply is still one
+      // sentence (see the prompt and tightenInsight).
+      maxTokens: 400,
       temperature: 0.6,
     );
     return raw == null ? null : tightenInsight(raw);
