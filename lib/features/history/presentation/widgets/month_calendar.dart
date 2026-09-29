@@ -175,7 +175,7 @@ class MonthCalendar extends StatelessWidget {
                   height: 6,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.leafBright,
+                    color: AppColors.accentBright,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -240,7 +240,7 @@ class _DayCell extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? AppColors.leafBright
+                  ? AppColors.accentBright
                   : isToday
                   ? AppColors.textPrimary.withValues(alpha: 0.6)
                   : Colors.transparent,
@@ -292,7 +292,7 @@ class _DayCell extends StatelessWidget {
                     height: 6,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.leafBright,
+                      color: AppColors.accentBright,
                     ),
                   ),
                 ),

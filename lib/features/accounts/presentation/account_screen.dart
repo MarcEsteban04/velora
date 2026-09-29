@@ -110,7 +110,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         Padding(
           padding: const EdgeInsets.all(40),
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.leafBright),
+            child: CircularProgressIndicator(color: AppColors.accentBright),
           ),
         ),
       ];
@@ -217,7 +217,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               child: _Flow(
                 label: 'In this month',
                 value: '+${money(inMinor)}',
-                color: AppColors.leafBright,
+                color: AppColors.accentBright,
                 icon: Icons.south_west_rounded,
               ),
             ),

@@ -51,7 +51,7 @@ class _PinDotsState extends State<PinDots> with SingleTickerProviderStateMixin {
     final color = switch (widget.state) {
       PinDotsState.error => AppColors.rust,
       PinDotsState.success => AppColors.leafBright,
-      PinDotsState.idle => AppColors.leafBright,
+      PinDotsState.idle => AppColors.accentBright,
     };
 
     return Semantics(

@@ -101,7 +101,7 @@ class _SplashView extends StatelessWidget {
             dimension: 26,
             child: CircularProgressIndicator(
               strokeWidth: 2.6,
-              color: AppColors.leafBright,
+              color: AppColors.accentBright,
             ),
           ),
         ],

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/money/currency.dart';
 import '../../../core/money/money.dart';
 import '../../../core/theme/app_colors.dart';
+import '../domain/flame.dart';
 import '../domain/streak.dart';
+import 'widgets/flame_icon.dart';
 
 /// How each streak goal looks and reads: a flame for logging, a leaf for
 /// spending under a cap.
@@ -36,6 +38,49 @@ extension StreakGoalStyle on StreakSettings {
     StreakGoal.underCap when capMinor == 0 =>
       count == 1 ? 'no-spend day' : 'no-spend days',
     StreakGoal.underCap => count == 1 ? 'day under cap' : 'days under cap',
+  };
+}
+
+extension StreakLook on Streak {
+  /// The flame's colour for this streak's length.
+  FlameTier get tier => FlameTier.of(current);
+
+  /// The streak's colour: the flame's for logging, green for a cap.
+  Color get tint =>
+      settings.goal == StreakGoal.logging ? tier.tint : settings.color;
+}
+
+/// The streak's icon: a flame in its tier's colours for logging, a leaf for
+/// a cap.
+class StreakGlyph extends StatelessWidget {
+  const StreakGlyph({
+    super.key,
+    required this.goal,
+    required this.tier,
+    this.size = 24,
+    this.outlined = false,
+    this.dim = false,
+  });
+
+  final StreakGoal goal;
+  final FlameTier tier;
+  final double size;
+  final bool outlined;
+  final bool dim;
+
+  @override
+  Widget build(BuildContext context) => switch (goal) {
+    StreakGoal.logging => FlameIcon(
+      tier: tier,
+      size: size,
+      outlined: outlined,
+      dim: dim,
+    ),
+    StreakGoal.underCap => Icon(
+      outlined ? Icons.eco_outlined : Icons.eco_rounded,
+      size: size,
+      color: dim ? AppColors.textMuted : AppColors.leafBright,
+    ),
   };
 }
 

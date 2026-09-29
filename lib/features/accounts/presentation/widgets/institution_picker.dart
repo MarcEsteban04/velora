@@ -82,7 +82,7 @@ class InstitutionPicker extends StatelessWidget {
           tile(
             isSelected: selected == null,
             label: 'Other',
-            ring: AppColors.leafBright,
+            ring: AppColors.accentBright,
             onTap: () => onChanged(null),
             child: SizedBox(
               width: 92,

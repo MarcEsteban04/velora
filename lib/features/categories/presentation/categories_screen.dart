@@ -165,7 +165,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
         Padding(
           padding: const EdgeInsets.all(40),
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.leafBright),
+            child: CircularProgressIndicator(color: AppColors.accentBright),
           ),
         ),
       ];
@@ -481,7 +481,7 @@ class _BudgetButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = hasBudget ? AppColors.leafBright : AppColors.sky;
+    final color = hasBudget ? AppColors.accentBright : AppColors.sky;
     return Semantics(
       button: true,
       child: GestureDetector(
@@ -522,18 +522,18 @@ class _CreateButton extends StatelessWidget {
           onTap();
         },
         child: CustomPaint(
-          painter: _DashedBorder(color: AppColors.leafBright),
+          painter: _DashedBorder(color: AppColors.accentBright),
           child: SizedBox(
             height: 54,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_rounded, color: AppColors.leafBright),
+                Icon(Icons.add_rounded, color: AppColors.accentBright),
                 const SizedBox(width: 6),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(fontSize: 14, color: AppColors.leafBright),
+                      ?.copyWith(fontSize: 14, color: AppColors.accentBright),
                 ),
               ],
             ),
@@ -589,15 +589,15 @@ class _BudgetLink extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final b = budget;
     return Material(
-      color: AppColors.leaf.withValues(alpha: 0.1),
+      color: AppColors.accent.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.leaf.withValues(alpha: 0.2)),
+        side: BorderSide(color: AppColors.accent.withValues(alpha: 0.2)),
       ),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         onTap: onTap,
-        leading: Icon(Icons.pie_chart_rounded, color: AppColors.leafBright),
+        leading: Icon(Icons.pie_chart_rounded, color: AppColors.accentBright),
         title: Text(
           b == null
               ? 'Set a budget'
@@ -613,7 +613,7 @@ class _BudgetLink extends StatelessWidget {
         ),
         trailing: Icon(
           Icons.chevron_right_rounded,
-          color: AppColors.leafBright,
+          color: AppColors.accentBright,
         ),
       ),
     );

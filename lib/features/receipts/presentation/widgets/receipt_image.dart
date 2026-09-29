@@ -61,7 +61,7 @@ class _Loading extends StatelessWidget {
         dimension: 18,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          color: AppColors.leafBright,
+          color: AppColors.accentBright,
         ),
       ),
     ),

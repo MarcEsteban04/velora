@@ -25,7 +25,7 @@ class SpeechBubble extends StatelessWidget {
             Text(
               speaker.toUpperCase(),
               style: text.labelMedium?.copyWith(
-                color: AppColors.leafShadow,
+                color: AppColors.accentShadow,
                 fontSize: 11,
                 letterSpacing: 1.4,
                 fontWeight: FontWeight.w800,

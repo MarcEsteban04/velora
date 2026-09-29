@@ -185,7 +185,7 @@ class _DebtBillSheetState extends State<_DebtBillSheet> {
                     avatar: Icon(
                       Icons.event_rounded,
                       size: 18,
-                      color: AppColors.leafBright,
+                      color: AppColors.accentBright,
                     ),
                     label: Text(DateFormat('d MMM y').format(_dueOn)),
                     onPressed: _pickDate,

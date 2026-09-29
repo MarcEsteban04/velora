@@ -74,7 +74,7 @@ class SettingsTile extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
 
-  /// Defaults to the brand green.
+  /// Defaults to the theme colour.
   final Color? color;
   final bool destructive;
 
@@ -84,7 +84,9 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final tint = destructive ? AppColors.rust : (color ?? AppColors.leafBright);
+    final tint = destructive
+        ? AppColors.rust
+        : (color ?? AppColors.accentBright);
 
     return Material(
       type: MaterialType.transparency,

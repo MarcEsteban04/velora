@@ -456,7 +456,7 @@ class _TransactionCard extends StatelessWidget {
                           Icon(
                             Icons.attach_file_rounded,
                             size: 15,
-                            color: AppColors.leafBright,
+                            color: AppColors.accentBright,
                             semanticLabel: 'Has a receipt',
                           ),
                         ],

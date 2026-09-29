@@ -252,17 +252,21 @@ class _PeriodPill extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.leaf.withValues(alpha: 0.25)
+                ? AppColors.accent.withValues(alpha: 0.25)
                 : AppColors.surface.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: selected ? AppColors.leafBright : AppColors.hairline(0.08),
+              color: selected
+                  ? AppColors.accentBright
+                  : AppColors.hairline(0.08),
             ),
           ),
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: selected ? AppColors.leafBright : AppColors.textSecondary,
+              color: selected
+                  ? AppColors.accentBright
+                  : AppColors.textSecondary,
             ),
           ),
         ),

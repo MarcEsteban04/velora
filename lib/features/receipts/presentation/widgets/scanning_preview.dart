@@ -75,7 +75,7 @@ class _ScanningPreviewState extends State<ScanningPreview>
                         height: 3,
                         margin: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.leafBright,
+                          color: AppColors.accentBright,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),

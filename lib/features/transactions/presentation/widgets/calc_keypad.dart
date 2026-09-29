@@ -54,7 +54,7 @@ class CalcKeypad extends StatelessWidget {
       label: spoken,
       tone: _Tone.accent,
       onTap: () => onOperator(o),
-      child: Text(o, style: style.copyWith(color: AppColors.leafBright)),
+      child: Text(o, style: style.copyWith(color: AppColors.accentBright)),
     );
 
     final rows = <List<Widget>>[
@@ -76,7 +76,10 @@ class CalcKeypad extends StatelessWidget {
           label: 'percent',
           tone: _Tone.accent,
           onTap: onPercent,
-          child: Text('%', style: style.copyWith(color: AppColors.leafBright)),
+          child: Text(
+            '%',
+            style: style.copyWith(color: AppColors.accentBright),
+          ),
         ),
         op('÷', 'divide'),
       ],
@@ -180,10 +183,10 @@ class _KeyState extends State<_Key> {
 
   Color get _fill => switch (widget.tone) {
     _Tone.plain => AppColors.night.withValues(alpha: 0.85),
-    _Tone.accent => AppColors.leaf.withValues(alpha: 0.18),
+    _Tone.accent => AppColors.accent.withValues(alpha: 0.18),
     _Tone.danger =>
       AppColors.isLight ? const Color(0xFFFBE1DD) : const Color(0xFF4A1F24),
-    _Tone.solid => AppColors.leaf,
+    _Tone.solid => AppColors.accent,
   };
 
   @override

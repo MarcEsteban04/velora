@@ -279,7 +279,7 @@ class _DebtEditorState extends ConsumerState<_DebtEditor> {
                     avatar: Icon(
                       Icons.event_rounded,
                       size: 18,
-                      color: AppColors.leafBright,
+                      color: AppColors.accentBright,
                     ),
                     label: Text(
                       _dueDay == null

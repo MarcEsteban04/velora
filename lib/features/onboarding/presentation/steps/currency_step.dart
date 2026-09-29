@@ -47,7 +47,10 @@ class CurrencyStep extends ConsumerWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
-                        colors: [AppColors.leafBright, AppColors.leafShadow],
+                        colors: [
+                          AppColors.accentBright,
+                          AppColors.accentShadow,
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -83,7 +86,7 @@ class CurrencyStep extends ConsumerWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.leaf.withValues(alpha: 0.18),
+                      color: AppColors.accent.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -92,13 +95,13 @@ class CurrencyStep extends ConsumerWidget {
                         Icon(
                           Icons.my_location_rounded,
                           size: 13,
-                          color: AppColors.leafBright,
+                          color: AppColors.accentBright,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Your region',
                           style: text.labelMedium?.copyWith(
-                            color: AppColors.leafBright,
+                            color: AppColors.accentBright,
                             fontSize: 11,
                           ),
                         ),
@@ -136,7 +139,7 @@ class CurrencyStep extends ConsumerWidget {
                         style: text.headlineSmall?.copyWith(
                           fontSize: 20,
                           color: c == selected
-                              ? AppColors.leafBright
+                              ? AppColors.accentBright
                               : AppColors.textPrimary,
                         ),
                       ),

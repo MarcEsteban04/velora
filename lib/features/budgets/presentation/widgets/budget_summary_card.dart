@@ -94,7 +94,7 @@ class BudgetSummaryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color: AppColors.leaf.withValues(alpha: 0.1),
+              color: AppColors.accent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -102,7 +102,7 @@ class BudgetSummaryCard extends StatelessWidget {
                 Icon(
                   Icons.today_rounded,
                   size: 18,
-                  color: AppColors.leafBright,
+                  color: AppColors.accentBright,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -111,7 +111,7 @@ class BudgetSummaryCard extends StatelessWidget {
                 Text(
                   Money.format(totals.dailyAllowanceMinor, currency),
                   style: text.titleMedium?.copyWith(
-                    color: AppColors.leafBright,
+                    color: AppColors.accentBright,
                   ),
                 ),
               ],

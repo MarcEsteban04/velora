@@ -138,7 +138,7 @@ class _KeyState extends State<_Key> {
               color: !widget.filled
                   ? Colors.transparent
                   : _down
-                  ? AppColors.leaf.withValues(alpha: 0.35)
+                  ? AppColors.accent.withValues(alpha: 0.35)
                   : AppColors.surface.withValues(alpha: 0.6),
               border: widget.filled
                   ? Border.all(color: AppColors.hairline(0.08))

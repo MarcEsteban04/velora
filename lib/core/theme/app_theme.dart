@@ -29,10 +29,10 @@ abstract final class AppTheme {
     final brightness = AppColors.isLight ? Brightness.light : Brightness.dark;
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: AppColors.leaf,
+          seedColor: AppColors.accent,
           brightness: brightness,
         ).copyWith(
-          primary: AppColors.leaf,
+          primary: AppColors.accent,
           onPrimary: AppColors.onBrand,
           secondary: AppColors.rust,
           onSecondary: AppColors.onBrand,
@@ -63,9 +63,9 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: AppColors.leafBright,
-        selectionColor: AppColors.leaf.withValues(alpha: 0.4),
-        selectionHandleColor: AppColors.leafBright,
+        cursorColor: AppColors.accentBright,
+        selectionColor: AppColors.accent.withValues(alpha: 0.4),
+        selectionHandleColor: AppColors.accentBright,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -82,7 +82,7 @@ abstract final class AppTheme {
         ),
         border: _fieldBorder(AppColors.hairline()),
         enabledBorder: _fieldBorder(AppColors.hairline()),
-        focusedBorder: _fieldBorder(AppColors.leafBright, width: 1.8),
+        focusedBorder: _fieldBorder(AppColors.accentBright, width: 1.8),
         errorBorder: _fieldBorder(AppColors.rust),
         focusedErrorBorder: _fieldBorder(AppColors.rust, width: 1.8),
       ),

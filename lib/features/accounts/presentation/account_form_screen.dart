@@ -298,7 +298,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                         leading: Text(
                           _currency.symbol,
                           style: text.titleMedium?.copyWith(
-                            color: AppColors.leafBright,
+                            color: AppColors.accentBright,
                           ),
                         ),
                         title: '${_currency.code} · ${_currency.name}',
@@ -320,7 +320,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                             child: Text(
                               _currency.symbol,
                               style: text.titleMedium?.copyWith(
-                                color: AppColors.leafBright,
+                                color: AppColors.accentBright,
                                 fontSize: 18,
                               ),
                             ),
@@ -359,7 +359,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                               child: Text(
                                 _currency.symbol,
                                 style: text.titleMedium?.copyWith(
-                                  color: AppColors.leafBright,
+                                  color: AppColors.accentBright,
                                   fontSize: 18,
                                 ),
                               ),
@@ -379,7 +379,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                           child: SwitchListTile.adaptive(
                             contentPadding: EdgeInsets.zero,
                             value: _include,
-                            activeTrackColor: AppColors.leaf,
+                            activeTrackColor: AppColors.accent,
                             onChanged: (v) => setState(() => _include = v),
                             title: Text(
                               'Include in net worth',

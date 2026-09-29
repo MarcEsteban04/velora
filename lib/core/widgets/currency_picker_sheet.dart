@@ -73,7 +73,7 @@ class _CurrencyPickerSheetState extends State<CurrencyPickerSheet> {
                           ),
                           leading: CircleAvatar(
                             backgroundColor: selected
-                                ? AppColors.leaf.withValues(alpha: 0.25)
+                                ? AppColors.accent.withValues(alpha: 0.25)
                                 : AppColors.surfaceRaised,
                             child: Text(
                               c.symbol,
@@ -87,7 +87,7 @@ class _CurrencyPickerSheetState extends State<CurrencyPickerSheet> {
                           trailing: selected
                               ? Icon(
                                   Icons.check_circle_rounded,
-                                  color: AppColors.leafBright,
+                                  color: AppColors.accentBright,
                                 )
                               : null,
                           onTap: () => Navigator.pop(context, c),

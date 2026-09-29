@@ -424,8 +424,10 @@ class _InvoiceRow extends StatelessWidget {
                 onPressed: onPaid,
                 style: FilledButton.styleFrom(
                   visualDensity: VisualDensity.compact,
-                  backgroundColor: AppColors.leafBright.withValues(alpha: 0.16),
-                  foregroundColor: AppColors.leafBright,
+                  backgroundColor: AppColors.accentBright.withValues(
+                    alpha: 0.16,
+                  ),
+                  foregroundColor: AppColors.accentBright,
                 ),
                 child: const Text('Paid'),
               ),
@@ -545,7 +547,7 @@ class _ActivityList extends StatelessWidget {
           t.occurredAt,
           _ActivityRow(
             icon: Icons.south_west_rounded,
-            color: AppColors.leafBright,
+            color: AppColors.accentBright,
             title: t.note ?? 'Payment received',
             subtitle: DateFormat('MMM d, y').format(t.occurredAt),
             amount: '+${money(t.amountMinor, from)}',

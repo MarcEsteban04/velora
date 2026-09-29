@@ -21,7 +21,7 @@ class ReadyStep extends ConsumerWidget {
     final rows = [
       (
         Icons.currency_exchange_rounded,
-        AppColors.leafBright,
+        AppColors.accentBright,
         'Currency',
         '${draft.currency.code} · ${draft.currency.name}',
       ),

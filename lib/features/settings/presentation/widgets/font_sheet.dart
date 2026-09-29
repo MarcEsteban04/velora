@@ -41,7 +41,7 @@ abstract final class FontSheet {
                                   fontFamily: option.display,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 26,
-                                  color: AppColors.leafBright,
+                                  color: AppColors.accentBright,
                                 ),
                               ),
                             ),

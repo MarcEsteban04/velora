@@ -74,7 +74,7 @@ class _NameStepState extends ConsumerState<NameStep> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Icon(Icons.lock_rounded, size: 14, color: AppColors.leafBright),
+            Icon(Icons.lock_rounded, size: 14, color: AppColors.accentBright),
             const SizedBox(width: 6),
             Flexible(
               child: Text(

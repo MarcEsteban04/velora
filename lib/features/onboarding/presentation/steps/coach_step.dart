@@ -70,7 +70,7 @@ class CoachStep extends ConsumerWidget {
         _Reaction(
           pose: MascotPose.coin,
           tag: 'On track',
-          tagColor: AppColors.leafBright,
+          tagColor: AppColors.accentBright,
           message: tone.onTrackExample(draft.firstName),
         ),
         const SizedBox(height: 10),

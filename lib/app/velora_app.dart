@@ -28,6 +28,7 @@ class _VeloraAppState extends ConsumerState<VeloraApp>
     with WidgetsBindingObserver {
   Scene? _shown;
   AppFont? _shownFont;
+  AppAccent? _shownAccent;
 
   /// Fires at the next Day, Afternoon or Night boundary under Automatic.
   Timer? _sceneTimer;
@@ -97,13 +98,18 @@ class _VeloraAppState extends ConsumerState<VeloraApp>
     // Fonts are read from AppTypography while building, like colours.
     final font = ref.watch(fontProvider);
     AppTypography.font = font;
+    // So is the theme colour.
+    final accent = ref.watch(accentProvider);
+    AppColors.accentChoice = accent;
     final theme = AppTheme.forPalette(Palette.of(scene));
     if ((_shown != null && _shown != scene) ||
-        (_shownFont != null && _shownFont != font)) {
+        (_shownFont != null && _shownFont != font) ||
+        (_shownAccent != null && _shownAccent != accent)) {
       _repaintEverything();
     }
     _shown = scene;
     _shownFont = font;
+    _shownAccent = accent;
 
     return MaterialApp(
       title: 'Velora',

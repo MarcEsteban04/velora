@@ -46,7 +46,7 @@ class AccountTypePicker extends StatelessWidget {
                   Icon(
                     type.icon,
                     color: selected == type
-                        ? AppColors.leafBright
+                        ? AppColors.accentBright
                         : AppColors.textSecondary,
                   ),
                   const SizedBox(height: 6),

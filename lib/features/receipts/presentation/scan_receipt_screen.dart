@@ -331,7 +331,7 @@ class _Start extends StatelessWidget {
     Widget tip(IconData icon, String label) => Expanded(
       child: Column(
         children: [
-          Icon(icon, color: AppColors.leafBright, size: 22),
+          Icon(icon, color: AppColors.accentBright, size: 22),
           const SizedBox(height: 4),
           Text(
             label,

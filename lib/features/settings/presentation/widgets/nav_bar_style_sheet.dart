@@ -85,7 +85,7 @@ class _Preview extends StatelessWidget {
           height: active ? 26 : 14,
           decoration: BoxDecoration(
             color: active
-                ? AppColors.leaf.withValues(alpha: 0.25)
+                ? AppColors.accent.withValues(alpha: 0.25)
                 : AppColors.textMuted.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(active ? 10 : 5),
           ),
@@ -96,7 +96,7 @@ class _Preview extends StatelessWidget {
     Widget plus(double size, ShapeBorder shape) => Container(
       width: size,
       height: size,
-      decoration: ShapeDecoration(color: AppColors.leafBright, shape: shape),
+      decoration: ShapeDecoration(color: AppColors.accentBright, shape: shape),
       child: Icon(Icons.add_rounded, color: AppColors.onBrand, size: 20),
     );
 

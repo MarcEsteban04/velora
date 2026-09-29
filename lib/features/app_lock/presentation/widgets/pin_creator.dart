@@ -119,7 +119,7 @@ class _PinCreatorState extends State<PinCreator> {
                   fontSize: 13,
                   color: _message != null
                       ? AppColors.ember
-                      : AppColors.leafBright,
+                      : AppColors.accentBright,
                 ),
               ),
             ),

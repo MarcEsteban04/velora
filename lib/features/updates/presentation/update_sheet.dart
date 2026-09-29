@@ -136,7 +136,7 @@ class _UpdateSheetState extends ConsumerState<_UpdateSheet> {
                 child: LinearProgressIndicator(
                   value: progress.fraction == 0 ? null : progress.fraction,
                   minHeight: 8,
-                  color: AppColors.leafBright,
+                  color: AppColors.accentBright,
                   backgroundColor: AppColors.hairline(0.1),
                 ),
               ),
@@ -161,7 +161,11 @@ class _UpdateSheetState extends ConsumerState<_UpdateSheet> {
             const SizedBox(height: 10),
             Row(
               children: [
-                Icon(Icons.lock_rounded, size: 14, color: AppColors.leafBright),
+                Icon(
+                  Icons.lock_rounded,
+                  size: 14,
+                  color: AppColors.accentBright,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(

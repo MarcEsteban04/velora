@@ -77,7 +77,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
         Padding(
           padding: const EdgeInsets.all(40),
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.leafBright),
+            child: CircularProgressIndicator(color: AppColors.accentBright),
           ),
         ),
       ];
@@ -157,7 +157,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                 const SizedBox(height: 10),
                 ProgressBar(
                   value: totals.fraction,
-                  color: AppColors.leafBright,
+                  color: AppColors.accentBright,
                   height: 8,
                 ),
                 const SizedBox(height: 6),

@@ -32,7 +32,7 @@ class OnboardingProgress extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(6),
                   color: i <= index
-                      ? (i == index ? AppColors.leafBright : AppColors.leaf)
+                      ? (i == index ? AppColors.accentBright : AppColors.accent)
                       : AppColors.hairline(0.14),
                 ),
               ),

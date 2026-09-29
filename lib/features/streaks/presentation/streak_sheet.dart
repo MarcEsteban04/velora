@@ -10,8 +10,11 @@ import '../../../core/widgets/velora_mascot.dart';
 import '../../profile/data/profile_repository.dart';
 import '../application/streak_providers.dart';
 import '../domain/streak.dart';
+import '../domain/flame.dart';
+import 'streak_celebration.dart';
 import 'streak_goal_sheet.dart';
 import 'streak_style.dart';
+import 'widgets/flame_icon.dart';
 
 /// The streak up close: the count, where today stands, the week, badges
 /// and the goal. It stays live, so logging something updates it in place.
@@ -58,7 +61,7 @@ class _StreakSheet extends ConsumerWidget {
     }
     final s = streak.settings;
     final live = streak.current > 0 && streak.today != TodayState.over;
-    final tint = live ? s.color : AppColors.textMuted;
+    final tint = live ? streak.tint : AppColors.textMuted;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -75,7 +78,14 @@ class _StreakSheet extends ConsumerWidget {
                     shape: BoxShape.circle,
                     color: tint.withValues(alpha: 0.16),
                   ),
-                  child: Icon(s.icon, size: 36, color: tint),
+                  child: Center(
+                    child: StreakGlyph(
+                      goal: s.goal,
+                      tier: streak.tier,
+                      size: 36,
+                      dim: !live,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -195,7 +205,7 @@ class _WeekStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final tint = streak.settings.color;
+    final tint = streak.tint;
 
     String describe(DayMark m) => switch (m) {
       DayMark.done => 'done',
@@ -304,7 +314,8 @@ class _Badges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final tint = streak.settings.color;
+    final tint = streak.tint;
+    final flame = streak.settings.goal == StreakGoal.logging;
     final next = streak.nextMilestone;
     final from = streak.lastMilestone;
     final progress = next == null
@@ -365,7 +376,20 @@ class _Badges extends StatelessWidget {
           runSpacing: 8,
           children: [
             for (final m in streakMilestones)
-              _BadgeChip(days: m, earned: streak.best >= m, tint: tint),
+              _BadgeChip(
+                days: m,
+                earned: streak.best >= m,
+                goal: streak.settings.goal,
+                tint: flame ? FlameTier.of(m).tint : tint,
+                // An earned badge replays its moment.
+                onTap: streak.best >= m
+                    ? () => StreakCelebration.show(
+                        context,
+                        days: m,
+                        goal: streak.settings.goal,
+                      )
+                    : null,
+              ),
           ],
         ),
       ],
@@ -377,46 +401,57 @@ class _BadgeChip extends StatelessWidget {
   const _BadgeChip({
     required this.days,
     required this.earned,
+    required this.goal,
     required this.tint,
+    this.onTap,
   });
 
   final int days;
   final bool earned;
+  final StreakGoal goal;
   final Color tint;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = earned ? tint : AppColors.textMuted;
     return Semantics(
+      button: onTap != null,
       label: '$days-day badge, ${earned ? 'earned' : 'not earned yet'}',
       excludeSemantics: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: earned ? tint.withValues(alpha: 0.14) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: earned
-                ? tint.withValues(alpha: 0.35)
-                : AppColors.hairline(0.1),
+      child: GestureDetector(
+        onTap: onTap == null
+            ? null
+            : () {
+                HapticFeedback.selectionClick();
+                onTap!();
+              },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: earned ? tint.withValues(alpha: 0.14) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: earned
+                  ? tint.withValues(alpha: 0.35)
+                  : AppColors.hairline(0.1),
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              earned ? Icons.workspace_premium_rounded : Icons.lock_rounded,
-              size: 14,
-              color: color,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$days',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: earned ? AppColors.textPrimary : AppColors.textMuted,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (earned)
+                StreakGlyph(goal: goal, tier: FlameTier.of(days), size: 15)
+              else
+                Icon(Icons.lock_rounded, size: 14, color: AppColors.textMuted),
+              const SizedBox(width: 4),
+              Text(
+                '$days',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: earned ? AppColors.textPrimary : AppColors.textMuted,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -470,7 +505,7 @@ class _Stat extends StatelessWidget {
                   Icon(
                     Icons.edit_rounded,
                     size: 16,
-                    color: AppColors.leafBright,
+                    color: AppColors.accentBright,
                   ),
               ],
             ),

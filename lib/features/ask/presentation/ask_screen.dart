@@ -172,7 +172,7 @@ class _AskScreenState extends ConsumerState<AskScreen> {
                               style: text.labelMedium?.copyWith(
                                 fontSize: 11,
                                 color: chat.thinking
-                                    ? AppColors.leafBright
+                                    ? AppColors.accentBright
                                     : AppColors.textMuted,
                               ),
                             ),
@@ -274,7 +274,7 @@ class _Composer extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: canSend
-                      ? AppColors.leaf
+                      ? AppColors.accent
                       : AppColors.surface.withValues(alpha: 0.8),
                 ),
                 child: Icon(

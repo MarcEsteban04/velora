@@ -292,7 +292,7 @@ class _AccountDeckState extends State<AccountDeck>
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4),
                               color: a.id == front.id
-                                  ? AppColors.leafBright
+                                  ? AppColors.accentBright
                                   : AppColors.hairline(0.2),
                             ),
                           ),

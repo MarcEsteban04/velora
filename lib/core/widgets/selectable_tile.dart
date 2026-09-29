@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 
-/// A tappable option that glows green when selected. Used for currencies,
-/// account types and coaching tones, so every choice in onboarding feels the
-/// same.
+/// A tappable option that lights up in the theme colour when selected. Used
+/// for currencies, account types and coaching tones, so every choice in
+/// onboarding feels the same.
 class SelectableTile extends StatelessWidget {
   const SelectableTile({
     super.key,
@@ -46,11 +46,11 @@ class SelectableTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(radius),
               color: selected
-                  ? AppColors.leaf.withValues(alpha: 0.18)
+                  ? AppColors.accent.withValues(alpha: 0.18)
                   : AppColors.surface.withValues(alpha: 0.55),
               border: Border.all(
                 color: selected
-                    ? AppColors.leafBright
+                    ? AppColors.accentBright
                     : AppColors.hairline(0.07),
                 width: selected ? 1.8 : 1,
               ),
@@ -77,9 +77,9 @@ class SelectionDot extends StatelessWidget {
       height: 24,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: selected ? AppColors.leafBright : Colors.transparent,
+        color: selected ? AppColors.accentBright : Colors.transparent,
         border: Border.all(
-          color: selected ? AppColors.leafBright : AppColors.textMuted,
+          color: selected ? AppColors.accentBright : AppColors.textMuted,
           width: 1.6,
         ),
       ),

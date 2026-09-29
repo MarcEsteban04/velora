@@ -168,7 +168,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         Padding(
           padding: const EdgeInsets.all(40),
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.leafBright),
+            child: CircularProgressIndicator(color: AppColors.accentBright),
           ),
         ),
       ];
@@ -242,7 +242,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
 
     return RefreshIndicator(
-      color: AppColors.leafBright,
+      color: AppColors.accentBright,
       backgroundColor: AppColors.surfaceRaised,
       onRefresh: () async {
         ref.invalidate(monthTransactionsProvider(_month));
@@ -606,7 +606,7 @@ class _MonthPicker extends StatelessWidget {
                               ? AppColors.onBrand
                               : AppColors.textSecondary,
                         ),
-                        selectedColor: AppColors.leaf,
+                        selectedColor: AppColors.accent,
                         backgroundColor: AppColors.surface.withValues(
                           alpha: 0.6,
                         ),

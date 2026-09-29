@@ -22,7 +22,7 @@ class PromiseStep extends ConsumerWidget {
     ),
     (
       Icons.pie_chart_rounded,
-      AppColors.leafBright,
+      AppColors.accentBright,
       'Budget without the stress',
       'Set limits per category and get a nudge before you overspend.',
     ),

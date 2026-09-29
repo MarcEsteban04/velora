@@ -190,7 +190,7 @@ class _ZoneTile extends StatelessWidget {
               time,
               style: text.labelMedium?.copyWith(
                 color: selected
-                    ? AppColors.leafBright
+                    ? AppColors.accentBright
                     : AppColors.textSecondary,
               ),
             ),

@@ -36,7 +36,7 @@ class RoundIconButton extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: active
-                ? AppColors.leaf.withValues(alpha: 0.25)
+                ? AppColors.accent.withValues(alpha: 0.25)
                 : AppColors.surface.withValues(alpha: 0.6),
             border: Border.all(color: AppColors.hairline(0.08)),
           ),
@@ -46,7 +46,7 @@ class RoundIconButton extends StatelessWidget {
               icon,
               key: ValueKey(icon),
               size: 22,
-              color: active ? AppColors.leafBright : AppColors.textSecondary,
+              color: active ? AppColors.accentBright : AppColors.textSecondary,
             ),
           ),
         ),

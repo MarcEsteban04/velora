@@ -473,7 +473,7 @@ class _TransactionEntryScreenState
                     if (_showAllCategories) _padOpen = false;
                   }),
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.leafBright,
+                    foregroundColor: AppColors.accentBright,
                     visualDensity: VisualDensity.compact,
                   ),
                   iconAlignment: IconAlignment.end,
@@ -504,7 +504,7 @@ class _TransactionEntryScreenState
           loading: () => Padding(
             padding: EdgeInsets.all(16),
             child: Center(
-              child: CircularProgressIndicator(color: AppColors.leafBright),
+              child: CircularProgressIndicator(color: AppColors.accentBright),
             ),
           ),
           error: (e, _) => TextButton.icon(
@@ -797,7 +797,7 @@ class _LoggedAtCard extends StatelessWidget {
         labelStyle: text.labelMedium?.copyWith(
           color: day == d ? AppColors.night : AppColors.textSecondary,
         ),
-        selectedColor: AppColors.leafBright,
+        selectedColor: AppColors.accentBright,
         backgroundColor: AppColors.night.withValues(alpha: 0.6),
         side: BorderSide(color: AppColors.hairline(0.08)),
         shape: const StadiumBorder(),
@@ -964,7 +964,7 @@ class _AccountTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final accent = accentColor ?? AppColors.leafBright;
+    final accent = accentColor ?? AppColors.accentBright;
     final a = account;
     final currency = Currencies.byCode(a?.currencyCode ?? 'USD');
     final balance = a == null

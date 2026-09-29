@@ -77,7 +77,7 @@ class _OwedScreenState extends ConsumerState<OwedScreen> {
         Padding(
           padding: const EdgeInsets.all(40),
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.leafBright),
+            child: CircularProgressIndicator(color: AppColors.accentBright),
           ),
         ),
       ];
@@ -144,7 +144,7 @@ class _OwedScreenState extends ConsumerState<OwedScreen> {
                 const SizedBox(height: 10),
                 ProgressBar(
                   value: totals.fraction,
-                  color: AppColors.leafBright,
+                  color: AppColors.accentBright,
                   height: 8,
                 ),
                 const SizedBox(height: 6),

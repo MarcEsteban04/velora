@@ -117,7 +117,7 @@ class _VeloraMascotState extends State<VeloraMascot>
                   gradient: RadialGradient(
                     colors: [
                       AppColors.ember.withValues(alpha: 0.26),
-                      AppColors.leafBright.withValues(alpha: 0.08),
+                      AppColors.accentBright.withValues(alpha: 0.08),
                       Colors.transparent,
                     ],
                     stops: const [0, 0.55, 1],

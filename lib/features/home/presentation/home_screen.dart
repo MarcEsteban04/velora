@@ -115,7 +115,7 @@ class HomeScreen extends ConsumerWidget {
     );
 
     return RefreshIndicator(
-      color: AppColors.leafBright,
+      color: AppColors.accentBright,
       backgroundColor: AppColors.surfaceRaised,
       onRefresh: () async {
         ref

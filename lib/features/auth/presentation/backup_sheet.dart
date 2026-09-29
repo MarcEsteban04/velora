@@ -168,7 +168,7 @@ class _BackupSheetState extends ConsumerState<_BackupSheet> {
         const SizedBox(height: 10),
         Row(
           children: [
-            Icon(Icons.lock_rounded, size: 14, color: AppColors.leafBright),
+            Icon(Icons.lock_rounded, size: 14, color: AppColors.accentBright),
             const SizedBox(width: 6),
             Expanded(
               child: Text(

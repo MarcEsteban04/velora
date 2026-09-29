@@ -54,7 +54,7 @@ class SceneScaffold extends StatelessWidget {
                       style: text.labelMedium?.copyWith(
                         fontSize: 11,
                         letterSpacing: 1.6,
-                        color: AppColors.leafBright,
+                        color: AppColors.accentBright,
                       ),
                     ),
                   Text(title, style: text.headlineSmall),
@@ -70,7 +70,7 @@ class SceneScaffold extends StatelessWidget {
     );
     if (onRefresh != null) {
       list = RefreshIndicator(
-        color: AppColors.leafBright,
+        color: AppColors.accentBright,
         backgroundColor: AppColors.surfaceRaised,
         onRefresh: onRefresh!,
         child: list,

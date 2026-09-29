@@ -157,7 +157,7 @@ class _SplitNav extends StatelessWidget {
                             child: DecoratedBox(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(23),
-                                color: AppColors.leaf.withValues(alpha: 0.2),
+                                color: AppColors.accent.withValues(alpha: 0.2),
                               ),
                             ),
                           ),
@@ -244,7 +244,7 @@ class _Bar extends StatelessWidget {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          color: AppColors.leaf.withValues(alpha: 0.22),
+                          color: AppColors.accent.withValues(alpha: 0.22),
                         ),
                       ),
                     ),
@@ -284,7 +284,7 @@ class _Tab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.leafBright : AppColors.textMuted;
+    final color = selected ? AppColors.accentBright : AppColors.textMuted;
 
     return Semantics(
       button: true,
@@ -366,7 +366,7 @@ class _AddButton extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: open
                   ? [AppColors.surfaceRaised, AppColors.surface]
-                  : [AppColors.leafBright, AppColors.leafShadow],
+                  : [AppColors.accentBright, AppColors.accentShadow],
             ),
           ),
           child: AnimatedRotation(

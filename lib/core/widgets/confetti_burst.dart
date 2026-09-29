@@ -58,7 +58,7 @@ class _Piece {
 
   /// Read live, so confetti matches the current scene.
   static List<Color> get colors => [
-    AppColors.leafBright,
+    AppColors.accentBright,
     AppColors.ember,
     AppColors.cream,
     AppColors.sky,

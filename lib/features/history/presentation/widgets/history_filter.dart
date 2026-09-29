@@ -114,11 +114,11 @@ class _FilterSheetState extends State<_FilterSheet> {
         fontSize: 13,
         color: selected ? AppColors.textPrimary : AppColors.textSecondary,
       ),
-      selectedColor: (color ?? AppColors.leafBright).withValues(alpha: 0.22),
+      selectedColor: (color ?? AppColors.accentBright).withValues(alpha: 0.22),
       backgroundColor: AppColors.surface.withValues(alpha: 0.6),
       side: BorderSide(
         color: selected
-            ? (color ?? AppColors.leafBright)
+            ? (color ?? AppColors.accentBright)
             : AppColors.hairline(0.08),
       ),
       shape: const StadiumBorder(),

@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../domain/flame.dart';
 import '../../domain/streak.dart';
 import '../streak_style.dart';
 
 /// The streak count on Home. The flame (or leaf) is solid once today counts,
 /// breathes gently while today is still open, and turns grey at zero. When
-/// the count goes up it gives a little hop.
+/// the count goes up it gives a little hop. The flame changes colour as the
+/// streak grows (see [FlameTier]).
 class StreakChip extends StatefulWidget {
   const StreakChip({super.key, required this.streak, required this.onTap});
 
@@ -67,7 +69,7 @@ class _StreakChipState extends State<StreakChip> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final s = widget.streak;
     final live = s.current > 0 && s.today != TodayState.over;
-    final tint = live ? s.settings.color : AppColors.textMuted;
+    final tint = live ? s.tint : AppColors.textMuted;
     final secured =
         s.today == TodayState.secured ||
         (s.settings.goal == StreakGoal.underCap && s.current > 0);
@@ -110,16 +112,12 @@ class _StreakChipState extends State<StreakChip> with TickerProviderStateMixin {
                 scale: hop,
                 child: FadeTransition(
                   opacity: Tween(begin: 0.45, end: 1.0).animate(_breath),
-                  child: Icon(
-                    secured || !live
-                        ? s.settings.icon
-                        : switch (s.settings.goal) {
-                            StreakGoal.logging =>
-                              Icons.local_fire_department_outlined,
-                            StreakGoal.underCap => Icons.eco_outlined,
-                          },
+                  child: StreakGlyph(
+                    goal: s.settings.goal,
+                    tier: s.tier,
                     size: 22,
-                    color: tint,
+                    outlined: live && !secured,
+                    dim: !live,
                   ),
                 ),
               ),

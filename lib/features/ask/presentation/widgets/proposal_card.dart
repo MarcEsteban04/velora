@@ -105,7 +105,7 @@ class ProposalCard extends StatelessWidget {
           color: AppColors.surface.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: done ? AppColors.leafBright : tint.withValues(alpha: 0.35),
+            color: done ? AppColors.accentBright : tint.withValues(alpha: 0.35),
             width: done ? 1.6 : 1,
           ),
         ),
@@ -207,7 +207,7 @@ class ProposalCard extends StatelessWidget {
                           ? null
                           : onConfirm,
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.leaf,
+                        backgroundColor: AppColors.accent,
                         foregroundColor: AppColors.onBrand,
                         shape: const StadiumBorder(),
                       ),
@@ -229,7 +229,7 @@ class ProposalCard extends StatelessWidget {
                   Icon(
                     Icons.check_circle_rounded,
                     size: 18,
-                    color: AppColors.leafBright,
+                    color: AppColors.accentBright,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -237,7 +237,7 @@ class ProposalCard extends StatelessWidget {
                       'Logged',
                       style: text.titleMedium?.copyWith(
                         fontSize: 14,
-                        color: AppColors.leafBright,
+                        color: AppColors.accentBright,
                       ),
                     ),
                   ),

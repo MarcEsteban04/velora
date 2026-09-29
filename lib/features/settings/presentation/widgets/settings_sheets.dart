@@ -132,7 +132,7 @@ abstract final class SettingsSheets {
                     for (final option in AutoLock.values)
                       RadioListTile<AutoLock>(
                         value: option,
-                        activeColor: AppColors.leafBright,
+                        activeColor: AppColors.accentBright,
                         title: Text(option.label),
                       ),
                   ],

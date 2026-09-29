@@ -77,7 +77,9 @@ class RecentActivity extends StatelessWidget {
           ],
           TextButton(
             onPressed: onSeeAll,
-            style: TextButton.styleFrom(foregroundColor: AppColors.leafBright),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.accentBright,
+            ),
             child: const Text('See all in History'),
           ),
         ],

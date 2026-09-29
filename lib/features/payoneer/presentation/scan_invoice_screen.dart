@@ -338,7 +338,7 @@ class _ResultCard extends StatelessWidget {
       ),
       InvoiceLogged(:final invoice, paidTransactionId: _?) => (
         Icons.payments_rounded,
-        AppColors.leafBright,
+        AppColors.accentBright,
         'Logged as paid',
         '${invoice.title} · ${money(landed)} salary added',
       ),
@@ -350,7 +350,7 @@ class _ResultCard extends StatelessWidget {
       ),
       InvoiceMarkedPaid(:final invoice) => (
         Icons.payments_rounded,
-        AppColors.leafBright,
+        AppColors.accentBright,
         'Marked paid',
         '${invoice.title} · ${money(landed)} salary added',
       ),

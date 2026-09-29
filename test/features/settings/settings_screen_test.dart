@@ -243,4 +243,32 @@ void main() {
     expect(row.style?.fontFamily, 'PlusJakartaSans');
     addTearDown(() => AppTypography.font = AppFont.velora);
   });
+
+  testWidgets('the theme colour changes the app, but money in stays green', (
+    tester,
+  ) async {
+    await openSettings(tester);
+    final green = AppColors.leafBright;
+    expect(AppColors.accentChoice, AppAccent.leaf);
+    expect(find.text('Theme colour'), findsOneWidget);
+
+    await tester.tap(find.text('Theme colour'));
+    await tester.pump();
+    await frames(tester);
+    await tester.tap(find.text('Sky'));
+    await tester.pump();
+    await frames(tester);
+
+    expect(AppColors.accentChoice, AppAccent.sky);
+    expect(prefs.getString('prefs.accent'), 'sky');
+    expect(AppColors.accentBright, AppAccent.sky.night.$2);
+    // Income, paid and on-track keep their green.
+    expect(AppColors.leafBright, green);
+
+    await tester.tap(find.text('Done'));
+    await tester.pump();
+    await frames(tester);
+    // The Settings row shows the choice.
+    expect(find.text('Clear evening blue'), findsOneWidget);
+  });
 }

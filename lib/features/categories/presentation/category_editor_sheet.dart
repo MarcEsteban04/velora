@@ -149,7 +149,7 @@ class _EditorState extends ConsumerState<_Editor> {
               style: TextButton.styleFrom(
                 foregroundColor: used == 0
                     ? AppColors.rust
-                    : AppColors.leafBright,
+                    : AppColors.accentBright,
               ),
               child: Text(used == 0 ? 'Delete' : 'Hide it'),
             ),

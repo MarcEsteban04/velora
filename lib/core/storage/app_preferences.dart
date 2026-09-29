@@ -1,3 +1,4 @@
+import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/scene_schedule.dart';
 
@@ -63,6 +64,7 @@ class AppPreferences {
   static const _kTimeZone = 'prefs.timeZone';
   static const _kNavBar = 'prefs.navBarStyle';
   static const _kFont = 'prefs.font';
+  static const _kAccent = 'prefs.accent';
   // v2: insights now know how many days were tracked.
   // v4/v3: earlier notes could be cut off mid-sentence.
   static const _kInsight = 'cache.walletInsight.v5';
@@ -88,6 +90,12 @@ class AppPreferences {
   AppFont get font =>
       AppFont.values.asNameMap()[_prefs.getString(_kFont)] ?? AppFont.velora;
   Future<void> setFont(AppFont value) => _prefs.setString(_kFont, value.name);
+
+  AppAccent get accent =>
+      AppAccent.values.asNameMap()[_prefs.getString(_kAccent)] ??
+      AppAccent.leaf;
+  Future<void> setAccent(AppAccent value) =>
+      _prefs.setString(_kAccent, value.name);
 
   NavBarStyle get navBarStyle =>
       NavBarStyle.values.asNameMap()[_prefs.getString(_kNavBar)] ??
@@ -159,6 +167,20 @@ class FontSetting extends Notifier<AppFont> {
   Future<void> set(AppFont value) async {
     state = value;
     await ref.read(appPreferencesProvider).setFont(value);
+  }
+}
+
+final accentProvider = NotifierProvider<AccentSetting, AppAccent>(
+  AccentSetting.new,
+);
+
+class AccentSetting extends Notifier<AppAccent> {
+  @override
+  AppAccent build() => ref.watch(appPreferencesProvider).accent;
+
+  Future<void> set(AppAccent value) async {
+    state = value;
+    await ref.read(appPreferencesProvider).setAccent(value);
   }
 }
 

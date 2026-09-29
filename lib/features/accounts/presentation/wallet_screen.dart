@@ -75,7 +75,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       body = Padding(
         padding: EdgeInsets.all(40),
         child: Center(
-          child: CircularProgressIndicator(color: AppColors.leafBright),
+          child: CircularProgressIndicator(color: AppColors.accentBright),
         ),
       );
     } else if (accountsAsync.hasError && !accountsAsync.hasValue) {
@@ -197,7 +197,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     }
 
     return RefreshIndicator(
-      color: AppColors.leafBright,
+      color: AppColors.accentBright,
       backgroundColor: AppColors.surfaceRaised,
       onRefresh: () async {
         ref.invalidate(accountsProvider);
@@ -441,13 +441,13 @@ class _ViewToggle extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               color: selected
-                  ? AppColors.leaf.withValues(alpha: 0.25)
+                  ? AppColors.accent.withValues(alpha: 0.25)
                   : Colors.transparent,
             ),
             child: Icon(
               icon,
               size: 18,
-              color: selected ? AppColors.leafBright : AppColors.textMuted,
+              color: selected ? AppColors.accentBright : AppColors.textMuted,
             ),
           ),
         ),

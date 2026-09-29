@@ -28,6 +28,7 @@ import '../../streaks/application/streak_providers.dart';
 import '../../streaks/presentation/streak_sheet.dart';
 import '../../streaks/presentation/streak_style.dart';
 import 'widgets/settings_section.dart';
+import 'widgets/accent_sheet.dart';
 import 'widgets/font_sheet.dart';
 import 'widgets/nav_bar_style_sheet.dart';
 import 'widgets/settings_sheets.dart';
@@ -142,6 +143,7 @@ class SettingsScreen extends ConsumerWidget {
     final appearance = ref.watch(appearanceProvider);
     final navBar = ref.watch(navBarStyleProvider);
     final font = ref.watch(fontProvider);
+    final accent = ref.watch(accentProvider);
     final zone = ref.watch(timeZoneProvider);
     final backup = ref.watch(backupStatusProvider);
     final installed = ref.watch(installedVersionProvider).value;
@@ -225,6 +227,14 @@ class SettingsScreen extends ConsumerWidget {
                         },
                       ),
                       SettingsTile(
+                        icon: Icons.palette_rounded,
+                        color: AppColors.accentBright,
+                        title: 'Theme colour',
+                        subtitle: accent.description,
+                        value: accent.label,
+                        onTap: () => AccentSheet.show(context),
+                      ),
+                      SettingsTile(
                         icon: Icons.text_fields_rounded,
                         color: AppColors.lilac,
                         title: 'Font',
@@ -240,7 +250,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       SettingsTile(
                         icon: Icons.space_dashboard_rounded,
-                        color: AppColors.leafBright,
+                        color: AppColors.accentBright,
                         title: 'Navigation bar',
                         subtitle: navBar.description,
                         value: navBar.label,
@@ -341,7 +351,7 @@ class SettingsScreen extends ConsumerWidget {
                             .set(!hideOnOpen),
                         trailing: Switch.adaptive(
                           value: hideOnOpen,
-                          activeTrackColor: AppColors.leaf,
+                          activeTrackColor: AppColors.accent,
                           onChanged: (v) => ref
                               .read(hideBalancesOnOpenProvider.notifier)
                               .set(v),
@@ -366,7 +376,7 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                         trailing: Switch.adaptive(
                           value: streak.enabled,
-                          activeTrackColor: AppColors.leaf,
+                          activeTrackColor: AppColors.accent,
                           onChanged: (v) =>
                               streakCtl.save(streak.copyWith(enabled: v)),
                         ),
@@ -389,7 +399,7 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                         trailing: Switch.adaptive(
                           value: streak.restDays,
-                          activeTrackColor: AppColors.leaf,
+                          activeTrackColor: AppColors.accent,
                           onChanged: (v) =>
                               streakCtl.save(streak.copyWith(restDays: v)),
                         ),
@@ -596,7 +606,7 @@ class _ProfileCard extends StatelessWidget {
                 child: Icon(
                   Icons.edit_rounded,
                   size: 18,
-                  color: AppColors.leafBright,
+                  color: AppColors.accentBright,
                 ),
               ),
             ),

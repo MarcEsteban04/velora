@@ -145,7 +145,7 @@ class _AccountStepState extends ConsumerState<AccountStep> {
               child: Text(
                 currency.symbol,
                 style: text.titleMedium?.copyWith(
-                  color: AppColors.leafBright,
+                  color: AppColors.accentBright,
                   fontSize: 18,
                 ),
               ),

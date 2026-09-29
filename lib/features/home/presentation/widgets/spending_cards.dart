@@ -152,10 +152,12 @@ class _Bars extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(6),
                                   color: isSel
-                                      ? AppColors.leafBright
+                                      ? AppColors.accentBright
                                       : isToday
-                                      ? AppColors.leaf.withValues(alpha: 0.65)
-                                      : AppColors.leaf.withValues(alpha: 0.32),
+                                      ? AppColors.accent.withValues(alpha: 0.65)
+                                      : AppColors.accent.withValues(
+                                          alpha: 0.32,
+                                        ),
                                 ),
                               ),
                             ),
@@ -212,7 +214,7 @@ class PeriodSpendCard extends StatelessWidget {
     final color = change == null
         ? AppColors.textMuted
         : less
-        ? AppColors.leafBright
+        ? AppColors.accentBright
         : AppColors.ember;
 
     return GlassCard(
@@ -320,7 +322,7 @@ class _PeriodSwitch extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: p == value
-                          ? AppColors.leaf.withValues(alpha: 0.9)
+                          ? AppColors.accent.withValues(alpha: 0.9)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(13),
                     ),

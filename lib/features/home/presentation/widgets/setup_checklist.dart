@@ -90,10 +90,12 @@ class _TaskRow extends StatelessWidget {
                 height: 26,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: task.done ? AppColors.leafBright : Colors.transparent,
+                  color: task.done
+                      ? AppColors.accentBright
+                      : Colors.transparent,
                   border: Border.all(
                     color: task.done
-                        ? AppColors.leafBright
+                        ? AppColors.accentBright
                         : AppColors.textMuted,
                     width: 1.6,
                   ),
@@ -184,7 +186,11 @@ class _RingPainter extends CustomPainter {
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round
       ..shader = SweepGradient(
-        colors: [AppColors.leafBright, AppColors.ember, AppColors.leafBright],
+        colors: [
+          AppColors.accentBright,
+          AppColors.ember,
+          AppColors.accentBright,
+        ],
       ).createShader(rect);
     canvas.drawArc(rect, 0, math.pi * 2, false, track);
     canvas.drawArc(rect, -math.pi / 2, math.pi * 2 * progress, false, arc);

@@ -70,7 +70,7 @@ class ReceiptAttachment extends ConsumerWidget {
                     children: [
                       Icon(
                         Icons.photo_library_rounded,
-                        color: AppColors.leafBright,
+                        color: AppColors.accentBright,
                       ),
                       const SizedBox(width: 10),
                       Text(
@@ -146,7 +146,7 @@ class ReceiptAttachment extends ConsumerWidget {
                         Icon(
                           Icons.attach_file_rounded,
                           size: 16,
-                          color: AppColors.leafBright,
+                          color: AppColors.accentBright,
                         ),
                         const SizedBox(width: 4),
                         Flexible(
@@ -266,7 +266,7 @@ Future<Uint8List?> chooseReceiptPhoto(
             ListTile(
               leading: Icon(
                 Icons.photo_camera_rounded,
-                color: AppColors.leafBright,
+                color: AppColors.accentBright,
               ),
               title: const Text('Take a photo'),
               onTap: () => Navigator.pop(context, true),
@@ -274,7 +274,7 @@ Future<Uint8List?> chooseReceiptPhoto(
             ListTile(
               leading: Icon(
                 Icons.photo_library_rounded,
-                color: AppColors.leafBright,
+                color: AppColors.accentBright,
               ),
               title: const Text('Choose from photos'),
               onTap: () => Navigator.pop(context, false),

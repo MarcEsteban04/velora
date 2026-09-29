@@ -151,6 +151,74 @@ class Palette {
   };
 }
 
+/// The theme colour the user picks in Settings: buttons, tabs, selections
+/// and highlights. Each has shades for the night scene and deeper ones for
+/// Day and Afternoon, so it keeps its contrast on light surfaces. Money
+/// coming in, paid and on-track states stay green whatever the accent.
+enum AppAccent {
+  leaf(
+    'Leaf',
+    'Velora’s own green',
+    night: (Color(0xFF58A765), Color(0xFF6CBF78), Color(0xFF34703F)),
+    light: (Color(0xFF3E9E57), Color(0xFF2E8A47), Color(0xFF256E39)),
+  ),
+  sky(
+    'Sky',
+    'Clear evening blue',
+    night: (Color(0xFF4F86E8), Color(0xFF7DA8FF), Color(0xFF2C4F9E)),
+    light: (Color(0xFF3D7BE0), Color(0xFF2F66C4), Color(0xFF234C94)),
+  ),
+  lilac(
+    'Lilac',
+    'Soft dusk violet',
+    night: (Color(0xFF8F6FE0), Color(0xFFB39BFF), Color(0xFF553C9A)),
+    light: (Color(0xFF7E5CD8), Color(0xFF6A48C8), Color(0xFF4E3396)),
+  ),
+  rose(
+    'Rose',
+    'Warm blossom pink',
+    night: (Color(0xFFD65C8C), Color(0xFFF27BA6), Color(0xFF8E2F57)),
+    light: (Color(0xFFD2507F), Color(0xFFBC3F6C), Color(0xFF8C2C50)),
+  ),
+  ember(
+    'Ember',
+    'Red panda orange',
+    night: (Color(0xFFE0873F), Color(0xFFF5A25E), Color(0xFF9A5220)),
+    light: (Color(0xFFD5762A), Color(0xFFC0621A), Color(0xFF8E4612)),
+  ),
+  teal(
+    'Teal',
+    'Cool mountain lake',
+    night: (Color(0xFF2FA8A2), Color(0xFF4FCBC4), Color(0xFF1B6763)),
+    light: (Color(0xFF23968F), Color(0xFF1B827C), Color(0xFF136058)),
+  );
+
+  const AppAccent(
+    this.label,
+    this.description, {
+    required this.night,
+    required this.light,
+  });
+
+  final String label;
+  final String description;
+
+  /// (base, bright, shadow) in the night scene.
+  final (Color, Color, Color) night;
+
+  /// (base, bright, shadow) in Day and Afternoon.
+  final (Color, Color, Color) light;
+
+  (Color, Color, Color) get _shades => AppColors.isLight ? light : night;
+
+  /// The swatch shown in Settings: the bright shade for the current scene.
+  Color get swatch => _shades.$2;
+
+  /// The button face and lip, for previews.
+  Color get base => _shades.$1;
+  Color get shadow => _shades.$3;
+}
+
 /// Velora's colour tokens, resolved against the active [Palette].
 ///
 /// Screens reference `AppColors.x`, and the app root switches [palette]
@@ -158,6 +226,9 @@ class Palette {
 /// which scene is showing. Keep raw hex values in [Palette], nowhere else.
 abstract final class AppColors {
   static Palette palette = Palette.nightPalette;
+
+  /// The user's theme colour; the app root sets it from Settings.
+  static AppAccent accentChoice = AppAccent.leaf;
 
   static Scene get scene => palette.scene;
 
@@ -180,6 +251,12 @@ abstract final class AppColors {
   static Color get leaf => palette.leaf;
   static Color get leafBright => palette.leafBright;
   static Color get leafShadow => palette.leafShadow;
+
+  /// The theme colour, for anything brand or interactive. Use [leaf] only
+  /// where green means something: money in, paid, on track.
+  static Color get accent => accentChoice.base;
+  static Color get accentBright => accentChoice.swatch;
+  static Color get accentShadow => accentChoice.shadow;
   static Color get rust => palette.rust;
   static Color get ember => palette.ember;
   static Color get sky => palette.sky;

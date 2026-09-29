@@ -215,7 +215,7 @@ class _OwedEditorState extends ConsumerState<_OwedEditor> {
                     avatar: Icon(
                       Icons.event_rounded,
                       size: 18,
-                      color: AppColors.leafBright,
+                      color: AppColors.accentBright,
                     ),
                     label: Text(
                       _dueOn == null

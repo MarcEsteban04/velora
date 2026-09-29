@@ -126,7 +126,7 @@ class _MascotHeroState extends State<MascotHero> with TickerProviderStateMixin {
                       gradient: RadialGradient(
                         colors: [
                           AppColors.ember.withValues(alpha: 0.28),
-                          AppColors.leafBright.withValues(alpha: 0.10),
+                          AppColors.accentBright.withValues(alpha: 0.10),
                           Colors.transparent,
                         ],
                         stops: const [0, 0.55, 1],

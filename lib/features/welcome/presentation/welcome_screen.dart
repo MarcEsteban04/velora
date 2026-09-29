@@ -265,7 +265,7 @@ class _PrivacyNote extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.lock_rounded, size: 15, color: AppColors.leafBright),
+        Icon(Icons.lock_rounded, size: 15, color: AppColors.accentBright),
         const SizedBox(width: 6),
         Flexible(
           child: Text(

@@ -51,7 +51,7 @@ class PlanScreen extends ConsumerWidget {
     }
 
     return RefreshIndicator(
-      color: AppColors.leafBright,
+      color: AppColors.accentBright,
       backgroundColor: AppColors.surfaceRaised,
       onRefresh: () async {
         ref
@@ -201,12 +201,12 @@ class _CardHeader extends StatelessWidget {
         if (action != null) ...[
           Text(
             action!,
-            style: text.labelMedium?.copyWith(color: AppColors.leafBright),
+            style: text.labelMedium?.copyWith(color: AppColors.accentBright),
           ),
           Icon(
             Icons.chevron_right_rounded,
             size: 18,
-            color: AppColors.leafBright,
+            color: AppColors.accentBright,
           ),
         ],
       ],
@@ -281,7 +281,7 @@ class _BudgetsCard extends StatelessWidget {
                     Text(
                       Money.format(totals.dailyAllowanceMinor, currency),
                       style: text.titleMedium?.copyWith(
-                        color: AppColors.leafBright,
+                        color: AppColors.accentBright,
                       ),
                     ),
                   ],
@@ -436,7 +436,7 @@ class _DebtsCard extends StatelessWidget {
           const SizedBox(height: 6),
           ProgressBar(
             value: totals.fraction,
-            color: AppColors.leafBright,
+            color: AppColors.accentBright,
             height: 6,
           ),
           const SizedBox(height: 10),
@@ -558,7 +558,7 @@ class _OwedCard extends StatelessWidget {
           const SizedBox(height: 6),
           ProgressBar(
             value: totals.fraction,
-            color: AppColors.leafBright,
+            color: AppColors.accentBright,
             height: 6,
           ),
           const SizedBox(height: 10),
@@ -762,7 +762,7 @@ class _Invite extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, color: AppColors.leafBright),
+          Icon(Icons.chevron_right_rounded, color: AppColors.accentBright),
         ],
       ),
     );

@@ -51,7 +51,7 @@ class InsightCard extends StatelessWidget {
                 style: text.labelMedium?.copyWith(
                   fontSize: 11,
                   letterSpacing: 1.4,
-                  color: AppColors.leafBright,
+                  color: AppColors.accentBright,
                 ),
               ),
               const Spacer(),
@@ -302,8 +302,8 @@ class _Bars extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(5),
                               color: i == days.length - 1
-                                  ? AppColors.leafBright
-                                  : AppColors.leaf.withValues(alpha: 0.38),
+                                  ? AppColors.accentBright
+                                  : AppColors.accent.withValues(alpha: 0.38),
                             ),
                           ),
                         ),

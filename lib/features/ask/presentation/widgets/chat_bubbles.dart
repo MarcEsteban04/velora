@@ -20,7 +20,7 @@ class UserBubble extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10, left: 40),
         padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
         decoration: BoxDecoration(
-          color: AppColors.leaf,
+          color: AppColors.accent,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),

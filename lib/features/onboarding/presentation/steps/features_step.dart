@@ -12,7 +12,7 @@ class FeaturesStep extends StatelessWidget {
   static List<(IconData, Color, String, String)> get _features => [
     (
       Icons.add_circle_rounded,
-      AppColors.leafBright,
+      AppColors.accentBright,
       'Quick add',
       'Tap +, enter an amount, pick a category. Done.',
     ),

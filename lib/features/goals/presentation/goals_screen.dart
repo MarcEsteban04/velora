@@ -64,7 +64,7 @@ class GoalsScreen extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(40),
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.leafBright),
+            child: CircularProgressIndicator(color: AppColors.accentBright),
           ),
         ),
       ];
@@ -165,7 +165,7 @@ class GoalsScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 ProgressBar(
                   value: target == 0 ? 0 : saved / target,
-                  color: AppColors.leafBright,
+                  color: AppColors.accentBright,
                 ),
               ],
             ),
