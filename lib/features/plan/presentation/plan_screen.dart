@@ -19,6 +19,12 @@ import '../../debts/presentation/debt_style.dart';
 import '../../debts/presentation/debts_screen.dart';
 import '../../home/application/balance_privacy.dart';
 import '../../owed/application/owed_providers.dart';
+import '../../planned/application/planned_providers.dart';
+import '../../planned/presentation/planned_screen.dart';
+import '../../planned/presentation/planned_style.dart';
+import '../../accounts/data/account_repository.dart';
+import '../../accounts/domain/account.dart';
+import '../../planned/domain/planned_payment.dart';
 import '../../owed/domain/owed.dart';
 import '../../owed/presentation/owed_screen.dart';
 import '../../owed/presentation/owed_style.dart';
@@ -44,6 +50,12 @@ class PlanScreen extends ConsumerWidget {
     final goals = ref.watch(goalProgressProvider);
     final debts = ref.watch(debtProgressProvider);
     final owed = ref.watch(owedProgressProvider);
+    final planned = ref.watch(activePlannedProvider);
+    final upcoming = ref.watch(upcomingTotalsProvider);
+    final plannedCurrency = <String, String>{
+      for (final a in ref.watch(accountsProvider).value ?? const <Account>[])
+        a.id: a.currencyCode,
+    };
     final hidden = ref.watch(balancesHiddenProvider);
 
     void open(Route<void> route) {
@@ -64,7 +76,8 @@ class PlanScreen extends ConsumerWidget {
           ..invalidate(debtEntriesProvider)
           ..invalidate(debtBillsProvider)
           ..invalidate(owedProvider)
-          ..invalidate(owedEntriesProvider);
+          ..invalidate(owedEntriesProvider)
+          ..invalidate(plannedProvider);
         await ref.read(budgetsProvider.future);
       },
       child: ListView(
@@ -81,10 +94,7 @@ class PlanScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Plan', style: text.displaySmall),
-                Text(
-                  'Budgets, goals, debts and who owes you',
-                  style: text.bodyLarge,
-                ),
+                Text('Budgets, bills, goals and debts', style: text.bodyLarge),
               ],
             ),
           ),
@@ -95,6 +105,18 @@ class PlanScreen extends ConsumerWidget {
               views: budgets,
               currency: currency,
               onOpen: () => open(CategoriesScreen.route()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 110),
+            child: _PlannedCard(
+              planned: planned,
+              upcoming: upcoming,
+              currency: currency,
+              currencyOf: plannedCurrency,
+              hidden: hidden,
+              onOpen: () => open(PlannedScreen.route()),
             ),
           ),
           const SizedBox(height: 12),
@@ -151,36 +173,6 @@ class PlanScreen extends ConsumerWidget {
               title: 'Reports',
               subtitle: 'Where it all went, month by month',
               onTap: () => open(ReportsScreen.route()),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(6, 26, 6, 10),
-            child: Text(
-              'COMING NEXT',
-              style: text.labelMedium?.copyWith(
-                fontSize: 11,
-                letterSpacing: 1.4,
-              ),
-            ),
-          ),
-          FadeSlideIn(
-            delay: const Duration(milliseconds: 200),
-            child: GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.9,
-              children: [
-                _SoonTile(
-                  icon: Icons.event_repeat_rounded,
-                  color: AppColors.sky,
-                  title: 'Planned payments',
-                  subtitle: 'Bills, never missed',
-                ),
-              ],
             ),
           ),
         ],
@@ -494,6 +486,117 @@ class _DebtsCard extends StatelessWidget {
               _CardHeader(
                 label: 'DEBTS',
                 action: d == null || d.isEmpty ? null : 'See all',
+              ),
+              const SizedBox(height: 12),
+              content,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlannedCard extends StatelessWidget {
+  const _PlannedCard({
+    required this.planned,
+    required this.upcoming,
+    required this.currency,
+    required this.currencyOf,
+    required this.hidden,
+    required this.onOpen,
+  });
+
+  final List<PlannedPayment>? planned;
+  final UpcomingTotals? upcoming;
+  final Currency currency;
+  final Map<String, String> currencyOf;
+  final bool hidden;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final list = planned;
+    final totals = upcoming;
+    String money(int m, Currency c) =>
+        hidden ? '${c.symbol}••••' : Money.format(m, c);
+
+    Widget content;
+    if (list == null || totals == null) {
+      content = const SizedBox(height: 60);
+    } else if (list.isEmpty) {
+      content = _Invite(
+        pose: MascotPose.streak,
+        title: 'Never miss a bill',
+        body: 'Rent, electricity, subscriptions. Get a reminder, pay in a tap.',
+      );
+    } else {
+      final now = AppClock.now();
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    money(totals.outMinor, currency),
+                    style: text.headlineSmall,
+                  ),
+                ),
+              ),
+              Text('due in 30 days', style: text.labelMedium),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (final p in list.take(3))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  PlannedBadge(planned: p, size: 26),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      p.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium?.copyWith(fontSize: 13),
+                    ),
+                  ),
+                  Text(
+                    '${plannedDueLabel(p, now)} · '
+                    '${money(p.amountMinor, Currencies.byCode(currencyOf[p.accountId] ?? currency.code))}',
+                    style: text.labelMedium?.copyWith(
+                      fontSize: 11,
+                      color: dueColor(dueStatus(p, now)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: 'Planned payments',
+      child: GestureDetector(
+        onTap: onOpen,
+        child: GlassCard(
+          radius: 24,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _CardHeader(
+                label: 'PLANNED PAYMENTS',
+                action: list == null || list.isEmpty ? null : 'See all',
               ),
               const SizedBox(height: 12),
               content,
@@ -820,58 +923,6 @@ class _HubTile extends StatelessWidget {
               Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SoonTile extends StatelessWidget {
-  const _SoonTile({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Semantics(
-      label: '$title, coming soon',
-      excludeSemantics: true,
-      child: GlassCard(
-        radius: 20,
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 20, color: color.withValues(alpha: 0.8)),
-                const Spacer(),
-                StatusPill(label: 'SOON', color: AppColors.ember),
-              ],
-            ),
-            const Spacer(),
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text.titleMedium?.copyWith(fontSize: 14),
-            ),
-            Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text.labelMedium?.copyWith(fontSize: 11),
-            ),
-          ],
         ),
       ),
     );

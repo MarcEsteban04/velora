@@ -38,6 +38,10 @@ abstract final class AppClock {
   /// The zone in use, or null while following the phone.
   static String? get zone => _location?.name;
 
+  /// The zone itself, for scheduling (reminders), or null while following
+  /// the phone.
+  static tz.Location? get location => _location;
+
   /// Every zone name, for the picker. Empty before [init].
   static List<String> get zones =>
       _loaded ? (tz.timeZoneDatabase.locations.keys.toList()..sort()) : [];

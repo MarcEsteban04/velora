@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:intl/intl.dart';
 
 import '../../../core/time/app_clock.dart';
+import '../../../core/time/iso_date.dart';
 
 /// Someone who owes the user money. What's still owed comes from its
 /// [OwedEntry]s: what was lent, less what's been paid back.
@@ -71,15 +72,9 @@ class OwedDraft {
       _ => null,
     },
     'currency_code': currencyCode,
-    'due_on': dueOn == null ? null : dateOnly(dueOn!),
+    'due_on': dueOn == null ? null : isoDate(dueOn!),
   };
 }
-
-/// "2026-11-15".
-String dateOnly(DateTime d) =>
-    '${d.year.toString().padLeft(4, '0')}-'
-    '${d.month.toString().padLeft(2, '0')}-'
-    '${d.day.toString().padLeft(2, '0')}';
 
 /// Paid back (positive) or lent (negative).
 class OwedEntry {

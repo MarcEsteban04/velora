@@ -11,6 +11,7 @@ import '../core/widgets/reveal.dart';
 import '../core/widgets/velora_mascot.dart';
 import '../features/shell/presentation/app_shell.dart';
 import '../features/onboarding/presentation/onboarding_flow.dart';
+import '../features/planned/presentation/planned_autopilot.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/updates/presentation/update_prompter.dart';
 import '../features/welcome/presentation/welcome_screen.dart';
@@ -42,7 +43,10 @@ class AppGate extends ConsumerWidget {
         onGetStarted: () => Navigator.of(context).push(OnboardingFlow.route()),
       );
     } else {
-      screen = const UpdatePrompter(key: ValueKey('shell'), child: AppShell());
+      screen = const UpdatePrompter(
+        key: ValueKey('shell'),
+        child: PlannedAutopilot(child: AppShell()),
+      );
     }
 
     return AnimatedSwitcher(

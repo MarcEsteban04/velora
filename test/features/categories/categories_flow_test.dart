@@ -56,8 +56,12 @@ void main() {
   Future<void> openCategories(WidgetTester tester) async {
     await tester.tap(find.bySemanticsLabel(RegExp('Plan tab')));
     await frames(tester);
-    // Below the budgets, goals, debts and owed cards.
-    await tester.ensureVisible(find.text('Categories'));
+    // Below the budgets, planned, goals, debts and owed cards.
+    await tester.dragUntilVisible(
+      find.text('Categories'),
+      find.text('PLANNED PAYMENTS'),
+      const Offset(0, -300),
+    );
     await tester.pump();
     await tester.tap(find.text('Categories'));
     await tester.pump();

@@ -25,6 +25,9 @@ import 'package:velora/features/onboarding/application/onboarding_controller.dar
 import 'package:velora/features/owed/data/owed_repository.dart';
 import 'package:velora/features/owed/domain/owed.dart';
 import 'package:velora/features/onboarding/data/onboarding_repository.dart';
+import 'package:velora/features/planned/data/planned_reminders.dart';
+import 'package:velora/features/planned/data/planned_repository.dart';
+import 'package:velora/features/planned/domain/planned_payment.dart';
 import 'package:velora/features/profile/data/profile_repository.dart';
 import 'package:velora/features/receipts/data/receipt_storage.dart';
 import 'package:velora/features/profile/domain/user_profile.dart';
@@ -36,6 +39,7 @@ import 'package:velora/core/money/exchange_rates.dart';
 import 'package:velora/features/payoneer/data/invoice_repository.dart';
 import 'package:velora/features/payoneer/domain/invoice.dart';
 import 'package:velora/features/updates/domain/app_release.dart';
+import 'package:velora/core/time/iso_date.dart';
 
 /// An in-memory stand-in for Supabase. One store sits behind every fake
 /// repository, so tests run the real app end to end without a network.
@@ -52,6 +56,10 @@ class FakeBackend implements OnboardingRepository, ProfileRepository {
   final debtBills = <CreditBill>[];
   final owed = <Owed>[];
   final owedEntries = <OwedEntry>[];
+
+  /// Planned payments as database rows, and which transaction paid which.
+  final plannedRows = <Map<String, dynamic>>[];
+  final plannedOf = <String, String>{};
   final categories = <Category>[
     const Category(
       id: 'food',
@@ -1030,6 +1038,108 @@ class FakeOwed implements OwedRepository {
       db.owedEntries.removeWhere((e) => e.id == id);
 }
 
+class FakePlanned implements PlannedRepository {
+  FakePlanned(this.db);
+  final FakeBackend db;
+
+  Map<String, dynamic> _row(String id) =>
+      db.plannedRows.firstWhere((r) => r['id'] == id);
+
+  @override
+  Future<List<PlannedPayment>> fetchAll() async =>
+      (db.plannedRows.map(PlannedPayment.fromRow).toList()
+        ..sort((a, b) => a.nextDue.compareTo(b.nextDue)));
+
+  @override
+  Future<PlannedPayment> create(PlannedDraft draft) async {
+    final row = {
+      ...draft.toRow(),
+      'id': db.nextId('plan'),
+      'created_at': '2026-01-01T00:00:00Z',
+    };
+    db.plannedRows.add(row);
+    return PlannedPayment.fromRow(row);
+  }
+
+  @override
+  Future<PlannedPayment> update(String id, PlannedDraft draft) async {
+    final row = _row(id)..addAll(draft.toRow());
+    return PlannedPayment.fromRow(row);
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    db.plannedRows.removeWhere((r) => r['id'] == id);
+    db.plannedOf.removeWhere((_, plan) => plan == id);
+  }
+
+  @override
+  Future<String> pay(
+    PlannedPayment p, {
+    required int amountMinor,
+    required DateTime paidAt,
+    required String accountId,
+    required DateTime? nextDue,
+  }) async {
+    final tx = db.nextId('tx');
+    db.transactions.add(
+      Transaction(
+        id: tx,
+        kind: p.kind,
+        amountMinor: amountMinor,
+        accountId: accountId,
+        categoryId: p.categoryId,
+        note: p.name,
+        occurredAt: paidAt,
+      ),
+    );
+    db.plannedOf[tx] = p.id;
+    await moveTo(p.id, nextDue);
+    return tx;
+  }
+
+  @override
+  Future<void> moveTo(String id, DateTime? nextDue) async {
+    final row = _row(id);
+    if (nextDue != null) row['next_due'] = isoDate(nextDue);
+    row['done_at'] = nextDue == null ? '2026-01-01T00:00:00Z' : null;
+  }
+
+  @override
+  Future<List<Transaction>> history(String id, {int limit = 12}) async =>
+      (db.transactions.where((t) => db.plannedOf[t.id] == id).toList()
+            ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt)))
+          .take(limit)
+          .toList();
+}
+
+/// Reminders that are only counted, never shown.
+class FakeReminders implements PlannedReminders {
+  int permissionAsks = 0;
+  List<PlannedPayment> lastSynced = const [];
+  final lines = <String>[];
+
+  @override
+  Future<bool> requestPermission() async {
+    permissionAsks++;
+    return true;
+  }
+
+  @override
+  Future<void> sync(
+    List<PlannedPayment> planned, {
+    required String Function(PlannedPayment p, int daysBefore) line,
+  }) async {
+    lastSynced = planned;
+    lines
+      ..clear()
+      ..addAll([
+        for (final p in planned)
+          if (p.remindDays case final d? when !p.isDone) line(p, d),
+      ]);
+  }
+}
+
 /// Every override the full app needs to run on the fakes above. [prefs]
 /// comes from `SharedPreferences.getInstance()` after
 /// `SharedPreferences.setMockInitialValues`.
@@ -1044,6 +1154,7 @@ List<Override> fakeOverrides(
   FakeUpdates? updates,
   FakeInstaller? installer,
   FakeRates? rates,
+  FakeReminders? reminders,
 }) => [
   sharedPreferencesProvider.overrideWithValue(prefs),
   authRepositoryProvider.overrideWithValue(auth ?? FakeAuth(db)),
@@ -1051,6 +1162,8 @@ List<Override> fakeOverrides(
   invoiceRepositoryProvider.overrideWithValue(FakeInvoices(db)),
   debtRepositoryProvider.overrideWithValue(FakeDebts(db)),
   owedRepositoryProvider.overrideWithValue(FakeOwed(db)),
+  plannedRepositoryProvider.overrideWithValue(FakePlanned(db)),
+  plannedRemindersProvider.overrideWithValue(reminders ?? FakeReminders()),
   exchangeRateSourceProvider.overrideWithValue(rates ?? FakeRates()),
   updateInstallerProvider.overrideWithValue(installer ?? FakeInstaller()),
   onboardingRepositoryProvider.overrideWithValue(db),
