@@ -139,6 +139,13 @@ class MonthReport {
   final int spentMinor;
   final List<CategorySpend> byCategory;
 
+  /// The name for the row that folds the rest together: "Other", or
+  /// "Everything else" when one of the categories shown is itself Other.
+  String get restLabel =>
+      byCategory.any((c) => c.category?.name.trim().toLowerCase() == 'other')
+      ? 'Everything else'
+      : 'Other';
+
   /// Spending so far at the end of each day counted, day 1 first.
   final List<int> cumulative;
 

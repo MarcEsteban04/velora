@@ -146,6 +146,41 @@ void main() {
     expect(r.daysCounted, 31);
   });
 
+  test("the folded row isn't called Other when a category already is", () {
+    final withOther = {...categories, 'other': cat('other')};
+    MonthReport report(Map<String, int> spend) => MonthReport.of(
+      DateTime(2026, 8),
+      [
+        for (final e in spend.entries)
+          t(
+            TransactionKind.expense,
+            e.value,
+            DateTime(2026, 8, 3),
+            category: e.key,
+          ),
+        t(TransactionKind.expense, 50, DateTime(2026, 8, 4)),
+      ],
+      categories: withOther,
+      inMain: inMain,
+      now: DateTime(2026, 9, 12),
+    );
+    // Other is shown as a category of its own: the rest is Everything else.
+    expect(report({'other': 900, 'food': 800}).restLabel, 'Everything else');
+    // Other is small enough to fold in: plain Other.
+    expect(
+      report({
+        'food': 800,
+        'transport': 700,
+        'bills': 600,
+        'fun': 500,
+        'health': 400,
+        'home': 300,
+        'other': 10,
+      }).restLabel,
+      'Other',
+    );
+  });
+
   test('an empty or future month', () {
     final r = MonthReport.of(
       DateTime(2026, 10),

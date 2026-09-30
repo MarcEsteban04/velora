@@ -400,7 +400,7 @@ class _CategoryList extends StatelessWidget {
           Semantics(
             button: true,
             label:
-                '${c.category?.name ?? 'Other'}, ${money(c.amountMinor)}, '
+                '${c.category?.name ?? report.restLabel}, ${money(c.amountMinor)}, '
                 '${(c.share * 100).round()} percent',
             excludeSemantics: true,
             child: InkWell(
@@ -433,7 +433,7 @@ class _CategoryList extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  c.category?.name ?? 'Other',
+                                  c.category?.name ?? report.restLabel,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: text.titleMedium?.copyWith(
@@ -592,7 +592,10 @@ class _CategoryTransactions extends ConsumerWidget {
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           children: [
-            Text(category?.name ?? 'Other', style: text.headlineSmall),
+            Text(
+              category?.name ?? report?.restLabel ?? 'Other',
+              style: text.headlineSmall,
+            ),
             Text(
               '${DateFormat('MMMM y').format(month)} · ${list.length} '
               'expense${list.length == 1 ? '' : 's'} · '
