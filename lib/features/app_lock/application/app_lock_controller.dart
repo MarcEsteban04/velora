@@ -13,7 +13,7 @@ class AppLockState {
 
 /// Decides when the lock screen covers the app. It locks on a cold start and
 /// again after the app has been in the background longer than the
-/// auto-lock setting.
+/// auto-lock setting, unless "Ask for PIN" is off in Settings.
 final appLockProvider = AsyncNotifierProvider<AppLockController, AppLockState>(
   AppLockController.new,
 );
@@ -30,7 +30,8 @@ class AppLockController extends AsyncNotifier<AppLockState> {
     ref.onDispose(listener.dispose);
 
     final hasPin = await ref.read(pinRepositoryProvider).hasPin();
-    return AppLockState(hasPin: hasPin, locked: hasPin);
+    final ask = ref.read(pinLockProvider);
+    return AppLockState(hasPin: hasPin, locked: hasPin && ask);
   }
 
   void _onReturn() {
@@ -38,6 +39,7 @@ class AppLockController extends AsyncNotifier<AppLockState> {
     _backgroundedAt = null;
     final current = state.value;
     if (since == null || current == null || !current.hasPin) return;
+    if (!ref.read(pinLockProvider)) return;
     final grace = ref.read(autoLockProvider).grace;
     if (DateTime.now().difference(since) >= grace) {
       state = AsyncData(AppLockState(hasPin: true, locked: true));

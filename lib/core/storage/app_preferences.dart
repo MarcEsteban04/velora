@@ -60,6 +60,7 @@ class AppPreferences {
 
   static const _kHideBalances = 'prefs.hideBalancesOnOpen';
   static const _kAutoLock = 'prefs.autoLock';
+  static const _kPinLock = 'prefs.pinLock';
   static const _kAppearance = 'prefs.appearance';
   static const _kTimeZone = 'prefs.timeZone';
   static const _kNavBar = 'prefs.navBarStyle';
@@ -111,6 +112,11 @@ class AppPreferences {
   Future<void> setHideBalancesOnOpen(bool value) =>
       _prefs.setBool(_kHideBalances, value);
 
+  /// Whether opening Velora asks for the PIN. On by default; off opens
+  /// straight to Home (the PIN is kept, for turning it back on).
+  bool get pinLock => _prefs.getBool(_kPinLock) ?? true;
+  Future<void> setPinLock(bool value) => _prefs.setBool(_kPinLock, value);
+
   AutoLock get autoLock =>
       AutoLock.values.asNameMap()[_prefs.getString(_kAutoLock)] ??
       AutoLock.thirtySeconds;
@@ -155,6 +161,20 @@ class AutoLockSetting extends Notifier<AutoLock> {
   Future<void> set(AutoLock value) async {
     state = value;
     await ref.read(appPreferencesProvider).setAutoLock(value);
+  }
+}
+
+final pinLockProvider = NotifierProvider<PinLockSetting, bool>(
+  PinLockSetting.new,
+);
+
+class PinLockSetting extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(appPreferencesProvider).pinLock;
+
+  Future<void> set(bool value) async {
+    state = value;
+    await ref.read(appPreferencesProvider).setPinLock(value);
   }
 }
 

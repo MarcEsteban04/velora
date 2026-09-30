@@ -154,6 +154,72 @@ void main() {
     expect(find.text('Enter your PIN'), findsOneWidget);
   });
 
+  testWidgets('Ask for PIN off opens straight to Home, and on locks again', (
+    tester,
+  ) async {
+    // Locks the moment it's left, so only the switch keeps it open.
+    await prefs.setString('prefs.autoLock', AutoLock.immediately.name);
+    await openSettings(tester);
+    await reveal(tester, 'Ask for PIN');
+    await tester.tap(find.text('Ask for PIN'));
+    await tester.pump();
+    await frames(tester);
+    expect(AppPreferences(prefs).pinLock, isFalse);
+    expect(find.text('Off: Velora opens straight to Home'), findsOneWidget);
+    expect(find.text('Lock now'), findsNothing);
+
+    // Coming back from the background: no lock.
+    final binding = tester.binding;
+    for (final s in [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+    ]) {
+      binding.handleAppLifecycleStateChanged(s);
+    }
+    await tester.pump(const Duration(minutes: 10));
+    for (final s in [
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      binding.handleAppLifecycleStateChanged(s);
+    }
+    await frames(tester);
+    expect(find.text('Enter your PIN'), findsNothing);
+
+    // Opening the app fresh: straight to Home.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fakeOverrides(db, pins, prefs),
+        child: const VeloraApp(),
+      ),
+    );
+    await frames(tester, 30);
+    expect(find.text('Enter your PIN'), findsNothing);
+    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
+
+    // Someone borrows the phone: on again, and it locks when it opens.
+    await tester.tap(find.byIcon(Icons.settings_rounded));
+    await tester.pump();
+    await frames(tester);
+    await reveal(tester, 'Ask for PIN');
+    await tester.tap(find.text('Ask for PIN'));
+    await tester.pump();
+    await frames(tester);
+    expect(AppPreferences(prefs).pinLock, isTrue);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fakeOverrides(db, pins, prefs),
+        child: const VeloraApp(),
+      ),
+    );
+    await frames(tester, 30);
+    expect(find.text('Enter your PIN'), findsOneWidget);
+  });
+
   testWidgets('change PIN needs the current one first', (tester) async {
     await openSettings(tester);
     await reveal(tester, 'Change PIN');

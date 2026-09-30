@@ -140,6 +140,7 @@ class SettingsScreen extends ConsumerWidget {
     final profile = ref.watch(profileProvider).value;
     final hideOnOpen = ref.watch(hideBalancesOnOpenProvider);
     final autoLock = ref.watch(autoLockProvider);
+    final pinLock = ref.watch(pinLockProvider);
     final appearance = ref.watch(appearanceProvider);
     final navBar = ref.watch(navBarStyleProvider);
     final font = ref.watch(fontProvider);
@@ -412,38 +413,56 @@ class SettingsScreen extends ConsumerWidget {
                     title: 'Security',
                     children: [
                       SettingsTile(
+                        icon: Icons.lock_person_rounded,
+                        color: AppColors.lilac,
+                        title: 'Ask for PIN',
+                        subtitle: pinLock
+                            ? 'Every time Velora opens'
+                            : 'Off: Velora opens straight to Home',
+                        onTap: () =>
+                            ref.read(pinLockProvider.notifier).set(!pinLock),
+                        trailing: Switch.adaptive(
+                          value: pinLock,
+                          activeTrackColor: AppColors.accent,
+                          onChanged: (v) =>
+                              ref.read(pinLockProvider.notifier).set(v),
+                        ),
+                      ),
+                      SettingsTile(
                         icon: Icons.pin_rounded,
                         color: AppColors.lilac,
                         title: 'Change PIN',
                         onTap: () =>
                             Navigator.of(context).push(ChangePinScreen.route()),
                       ),
-                      SettingsTile(
-                        icon: Icons.timer_rounded,
-                        color: AppColors.lilac,
-                        title: 'Auto-lock',
-                        value: autoLock.label.replaceFirst('After ', ''),
-                        onTap: () async {
-                          final picked = await SettingsSheets.autoLock(
-                            context,
-                            autoLock,
-                          );
-                          if (picked != null) {
-                            await ref
-                                .read(autoLockProvider.notifier)
-                                .set(picked);
-                          }
-                        },
-                      ),
-                      SettingsTile(
-                        icon: Icons.lock_rounded,
-                        color: AppColors.lilac,
-                        title: 'Lock now',
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          ref.read(appLockProvider.notifier).lock();
-                        },
-                      ),
+                      if (pinLock) ...[
+                        SettingsTile(
+                          icon: Icons.timer_rounded,
+                          color: AppColors.lilac,
+                          title: 'Auto-lock',
+                          value: autoLock.label.replaceFirst('After ', ''),
+                          onTap: () async {
+                            final picked = await SettingsSheets.autoLock(
+                              context,
+                              autoLock,
+                            );
+                            if (picked != null) {
+                              await ref
+                                  .read(autoLockProvider.notifier)
+                                  .set(picked);
+                            }
+                          },
+                        ),
+                        SettingsTile(
+                          icon: Icons.lock_rounded,
+                          color: AppColors.lilac,
+                          title: 'Lock now',
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            ref.read(appLockProvider.notifier).lock();
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),
