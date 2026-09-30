@@ -27,6 +27,7 @@ import '../../goals/domain/goal.dart';
 import '../../goals/presentation/goal_style.dart';
 import '../../goals/presentation/goals_screen.dart';
 import '../../profile/application/main_currency.dart';
+import '../../reports/presentation/reports_screen.dart';
 import '../../shell/presentation/widgets/floating_nav_bar.dart';
 import '../../transactions/presentation/category_style.dart';
 
@@ -138,6 +139,20 @@ class PlanScreen extends ConsumerWidget {
               onTap: () => open(CategoriesScreen.route()),
             ),
           ),
+          const SizedBox(height: 12),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 185),
+            child: _HubTile(
+              leading: const VeloraMascot(
+                pose: MascotPose.budget,
+                size: 56,
+                halo: false,
+              ),
+              title: 'Reports',
+              subtitle: 'Where it all went, month by month',
+              onTap: () => open(ReportsScreen.route()),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(6, 26, 6, 10),
             child: Text(
@@ -164,12 +179,6 @@ class PlanScreen extends ConsumerWidget {
                   color: AppColors.sky,
                   title: 'Planned payments',
                   subtitle: 'Bills, never missed',
-                ),
-                _SoonTile(
-                  icon: Icons.insights_rounded,
-                  color: AppColors.lilac,
-                  title: 'Reports',
-                  subtitle: 'Where it all went',
                 ),
               ],
             ),

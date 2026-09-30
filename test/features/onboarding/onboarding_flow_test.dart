@@ -253,7 +253,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     // Only the active tab is on screen. This guards against tabs stacking
     // on top of each other.
-    expect(find.text('Budgets, goals and what’s coming up'), findsOneWidget);
+    expect(find.text('Budgets, goals, debts and who owes you'), findsOneWidget);
     expect(find.text('LAST 7 DAYS'), findsNothing);
     expect(find.text('Every peso, searchable and tidy.'), findsNothing);
 
@@ -261,7 +261,7 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('LAST 7 DAYS'), findsOneWidget);
-    expect(find.text('Budgets, goals and what’s coming up'), findsNothing);
+    expect(find.text('Budgets, goals, debts and who owes you'), findsNothing);
 
     // + opens quick actions; picking one closes the panel with a note.
     await tester.tap(find.bySemanticsLabel(RegExp('Add: open quick actions')));
@@ -332,7 +332,7 @@ void main() {
     await tester.tap(find.text('BPI Savings').first);
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.bySemanticsLabel(RegExp('Account details')));
+    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Edit account'), findsOneWidget);

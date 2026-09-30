@@ -108,7 +108,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel(RegExp('^Maya card')));
     await frames(16);
     expect(find.text('In this month'.toUpperCase()), findsOneWidget);
-    await tester.tap(find.bySemanticsLabel(RegExp('Account details')));
+    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
     await frames(12);
     expect(find.text('Delete account'), findsOneWidget);
     semantics.dispose();
